@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MeuPet — A carteirinha digital do seu pet</title>
+<meta name="description" content="Carteirinha digital, ranking, adoção, vitrine e petshops perto de você. Uma conta. Todos os pets.">
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0F3D3E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MeuPet">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<!-- Open Graph -->
+<meta property="og:title" content="MeuPet — Carteirinha Digital do seu Pet">
+<meta property="og:description" content="Feed, ranking, adoção e petshops perto de você.">
+<meta property="og:image" content="/icons/feature-graphic-1024x500.png">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root{
+    --coral:#FF6B4A;
+    --coral-dark:#E1502E;
+    --teal:#0F3D3E;
+    --teal-light:#175C56;
+    --cream:#FFF8F0;
+    --mustard:#FFB627;
+    --sage:#8FBC94;
+    --ink:#1B2B2A;
+    --paper:#FFFEFB;
+    --line:rgba(15,61,62,0.12);
+    --radius-card:20px;
+    --radius-pill:999px;
+    --shadow-soft: 0 12px 30px -12px rgba(15,61,62,0.25);
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin:0;
+  }
+  .mono{font-family:'JetBrains Mono', monospace;}
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+  button{font-family:inherit; cursor:pointer;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- HEADER ---------- */
+  header.site{
+    position:sticky; top:0; z-index:60;
+    background:rgba(255,248,240,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px; max-width:1180px; margin:0 auto;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces', serif; font-weight:700; font-size:1.35rem; color:var(--teal);
+  }
+  .logo .paw{
+    width:34px; height:34px; border-radius:10px;
+    background:linear-gradient(140deg, var(--coral), var(--mustard));
+    display:grid; place-items:center; color:white; font-size:1.1rem;
+    box-shadow:var(--shadow-soft);
+  }
+  nav.links{display:flex; gap:26px; align-items:center;}
+  nav.links a{
+    font-size:0.92rem; font-weight:600; color:var(--teal-light);
+    position:relative; padding:6px 0;
+  }
+  nav.links a:hover{color:var(--coral-dark);}
+  .nav-actions{display:flex; align-items:center; gap:12px;}
+  .btn{
+    border:none; border-radius:var(--radius-pill);
+    padding:11px 20px; font-weight:700; font-size:0.9rem;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--coral); color:white; box-shadow:0 8px 18px -6px rgba(255,107,74,0.55);}
+  .btn-primary:hover{background:var(--coral-dark);}
+  .btn-ghost{background:transparent; color:var(--teal); border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);}
+  .burger{display:none; background:none; border:none; font-size:1.6rem; color:var(--teal);}
+
+  @media (max-width:880px){
+    nav.links{
+      display:none; position:absolute; top:64px; left:0; right:0;
+      flex-direction:column; gap:4px; background:var(--paper);
+      padding:18px 24px 24px; border-bottom:1px solid var(--line);
+      box-shadow:0 16px 30px -16px rgba(15,61,62,0.25);
+    }
+    nav.links.open{display:flex;}
+    nav.links a{padding:10px 0; border-bottom:1px solid var(--line);}
+    .burger{display:block;}
+    .nav-actions .btn-ghost{display:none;}
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:64px 0 40px;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; top:-180px; right:-160px;
+    width:480px; height:480px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(255,182,39,0.35), transparent 70%);
+    pointer-events:none;
+  }
+  .hero-grid{
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
+    position:relative; z-index:2;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono', monospace; font-size:0.74rem; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--teal-light);
+    background:rgba(143,188,148,0.25); border-radius:var(--radius-pill);
+    padding:6px 14px; margin-bottom:18px;
+  }
+  .dot-live{width:7px; height:7px; border-radius:50%; background:var(--coral); animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+  .hero h1{font-size:clamp(2.3rem, 4.2vw, 3.6rem); line-height:1.05; color:var(--teal);}
+  .hero h1 em{font-style:italic; color:var(--coral-dark);}
+  .hero p.lead{font-size:1.08rem; color:#3C5453; max-width:480px; margin:18px 0 28px; line-height:1.55;}
+  .hero-cta{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:28px;}
+  .hero-stats{display:flex; gap:28px; flex-wrap:wrap;}
+  .stat b{display:block; font-family:'Fraunces', serif; font-size:1.5rem; color:var(--teal);}
+  .stat span{font-size:0.78rem; color:#6A8482; font-weight:600;}
+
+  /* Carteirinha — signature element */
+  .carteirinha-stage{position:relative; display:flex; justify-content:center;}
+  .carteirinha{
+    width:340px; border-radius:24px;
+    background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
+    color:var(--cream);
+    padding:26px 24px 22px;
+    box-shadow:0 30px 60px -20px rgba(15,61,62,0.55);
+    position:relative;
+    transform:rotate(-3deg);
+    transition:transform .4s ease;
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .carteirinha:hover{transform:rotate(0deg) translateY(-6px);}
+  .carteirinha::after{
+    content:"";
+    position:absolute; inset:8px;
+    border:1.5px dashed rgba(255,248,240,0.25);
+    border-radius:18px; pointer-events:none;
+  }
+  .carteirinha-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .carteirinha-top .tag{font-family:'JetBrains Mono', monospace; font-size:0.68rem; letter-spacing:0.08em; color:var(--mustard); text-transform:uppercase;}
+  .carteirinha-top .stamp{
+    font-family:'JetBrains Mono', monospace; font-size:0.62rem; border:1px solid var(--coral);
+    color:var(--coral); padding:3px 8px; border-radius:6px; transform:rotate(6deg);
+  }
+  .carteirinha-photo{
+    width:100%; height:160px; border-radius:14px; margin:16px 0 14px;
+    background:linear-gradient(135deg, #2A6F66, #143F3D);
+    display:grid; place-items:center; font-size:3rem;
+  }
+  .carteirinha-name{font-family:'Fraunces', serif; font-size:1.4rem; font-weight:600;}
+  .carteirinha-meta{display:flex; justify-content:space-between; margin-top:4px; font-size:0.78rem; color:rgba(255,248,240,0.7);}
+  .carteirinha-bars{display:flex; gap:6px; margin-top:16px;}
+  .carteirinha-bars span{flex:1; height:5px; border-radius:4px; background:rgba(255,248,240,0.15);}
+  .carteirinha-bars span.fill{background:var(--mustard);}
+  .badge-float{
+    position:absolute; bottom:-18px; left:-22px;
+    background:var(--mustard); color:var(--teal);
+    border-radius:14px; padding:10px 14px;
+    font-weight:700; font-size:0.8rem; box-shadow:var(--shadow-soft);
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* ---------- AD SLOT ---------- */
+  .ad-slot{
+    margin:48px 0; border:1.5px dashed var(--line); border-radius:16px;
+    padding:18px 22px; display:flex; align-items:center; justify-content:space-between;
+    background:rgba(143,188,148,0.08); color:#5C7472; font-size:0.82rem;
+  }
+  .ad-slot .ad-label{font-family:'JetBrains Mono', monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; background:white; padding:3px 8px; border-radius:6px;}
+
+  /* ---------- SECTION GENERIC ---------- */
+  section.block{padding:64px 0;}
+  .section-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:32px; flex-wrap:wrap; gap:16px;}
+  .section-head h2{font-size:clamp(1.6rem,2.6vw,2.2rem); color:var(--teal);}
+  .section-head .kicker{font-family:'JetBrains Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--coral-dark); margin-bottom:6px; display:block;}
+  .section-head p{color:#5C7472; max-width:480px; font-size:0.95rem;}
+  .pill-tabs{display:flex; gap:8px; background:white; border-radius:var(--radius-pill); padding:5px; border:1px solid var(--line);}
+  .pill-tabs button{
+    border:none; background:transparent; padding:8px 16px; border-radius:var(--radius-pill);
+    font-weight:700; font-size:0.82rem; color:#6A8482;
+  }
+  .pill-tabs button.active{background:var(--teal); color:white;}
+
+  /* ---------- FEED / RANKING ---------- */
+  .feed-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .pet-card{
+    background:white; border-radius:var(--radius-card); overflow:hidden;
+    border:1px solid var(--line); transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .pet-card:hover{transform:translateY(-5px); box-shadow:var(--shadow-soft);}
+  .pet-card .media{
+    height:170px; background:linear-gradient(135deg, var(--sage), #d7e9d2);
+    display:grid; place-items:center; font-size:2.6rem; position:relative;
+  }
+  .rank-chip{
+    position:absolute; top:10px; left:10px; background:var(--teal); color:white;
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem; padding:4px 9px; border-radius:8px;
+  }
+  .pet-card .info{padding:16px 16px 18px;}
+  .pet-card .info h4{font-family:'Fraunces', serif; font-size:1.05rem; margin-bottom:2px;}
+  .pet-card .info .loc{font-size:0.76rem; color:#7C9492; margin-bottom:12px;}
+  .pet-card .actions{display:flex; justify-content:space-between; align-items:center;}
+  .like-btn{
+    display:flex; align-items:center; gap:6px; border:none; background:rgba(255,107,74,0.1);
+    color:var(--coral-dark); padding:7px 12px; border-radius:var(--radius-pill); font-weight:700; font-size:0.82rem;
+  }
+  .like-btn:active{transform:scale(0.95);}
+  .icon-btn{border:none; background:transparent; color:#7C9492; font-size:1rem;}
+
+  /* ---------- ADOPTION ---------- */
+  .adopt-filters{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .adopt-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+  .adopt-card{
+    background:white; border-radius:20px; border:1px solid var(--line); overflow:hidden;
+    position:relative; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .adopt-card:hover{transform:translateY(-5px); box-shadow:var(--shadow-soft);}
+  .adopt-card .media{
+    height:150px; background:linear-gradient(135deg,#FFD9C7,#FFB627);
+    display:grid; place-items:center; font-size:2.6rem; position:relative;
+  }
+  .adopt-card .fav-btn{
+    position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:50%;
+    border:none; background:rgba(255,255,255,0.85); font-size:0.95rem; display:grid; place-items:center;
+    box-shadow:0 4px 10px -4px rgba(0,0,0,0.3); transition:transform .15s ease;
+  }
+  .adopt-card .fav-btn:active{transform:scale(0.9);}
+  .adopt-card .fav-btn.active{background:var(--coral);}
+  .adopt-card .info{padding:14px 14px 16px;}
+  .adopt-card h4{font-family:'Fraunces',serif; font-size:1rem; margin-bottom:2px;}
+  .adopt-card .dist{font-size:0.74rem; color:#7C9492; margin:2px 0 12px; display:flex; align-items:center; gap:5px;}
+  .adopt-empty{grid-column:1/-1; text-align:center; padding:40px 20px; color:#7C9492; font-size:0.9rem;}
+  .btn-block{width:100%; background:var(--teal); color:white; border-radius:12px; padding:10px; font-weight:700; font-size:0.82rem; border:none;}
+  .btn-block:hover{background:var(--teal-light);}
+
+  /* ---------- MARKETPLACE ---------- */
+  .market-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+  .product-card{background:white; border:1px solid var(--line); border-radius:16px; padding:14px; position:relative; transition:transform .2s ease, box-shadow .2s ease;}
+  .product-card:hover{transform:translateY(-4px); box-shadow:var(--shadow-soft);}
+  .product-card .spons{
+    position:absolute; top:10px; right:10px; font-size:0.6rem; font-family:'JetBrains Mono',monospace;
+    background:var(--mustard); color:var(--teal); padding:2px 7px; border-radius:6px; text-transform:uppercase;
+  }
+  .product-card .media{height:110px; background:#FBEFE3; border-radius:10px; display:grid; place-items:center; font-size:1.8rem; margin-bottom:10px;}
+  .product-card h5{font-size:0.88rem; margin-bottom:4px;}
+  .product-card .price{font-family:'JetBrains Mono', monospace; font-weight:600; color:var(--coral-dark);}
+  .product-card .shop{font-size:0.72rem; color:#7C9492; margin-top:6px;}
+  .product-card .shop a{color:inherit; font-weight:600;}
+  .product-card .shop a:hover{color:var(--coral-dark); text-decoration:underline;}
+  .product-card .nearby-cta{
+    display:flex; align-items:center; gap:5px; font-size:0.7rem; color:var(--teal-light);
+    margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-weight:600;
+  }
+  .product-card .nearby-cta:hover{color:var(--coral-dark);}
+
+  /* ---------- PETSHOPS / GEO ---------- */
+  .geo-panel{display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:stretch;}
+  .map-mock{
+    border-radius:20px; background:linear-gradient(160deg,#DCEEE0,#BFE0C5);
+    position:relative; height:320px; overflow:hidden; border:1px solid var(--line);
+  }
+  .map-mock .leaflet-container{border-radius:20px; font-family:'Plus Jakarta Sans', sans-serif;}
+  .emoji-pin{
+    width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    font-size:0.95rem; box-shadow:0 6px 14px -4px rgba(15,61,62,0.5); border:2px solid white;
+  }
+  .emoji-pin.me{background:var(--teal);}
+  .emoji-pin.shop{background:var(--coral);}
+  .emoji-pin.partner{background:var(--mustard); box-shadow:0 6px 14px -4px rgba(255,182,39,0.7);}
+  .geo-list{background:white; border:1px solid var(--line); border-radius:20px; padding:6px;}
+  .geo-row{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); font-size:0.88rem;}
+  .geo-row:last-child{border-bottom:none;}
+  .geo-row .name{font-weight:700; color:var(--teal);}
+  .geo-row .meta{font-size:0.74rem; color:#7C9492;}
+  .city-select{
+    display:flex; gap:10px; align-items:center; margin-top:14px; font-size:0.82rem; color:#5C7472;
+  }
+  .city-select select{
+    border:1px solid var(--line); border-radius:var(--radius-pill); padding:8px 14px; font-family:inherit; font-size:0.82rem; background:white;
+  }
+  .geo-source{font-family:'JetBrains Mono', monospace; font-size:0.66rem; color:#8AA1A0; margin-top:14px; display:block;}
+
+  /* ---------- GAMES ---------- */
+  .games-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .game-card{
+    border-radius:18px; padding:22px; color:white; position:relative; overflow:hidden; min-height:150px;
+    display:flex; flex-direction:column; justify-content:space-between; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .game-card:hover{transform:translateY(-5px); box-shadow:0 20px 40px -16px rgba(0,0,0,0.45);}
+  .game-card .rating{
+    font-family:'JetBrains Mono', monospace; font-size:0.68rem; opacity:0.85;
+    display:inline-block; margin-bottom:8px; background:rgba(255,255,255,0.15); padding:3px 8px; border-radius:6px; width:fit-content;
+  }
+  .game-card h4{font-family:'Fraunces',serif; font-size:1.1rem;}
+  .game-card .go{font-size:0.78rem; font-weight:700; display:inline-flex; align-items:center; gap:6px;}
+  .g1{background:linear-gradient(135deg,#175C56,#0F3D3E);}
+  .g2{background:linear-gradient(135deg,#E1502E,#FF6B4A);}
+  .g3{background:linear-gradient(135deg,#B8861F,#FFB627);}
+
+  /* ---------- PLANS ---------- */
+  .plans-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px; max-width:640px; margin:0 auto;}
+  .plan-card{background:white; border:1.5px solid var(--line); border-radius:22px; padding:30px 26px;}
+  .plan-card.feat{border-color:var(--coral); position:relative; box-shadow:var(--shadow-soft);}
+  .plan-card.feat::before{
+    content:"Mais popular"; position:absolute; top:-13px; left:26px; background:var(--coral); color:white;
+    font-size:0.68rem; font-weight:700; padding:5px 12px; border-radius:var(--radius-pill);
+  }
+  .plan-card .price{font-family:'Fraunces',serif; font-size:2.1rem; margin:14px 0 4px; color:var(--teal);}
+  .plan-card .price span{font-size:0.9rem; font-family:'Plus Jakarta Sans'; color:#7C9492; font-weight:500;}
+  .plan-card ul{list-style:none; padding:0; margin:20px 0 26px; display:flex; flex-direction:column; gap:10px;}
+  .plan-card li{font-size:0.86rem; color:#3C5453; display:flex; gap:8px; align-items:flex-start;}
+  .plan-card li::before{content:"✓"; color:var(--sage); font-weight:700;}
+
+  /* ---------- MEUPET BUSINESS (parceiros e patrocinadores) ---------- */
+  .partner-plans-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:40px;}
+  .plan-card.partner-plan .price{color:var(--teal);}
+  .partner-form{
+    background:var(--paper); border-radius:24px; padding:32px 34px; max-width:620px; margin:0 auto;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,0.4);
+  }
+  .partner-form h3{font-size:1.25rem; color:var(--teal); margin-bottom:4px;}
+  .partner-form .sub{font-size:0.84rem; color:#7C9492; margin-bottom:20px;}
+  .partner-form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .partner-form input, .partner-form select, .partner-form textarea{
+    width:100%; padding:11px 14px; border-radius:12px; border:1.5px solid var(--line);
+    margin-bottom:12px; font-family:inherit; font-size:0.88rem; outline:none; background:white; color:var(--ink);
+    transition:border-color .2s;
+  }
+  .partner-form input:focus, .partner-form select:focus, .partner-form textarea:focus{border-color:var(--teal);}
+  .partner-form textarea{resize:vertical;}
+  .partner-form-status{font-size:0.84rem; text-align:center; margin-top:12px; min-height:1.2em;}
+  .partner-form-status.ok{color:var(--teal-light); font-weight:700;}
+  .partner-form-status.err{color:var(--coral-dark); font-weight:700;}
+  @media (max-width:720px){
+    .partner-plans-grid{grid-template-columns:1fr;}
+    .partner-form-grid{grid-template-columns:1fr;}
+    .partner-form{padding:26px 22px;}
+  }
+
+  /* ---------- LOGIN MODAL ---------- */
+  /* ---------- MODAL REDESENHADO ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(15,40,40,0.6); backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--paper); border-radius:28px; width:100%; max-width:400px;
+    box-shadow:0 40px 80px -20px rgba(0,0,0,0.45); position:relative; overflow:hidden;
+  }
+  .modal-close{
+    position:absolute; top:14px; right:14px; border:none; background:rgba(255,255,255,0.6);
+    width:32px; height:32px; border-radius:50%; font-size:1rem; color:var(--teal); z-index:2;
+    display:grid; place-items:center; cursor:pointer;
+  }
+
+  /* banner ilustrado no topo do modal */
+  .modal-banner{
+    width:100%; height:164px; background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
+    position:relative; overflow:hidden; display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-banner .banner-bg-blob{
+    position:absolute; width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,182,39,0.3) 0%, transparent 70%);
+    top:-80px; right:-60px;
+  }
+  .modal-banner .banner-bg-blob2{
+    position:absolute; width:180px; height:180px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,107,74,0.25) 0%, transparent 70%);
+    bottom:-40px; left:-20px;
+  }
+  .modal-banner .pets-scene{
+    position:relative; z-index:2; display:flex; align-items:flex-end; gap:0; padding-bottom:0;
+  }
+  .modal-banner .pet-bubble{
+    display:flex; flex-direction:column; align-items:center; position:relative;
+  }
+  .modal-banner .pet-avatar{
+    width:70px; height:70px; border-radius:50%;
+    background:rgba(255,248,240,0.12); border:3px solid rgba(255,248,240,0.2);
+    display:grid; place-items:center; font-size:2rem;
+    animation:petBob 2.4s ease-in-out infinite;
+  }
+  .modal-banner .pet-avatar.p2{animation-delay:.4s; width:82px; height:82px; font-size:2.4rem; background:rgba(255,107,74,0.2); border-color:rgba(255,107,74,0.35);}
+  .modal-banner .pet-avatar.p3{animation-delay:.8s;}
+  @keyframes petBob{
+    0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}
+  }
+  .modal-banner .heart{
+    position:absolute; font-size:0.85rem; top:-8px; right:-4px;
+    animation:heartPop 2s ease-in-out infinite;
+  }
+  .modal-banner .pet-avatar.p2 .heart{animation-delay:.3s;}
+  @keyframes heartPop{
+    0%,100%{transform:scale(1) translateY(0); opacity:1;}
+    50%{transform:scale(1.3) translateY(-6px); opacity:0.6;}
+  }
+  .modal-banner .banner-title{
+    position:absolute; top:14px; left:0; right:0; text-align:center;
+    font-family:'Fraunces', serif; font-size:1rem; color:rgba(255,248,240,0.9); font-weight:600;
+    letter-spacing:0.01em;
+  }
+  .modal-banner .paw-tag{
+    position:absolute; top:12px; left:16px;
+    background:rgba(255,182,39,0.25); border:1px solid rgba(255,182,39,0.4);
+    color:var(--mustard); font-family:'JetBrains Mono', monospace; font-size:0.62rem;
+    padding:3px 8px; border-radius:8px; text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  /* corpo do modal */
+  .modal-body{padding:22px 26px 26px;}
+  .modal-body h3{font-size:1.3rem; color:var(--teal); margin-bottom:4px;}
+  .modal-body p.sub{font-size:0.82rem; color:#7C9492; margin-bottom:20px;}
+  .social-btn{
+    width:100%; display:flex; align-items:center; gap:12px; justify-content:center;
+    padding:12px; border-radius:14px; border:1.5px solid var(--line); background:white;
+    font-weight:700; font-size:0.88rem; margin-bottom:10px; color:var(--ink); cursor:pointer;
+  }
+  .social-btn:hover{border-color:var(--teal); background:#F7FFFE;}
+  .social-btn .ico{width:22px; height:22px; display:grid; place-items:center; font-size:1rem;}
+  .divider{display:flex; align-items:center; gap:10px; margin:16px 0; font-size:0.72rem; color:#8AA1A0;}
+  .divider::before, .divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .modal-body input{
+    width:100%; padding:11px 14px; border-radius:12px; border:1.5px solid var(--line);
+    margin-bottom:10px; font-family:inherit; font-size:0.88rem; outline:none;
+    transition:border-color .2s;
+  }
+  .modal-body input:focus{border-color:var(--teal);}
+  .modal-body .terms{font-size:0.7rem; color:#8AA1A0; margin-top:14px; text-align:center; line-height:1.5;}
+
+  /* ---------- FOOTER (padrão FinWise) ---------- */
+  footer.site{
+    background:var(--teal); color:rgba(255,248,240,0.85); padding:56px 0 28px; margin-top:40px;
+  }
+  .footer-top{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:32px; padding-bottom:36px; border-bottom:1px solid rgba(255,248,240,0.12);}
+  .footer-brand .logo{color:var(--cream);}
+  .footer-brand p{font-size:0.85rem; color:rgba(255,248,240,0.6); margin:14px 0 18px; max-width:260px; line-height:1.5;}
+  .footer-tagline{
+    font-family:'JetBrains Mono', monospace; font-size:0.72rem; letter-spacing:0.03em;
+    background:rgba(255,182,39,0.14); color:var(--mustard); display:inline-block; padding:6px 12px; border-radius:8px;
+  }
+  .social-icons{display:flex; gap:10px; margin-top:18px;}
+  .social-icons a{
+    width:34px; height:34px; border-radius:50%; background:rgba(255,248,240,0.08);
+    display:grid; place-items:center; font-size:0.9rem;
+  }
+  .footer-col h5{font-family:'JetBrains Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--mustard); margin-bottom:14px;}
+  .footer-col a{display:block; font-size:0.86rem; color:rgba(255,248,240,0.75); margin-bottom:10px;}
+  .footer-col a:hover{color:white;}
+  .footer-bottom{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-top:22px; font-size:0.78rem; color:rgba(255,248,240,0.55);}
+  .footer-bottom .holding{font-family:'JetBrains Mono', monospace;}
+
+  @media (max-width:980px){
+    .hero-grid{grid-template-columns:1fr;}
+    .carteirinha-stage{margin-top:20px;}
+    .feed-grid{grid-template-columns:repeat(2,1fr);}
+    .adopt-grid, .market-grid{grid-template-columns:repeat(2,1fr);}
+    .games-grid, .plans-grid, .partner-plans-grid{grid-template-columns:1fr;}
+    .geo-panel{grid-template-columns:1fr;}
+    .footer-top{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:560px){
+    .feed-grid, .adopt-grid, .market-grid{grid-template-columns:1fr 1fr;}
+    .footer-top{grid-template-columns:1fr;}
+    .section-head{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="nav">
+    <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
+    <nav class="links" id="navLinks">
+      <a href="#feed">Feed</a>
+      <a href="#adocao">Adoção</a>
+      <a href="#loja">Loja</a>
+      <a href="#petshops">Petshops</a>
+      <a href="#games">Games</a>
+      <a href="#planos">Planos</a>
+      <a href="#parceiros">Anuncie no MeuPet</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="btn btn-ghost" id="openLogin">Entrar</button>
+      <button class="btn btn-primary" id="openSignup">Criar carteirinha</button>
+      <button class="burger" id="burgerBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow"><span class="dot-live"></span> Atualizado agora · <span id="liveClock" class="mono"></span></span>
+        <h1>A carteirinha digital<br>do seu <em>melhor amigo.</em></h1>
+        <p class="lead">Feed, ranking por ligas, adoção responsável, vitrine de produtos e petshops perto de você — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" id="heroCta">Criar carteirinha grátis</button>
+          <button class="btn btn-ghost">Ver como funciona</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><b id="statPets">128.4k</b><span>pets cadastrados</span></div>
+          <div class="stat"><b id="statLikes">2.1M</b><span>curtidas essa semana</span></div>
+          <div class="stat"><b>+940</b><span>petshops parceiros</span></div>
+        </div>
+      </div>
+      <div class="carteirinha-stage">
+        <div class="carteirinha">
+          <div class="carteirinha-top">
+            <span class="tag">Carteirinha MeuPet</span>
+            <span class="stamp">Liga Ouro</span>
+          </div>
+          <div class="carteirinha-photo">🐶</div>
+          <div class="carteirinha-name">Toby</div>
+          <div class="carteirinha-meta">
+            <span>Golden Retriever · 3 anos</span>
+            <span class="mono">#00482</span>
+          </div>
+          <div class="carteirinha-bars">
+            <span class="fill"></span><span class="fill"></span><span class="fill"></span><span></span><span></span>
+          </div>
+          <div class="badge-float">🏆 Top 3 em Belém</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <a class="ad-slot" id="adSlotFeed" href="#loja" target="_self">
+      <span><span class="ad-label">Publicidade</span> <span class="ad-headline">Ração premium com 20% off para novos tutores</span></span>
+      <span class="mono ad-cta">Ver oferta →</span>
+    </a>
+  </div>
+
+  <!-- FEED / RANKING -->
+  <section class="block" id="feed">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Feed &amp; ranqueamento</span>
+          <h2>Quem está bombando agora</h2>
+          <p>Ranking dinâmico por curtidas, com ligas que ramificam do bairro até o país.</p>
+        </div>
+        <div class="pill-tabs" id="rankTabs">
+          <button class="active" data-scope="bairro">Bairro</button>
+          <button data-scope="cidade">Cidade</button>
+          <button data-scope="pais">País</button>
+        </div>
+      </div>
+      <div class="feed-grid" id="feedGrid"></div>
+    </div>
+  </section>
+
+  <!-- ADOÇÃO -->
+  <section class="block" id="adocao" style="background:white;">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Adote um pet</span>
+          <h2>Lares esperando por eles</h2>
+          <p>Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.</p>
+        </div>
+        <button class="btn btn-ghost" id="btnCadastrarAdocao">Cadastrar pet para adoção</button>
+      </div>
+      <div class="adopt-filters pill-tabs" id="adoptFilters">
+        <button class="active" data-species="todos">Todos</button>
+        <button data-species="cao">🐶 Cães</button>
+        <button data-species="gato">🐱 Gatos</button>
+        <button data-species="outro">🐾 Outros</button>
+      </div>
+      <div class="adopt-grid" id="adoptGrid"></div>
+    </div>
+  </section>
+
+  <!-- MARKETPLACE -->
+  <section class="block" id="loja">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Vitrine de produtos</span>
+          <h2>Tudo pro seu pet, num clique</h2>
+          <p>Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.</p>
+        </div>
+      </div>
+      <div class="market-grid" id="marketGrid"></div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <a class="ad-slot" id="adSlotPetshops" href="#planos" target="_self">
+      <span><span class="ad-label">Publicidade</span> <span class="ad-headline">Plano de saúde pet a partir de R$ 29/mês</span></span>
+      <span class="mono ad-cta">Simular →</span>
+    </a>
+  </div>
+
+  <!-- PETSHOPS / GEO -->
+  <section class="block" id="petshops" style="background:white;">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Petshops perto de você</span>
+          <h2>Petshops e vets reais no mapa</h2>
+          <p>Localização por GPS (fallback por IP ou seleção manual) e busca real via OpenStreetMap — clique em "como chegar" pra traçar a rota.</p>
+        </div>
+      </div>
+      <div class="geo-panel">
+        <div class="map-mock">
+          <div id="petMap" style="height:100%; width:100%;"></div>
+        </div>
+        <div>
+          <div class="geo-list" id="geoList"></div>
+          <div class="city-select">
+            <span id="geoLabel">📍 Detectando localização ·</span>
+            <select id="citySelect">
+              <option>Belém, PA</option>
+              <option>São Paulo, SP</option>
+              <option>Lisboa, Portugal</option>
+              <option>Outra cidade…</option>
+            </select>
+          </div>
+          <span class="geo-source mono" id="geoSource">fonte: gps · precisão alta</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAMES -->
+  <section class="block" id="games">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Hub de games</span>
+          <h2>Pets também jogam</h2>
+          <p>Curadoria de jogos reais de pet, bem avaliados no CrazyGames — você sai do app só para jogar, e volta pro feed depois.</p>
+        </div>
+      </div>
+      <div class="games-grid">
+        <a class="game-card g1" href="https://www.crazygames.com/game/idle-pet-business" target="_blank" rel="noopener noreferrer">
+          <span class="rating">⭐ 9.1/10 · 117 avaliações</span>
+          <h4>Idle Pet Business</h4>
+          <span class="go">Jogar agora ↗</span>
+        </a>
+        <a class="game-card g2" href="https://www.crazygames.com/game/ducklife-4" target="_blank" rel="noopener noreferrer">
+          <span class="rating">⭐ 8.8/10 · 1.141 avaliações</span>
+          <h4>Duck Life 4</h4>
+          <span class="go">Jogar agora ↗</span>
+        </a>
+        <a class="game-card g3" href="https://www.crazygames.com/game/pet-healer---vet-hospital" target="_blank" rel="noopener noreferrer">
+          <span class="rating">⭐ 9.3/10 · 719 avaliações</span>
+          <h4>Pet Healer - Vet Hospital</h4>
+          <span class="go">Jogar agora ↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="block" id="planos" style="background:white;">
+    <div class="wrap">
+      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
+        <span class="kicker">Planos</span>
+        <h2>Grátis pra começar, Premium pra crescer</h2>
+        <p>Sem anúncios, mais alcance no ranking e carteirinha personalizada no Premium.</p>
+      </div>
+      <div class="plans-grid">
+        <div class="plan-card">
+          <span class="kicker">Free</span>
+          <div class="price">R$ 0</div>
+          <ul>
+            <li>Carteirinha digital básica</li>
+            <li>Feed e curtidas ilimitadas</li>
+            <li>Busca de petshops por geolocalização</li>
+            <li>Anúncios no feed</li>
+          </ul>
+          <button class="btn-block" style="background:var(--ink);">Começar grátis</button>
+        </div>
+        <div class="plan-card feat">
+          <span class="kicker">Premium</span>
+          <div class="price">R$ 14<span>/mês</span></div>
+          <ul>
+            <li>Tudo do Free, sem anúncios</li>
+            <li>Boost de visibilidade no ranking</li>
+            <li>Carteirinha personalizada e selos exclusivos</li>
+            <li>Acesso antecipado a novos games</li>
+          </ul>
+          <button class="btn-block" style="background:var(--coral);">Assinar Premium</button>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top:28px; font-size:0.88rem; color:#7C9492;">
+        É petshop, marca ou negócio pet? <a href="#parceiros" style="color:var(--coral-dark); font-weight:700;">Conheça o MeuPet Business →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- MEUPET BUSINESS — parceiros e patrocinadores -->
+  <section class="block" id="parceiros" style="background:var(--teal);">
+    <div class="wrap">
+      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
+        <span class="kicker" style="color:var(--mustard);">MeuPet Business</span>
+        <h2 style="color:var(--cream);">Coloque seu negócio na frente de quem tem pet</h2>
+        <p style="color:rgba(255,248,240,0.75);">Petshops, clínicas, marcas e produtos — apareça no mapa, na vitrine e no feed de milhares de tutores. Preços de referência abaixo; cobrança combinada direto com nosso time (Pix ou boleto).</p>
+      </div>
+
+      <div class="partner-plans-grid">
+        <div class="plan-card partner-plan">
+          <span class="kicker">Básico</span>
+          <div class="price">R$ 49<span>/mês</span></div>
+          <ul>
+            <li>Pin no mapa de petshops</li>
+            <li>Vitrine própria na Loja</li>
+            <li>Selo de parceiro verificado</li>
+          </ul>
+          <button class="btn-block partner-choose" style="background:var(--ink);" data-plan="basico">Quero esse plano</button>
+        </div>
+        <div class="plan-card partner-plan feat">
+          <span class="kicker">Destaque</span>
+          <div class="price">R$ 129<span>/mês</span></div>
+          <ul>
+            <li>Tudo do Básico</li>
+            <li>Prioridade no topo do mapa e da lista</li>
+            <li>Badge "Destaque" diferenciado</li>
+            <li>Até 6 produtos na vitrine</li>
+          </ul>
+          <button class="btn-block partner-choose" style="background:var(--coral);" data-plan="destaque">Quero esse plano</button>
+        </div>
+        <div class="plan-card partner-plan">
+          <span class="kicker">Banner patrocinado</span>
+          <div class="price">R$ 199<span>/mês</span></div>
+          <ul>
+            <li>Banner rotativo no Feed e nos Petshops</li>
+            <li>Relatório real de impressões e cliques</li>
+            <li>Ideal pra marcas (ração, saúde, serviços)</li>
+          </ul>
+          <button class="btn-block partner-choose" style="background:var(--ink);" data-plan="banner">Quero esse plano</button>
+        </div>
+      </div>
+
+      <form id="partnerForm" class="partner-form">
+        <h3>Cadastre seu negócio</h3>
+        <p class="sub">Preenchemos sua solicitação, nosso time entra em contato pra combinar a ativação e a cobrança.</p>
+        <div class="partner-form-grid">
+          <input type="text" id="pfBusiness" placeholder="Nome do negócio" required>
+          <input type="text" id="pfContact" placeholder="Seu nome" required>
+          <input type="email" id="pfEmail" placeholder="E-mail" required>
+          <input type="tel" id="pfPhone" placeholder="WhatsApp (opcional)">
+          <input type="text" id="pfCity" placeholder="Cidade">
+          <select id="pfType" aria-label="Tipo de negócio">
+            <option value="petshop">Petshop</option>
+            <option value="veterinaria">Clínica veterinária</option>
+            <option value="produto">Marca de produto</option>
+            <option value="servico">Serviço (banho, adestramento...)</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <select id="pfPlan" required aria-label="Plano de interesse">
+          <option value="basico">Plano Básico — R$ 49/mês</option>
+          <option value="destaque">Plano Destaque — R$ 129/mês</option>
+          <option value="banner">Banner patrocinado — R$ 199/mês</option>
+        </select>
+        <textarea id="pfMessage" placeholder="Conte um pouco sobre o seu negócio (opcional)" rows="3"></textarea>
+        <button type="submit" class="btn btn-primary" id="pfSubmit" style="width:100%; padding:14px;">Enviar solicitação</button>
+        <p id="pfStatus" class="partner-form-status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
+        <p>Carteirinha digital, ranking, adoção e petshops perto de você — feito pela RhoneyInc.</p>
+        <span class="footer-tagline">Uma conta. Todos os softwares.</span>
+        <div class="social-icons">
+          <a href="#">📷</a><a href="#">🎵</a><a href="#">💬</a><a href="#">▶️</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Produto</h5>
+        <a href="#feed">Feed</a>
+        <a href="#adocao">Adoção</a>
+        <a href="#loja">Loja</a>
+        <a href="#planos">Planos</a>
+        <a href="#parceiros">MeuPet Business</a>
+      </div>
+      <div class="footer-col">
+        <h5>RhoneyInc</h5>
+        <a href="#">FinWise</a>
+        <a href="#">FitNow</a>
+        <a href="#">MontaMovel</a>
+        <a href="#">Sobre nós</a>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <a href="/privacidade.html">Privacidade (LGPD)</a>
+        <a href="#">Termos de uso</a>
+        <a href="#">Contato</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 MeuPet — um produto RhoneyInc. Todos os direitos reservados.</span>
+      <span class="holding">rhoneyinc.com/meupet</span>
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL REDESENHADO -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" id="closeModal">✕</button>
+
+    <!-- Banner ilustrado com pets felizes -->
+    <div class="modal-banner">
+      <div class="banner-bg-blob"></div>
+      <div class="banner-bg-blob2"></div>
+      <span class="paw-tag">🐾 MeuPet</span>
+      <div class="pets-scene">
+        <div class="pet-bubble">
+          <div class="pet-avatar p1">🐱<span class="heart">💛</span></div>
+        </div>
+        <div class="pet-bubble" style="margin:0 6px;">
+          <div class="pet-avatar p2">🐶<span class="heart">❤️</span></div>
+        </div>
+        <div class="pet-bubble">
+          <div class="pet-avatar p3">🐰<span class="heart">💚</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Corpo -->
+    <div class="modal-body">
+      <h3 id="modalTitle">Bem-vindo de volta!</h3>
+      <p class="sub" id="modalSub">Entre para acessar a carteirinha do seu pet.</p>
+
+      <button class="social-btn" id="btnGoogle">
+        <span class="ico">🔵</span> Continuar com Google
+      </button>
+      <button class="social-btn" id="btnInstagram">
+        <span class="ico">🟣</span> Continuar com Instagram
+      </button>
+      <button class="social-btn" id="btnFacebook">
+        <span class="ico">🔷</span> Continuar com Facebook
+      </button>
+
+      <div class="divider">ou use seu e-mail</div>
+      <input type="email" placeholder="seu@email.com" id="modalEmail">
+      <input type="password" placeholder="Senha" id="modalPassword">
+      <button class="btn btn-primary" style="width:100%; padding:13px;" id="modalSubmit">Entrar</button>
+      <p class="terms">Ao continuar, você aceita os <a href="/privacidade.html" style="color:var(--teal)">Termos de uso e Privacidade (LGPD)</a> do MeuPet.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // =====================================================================
+  // CONFIGURAÇÃO SUPABASE — cole sua URL e anon key aqui quando estiver
+  // no notebook. Enquanto estiver vazio, o app roda 100% com dados de
+  // demonstração (nenhuma função quebra, só não persiste de verdade).
+  // =====================================================================
+  const SUPABASE_URL = "";       // ex: "https://xxxxx.supabase.co"
+  const SUPABASE_ANON_KEY = "";  // ex: "eyJhbGciOi..."
+  const supa = (SUPABASE_URL && SUPABASE_ANON_KEY)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+  const DB_READY = !!supa;
+  if(!DB_READY) console.warn("MeuPet: SUPABASE_URL/ANON_KEY não configurados — usando dados de demonstração.");
+
+  // e-mail comercial que recebe pedidos do formulário MeuPet Business (#parceiros)
+  // quando o Supabase ainda não está configurado (fallback via mailto)
+  const SPONSOR_CONTACT_EMAIL = ""; // ex: "comercial@rhoneyinc.com"
+
+  // escapa conteúdo vindo do banco (nomes de pets, cidades, produtos etc.)
+  // antes de injetar via innerHTML — evita XSS armazenado por dados de usuário
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+
+  // só permite http(s) em URLs vindas do banco (sponsors.target_url,
+  // products.affiliate_url) — defesa em profundidade contra um valor tipo
+  // "javascript:" acabar virando execução de script num clique
+  function safeUrl(url){
+    try{
+      const u = new URL(String(url ?? ''), window.location.href);
+      return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '#';
+    }catch(_){ return '#'; }
+  }
+
+  // =====================================================================
+  // MONETIZAÇÃO — telemetria real de anúncios/afiliados (tabela ad_impressions
+  // já existia no schema mas nunca era usada). Sem banco conectado, os
+  // registros só ficam no console — nenhuma função quebra.
+  // =====================================================================
+  function insertAdRow(slot){
+    if(!DB_READY){ console.log('MeuPet [ads demo]:', slot); return; }
+    supa.from('ad_impressions').insert({ slot }).then(({ error }) => {
+      if(error) console.warn('MeuPet: falha ao registrar evento de monetização', slot, error.message);
+    });
+  }
+
+  const loggedImpressions = new Set(); // no máx. 1 impressão por slot por sessão de página
+  function logAdImpression(slot){
+    if(loggedImpressions.has(slot)) return;
+    loggedImpressions.add(slot);
+    insertAdRow(slot);
+  }
+  // clique é sempre logado (cada clique é um evento monetizável de verdade,
+  // diferente da impressão que só faz sentido contar uma vez por visita)
+  function logAdClick(slot){ insertAdRow(slot + ':click'); }
+
+  // observa quando um slot de anúncio/afiliado realmente entra na tela
+  // (impressão de verdade, não só "foi renderizado")
+  const adObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        logAdImpression(entry.target.dataset.adSlot);
+        adObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 }) : null;
+
+  function trackAdSlot(el){
+    if(!el || !el.dataset.adSlot) return;
+    if(adObserver) adObserver.observe(el);
+    else logAdImpression(el.dataset.adSlot); // sem suporte a IntersectionObserver: loga direto
+  }
+
+  // mobile menu
+  document.getElementById('burgerBtn').onclick = function(){
+    const nav = document.getElementById('navLinks');
+    const open = nav.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  };
+  document.querySelectorAll('#navLinks a').forEach(a=>{
+    a.addEventListener('click', ()=> document.getElementById('navLinks').classList.remove('open'));
+  });
+
+  // ===================================================================
+  // LOGIN SOCIAL (Google / Instagram / Facebook) via Supabase Auth
+  // ===================================================================
+  function socialLogin(provider){
+    if(!DB_READY){ alert("Configure SUPABASE_URL e SUPABASE_ANON_KEY para ativar o login " + provider + "."); return; }
+    if(provider === 'instagram'){
+      // Supabase não tem provedor "instagram" nativo — o login via Instagram
+      // acontece através do Facebook Login (ecossistema Meta). Ative "Facebook"
+      // no painel Authentication > Providers; o botão abaixo usa esse provider.
+      supa.auth.signInWithOAuth({ provider:'facebook', options:{ redirectTo: window.location.href } });
+      return;
+    }
+    supa.auth.signInWithOAuth({ provider, options:{ redirectTo: window.location.href } });
+  }
+  document.querySelectorAll('.social-btn').forEach((btn,i)=>{
+    const providers = ['google','instagram','facebook'];
+    btn.addEventListener('click', ()=> socialLogin(providers[i]));
+  });
+
+  // ===================================================================
+  // GEOLOCALIZAÇÃO 100% DINÂMICA — funciona em qualquer cidade/país
+  // Ordem: GPS preciso -> reverse geocode -> fallback por IP -> manual
+  // ===================================================================
+  let currentGeo = { lat:null, lng:null, city:null, country:null, source:null };
+
+  async function reverseGeocode(lat, lng){
+    // API gratuita, sem chave, com CORS liberado para uso no navegador
+    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=pt`);
+    const data = await res.json();
+    return { city: data.city || data.locality || 'Sua região', country: data.countryName || '' };
+  }
+
+  async function geolocateByIP(){
+    const res = await fetch('https://ipapi.co/json/');
+    const data = await res.json();
+    return { lat:data.latitude, lng:data.longitude, city:data.city, country:data.country_name, source:'ip' };
+  }
+
+  async function detectLocation(){
+    document.getElementById('geoSource').textContent = 'detectando localização…';
+    try{
+      const pos = await new Promise((resolve, reject)=>{
+        if(!navigator.geolocation) return reject('no-geo');
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout:6000, enableHighAccuracy:true });
+      });
+      const { latitude:lat, longitude:lng } = pos.coords;
+      const place = await reverseGeocode(lat, lng);
+      currentGeo = { lat, lng, ...place, source:'gps' };
+    }catch(_){
+      try{
+        currentGeo = await geolocateByIP();
+      }catch(_){
+        currentGeo = { lat:null, lng:null, city:'Localização indisponível', country:'', source:'manual' };
+      }
+    }
+    applyLocation();
+  }
+
+  function applyLocation(){
+    const label = currentGeo.city ? `${currentGeo.city}${currentGeo.country ? ', ' + currentGeo.country : ''}` : 'Selecione sua cidade';
+    const sourceLabel = { gps:'fonte: gps · precisão alta', ip:'fonte: ip · precisão aproximada', manual:'fonte: seleção manual' }[currentGeo.source] || '';
+    document.getElementById('geoSource').textContent = sourceLabel;
+    const prefixLabel = { gps:'📍 Localizado por GPS ·', ip:'📍 Localizado por IP ·', manual:'📍 Cidade selecionada ·' }[currentGeo.source] || '📍 Detectando localização ·';
+    document.getElementById('geoLabel').textContent = prefixLabel;
+    const sel = document.getElementById('citySelect');
+    if(![...sel.options].some(o=>o.value === 'detected')) {
+      const opt = document.createElement('option');
+      opt.value = 'detected'; opt.textContent = label; opt.selected = true;
+      sel.insertBefore(opt, sel.firstChild);
+    } else {
+      sel.querySelector('option[value="detected"]').textContent = label;
+    }
+    if(currentGeo.lat && currentGeo.lng) initMap(currentGeo.lat, currentGeo.lng);
+    loadGeoList(); // internamente também atualiza a Loja (CTA de loja mais próxima)
+    loadAdoption(); // reordena a Adoção pela distância real assim que a localização chega
+  }
+
+  // ===================================================================
+  // MAPA REAL (Leaflet + tiles do OpenStreetMap, sem chave de API)
+  // ===================================================================
+  let petMap = null, petMarkers = [];
+
+  function emojiIcon(emoji, extraClass){
+    return L.divIcon({
+      html: `<div class="emoji-pin ${extraClass}">${emoji}</div>`,
+      className: '', iconSize: [30,30], iconAnchor: [15,15], popupAnchor: [0,-15]
+    });
+  }
+
+  function initMap(lat, lng){
+    if(typeof L === 'undefined') return; // Leaflet não carregou (ex: sem internet)
+    if(!petMap){
+      petMap = L.map('petMap', { zoomControl:false }).setView([lat, lng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }).addTo(petMap);
+    } else {
+      petMap.setView([lat, lng], 14);
+    }
+  }
+
+  function renderMapMarkers(items){
+    if(!petMap) return;
+    petMarkers.forEach(m => petMap.removeLayer(m));
+    petMarkers = [];
+    if(currentGeo.lat && currentGeo.lng){
+      petMarkers.push(
+        L.marker([currentGeo.lat, currentGeo.lng], { icon: emojiIcon('📍','me') })
+          .addTo(petMap).bindPopup('Você está aqui')
+      );
+    }
+    items.forEach(p=>{
+      if(p.lat == null || p.lng == null) return;
+      const icon = p.isPartner ? emojiIcon('🏅','partner') : emojiIcon('🐾','shop');
+      petMarkers.push(
+        L.marker([p.lat, p.lng], { icon })
+          .addTo(petMap).bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.meta || '')}`)
+      );
+    });
+  }
+
+  // link universal de rota (abre o app de mapas do usuário — Google/Apple Maps —
+  // sem precisar de chave de API, funciona em qualquer navegador/dispositivo)
+  function directionsUrl(destLat, destLng){
+    const origin = (currentGeo.lat && currentGeo.lng) ? `&origin=${currentGeo.lat},${currentGeo.lng}` : '';
+    return `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}${origin}&travelmode=driving`;
+  }
+
+  function haversineKm(lat1, lng1, lat2, lng2){
+    const R = 6371, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // petshops e veterinários REAIS via Overpass API (OpenStreetMap) — gratuita,
+  // sem chave, não envia nenhum dado do usuário além das coordenadas já usadas
+  // para a busca de localização (mesmo padrão de privacidade do resto do app)
+  async function fetchOSMPetshops(lat, lng, radiusKm){
+    const radiusM = Math.round(radiusKm * 1000);
+    const query = `[out:json][timeout:10];(
+      node["shop"="pet"](around:${radiusM},${lat},${lng});
+      node["amenity"="veterinary"](around:${radiusM},${lat},${lng});
+    );out 20;`;
+    const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body: query });
+    if(!res.ok) throw new Error('Overpass indisponível: ' + res.status);
+    const data = await res.json();
+    return (data.elements || [])
+      .filter(el => el.lat != null && el.lon != null)
+      .map(el => ({
+        name: el.tags?.name || (el.tags?.amenity === 'veterinary' ? 'Veterinário' : 'Petshop'),
+        kind: el.tags?.amenity === 'veterinary' ? 'Veterinário' : 'Petshop',
+        lat: el.lat, lng: el.lon
+      }));
+  }
+
+  // cache da última busca de petshops perto do usuário — reaproveitada pela
+  // Loja (produtos direcionados pra loja física mais próxima) e pela Adoção
+  let nearbyPetshopsCache = [];
+
+  // retorna o petshop mais relevante: prioriza nota real (quando existe, vem
+  // de parceiros cadastrados no MeuPet) e desempata por distância. Sem nota
+  // (dados públicos do OpenStreetMap) o critério vira só "mais próximo" —
+  // nunca inventamos uma nota que não temos.
+  function bestNearbyPetshop(){
+    const withCoords = nearbyPetshopsCache.filter(p => p.lat != null && p.lng != null);
+    if(!withCoords.length) return null;
+    return [...withCoords].sort((a,b) => {
+      // parceiro pago (plano "Petshop Parceiro") tem prioridade no CTA da Loja
+      if(!!b.isPartner !== !!a.isPartner) return (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0);
+      if(a.rating != null && b.rating != null && b.rating !== a.rating) return b.rating - a.rating;
+      if(a.rating != null && b.rating == null) return -1;
+      if(b.rating != null && a.rating == null) return 1;
+      return (a.dist ?? Infinity) - (b.dist ?? Infinity);
+    })[0];
+  }
+
+  async function loadGeoList(){
+    const list = document.getElementById('geoList');
+    let items = null;
+
+    // 1) dados reais dos petshops parceiros cadastrados no MeuPet
+    if(DB_READY && currentGeo.lat){
+      const { data, error } = await supa.rpc('petshops_near', { p_lat: currentGeo.lat, p_lng: currentGeo.lng, p_radius_km: 15 });
+      if(!error && data && data.length){
+        items = data.map(p => ({
+          name:p.name,
+          meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}${p.address || ''} · ⭐ ${p.rating ?? '-'}`,
+          lat:p.lat, lng:p.lng, isPartner: !!p.is_partner,
+          rating: p.rating ?? null, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng)
+        }));
+        // petshops parceiros (plano pago) aparecem primeiro — o "pin de destaque" prometido no plano
+        items.sort((a,b) => (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0) || a.dist - b.dist);
+      }
+    }
+
+    // 2) sem parceiros por perto: busca petshops/veterinários reais via OpenStreetMap
+    if(!items && currentGeo.lat && currentGeo.lng){
+      try{
+        const osm = await fetchOSMPetshops(currentGeo.lat, currentGeo.lng, 8);
+        if(osm.length){
+          items = osm
+            .map(p => ({ ...p, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng) }))
+            .sort((a,b) => a.dist - b.dist)
+            .slice(0, 8)
+            .map(p => ({ name:p.name, meta:`${p.kind} · ${p.dist.toFixed(1)} km`, lat:p.lat, lng:p.lng, rating:null, dist:p.dist }));
+        }
+      }catch(err){
+        console.warn('MeuPet: Overpass/OSM indisponível, usando dados de demonstração.', err);
+      }
+    }
+
+    // 3) último recurso: dados de demonstração (sem coordenadas)
+    if(!items){
+      items = geoData.map(g => ({ name:g.name, meta:g.meta, lat:null, lng:null, rating:null, dist:null }));
+    }
+
+    list.innerHTML = items.map(p => `
+      <div class="geo-row">
+        <div><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.meta)}</div></div>
+        ${p.lat != null
+          ? `<a class="icon-btn" href="${directionsUrl(p.lat, p.lng)}" target="_blank" rel="noopener" title="Como chegar">🧭</a>`
+          : '<span class="icon-btn">→</span>'}
+      </div>`).join('');
+
+    renderMapMarkers(items);
+    nearbyPetshopsCache = items;
+    loadMarket(); // atualiza o CTA de "loja física perto de você" na vitrine
+  }
+
+  document.getElementById('citySelect').addEventListener('change', e=>{
+    if(e.target.value !== 'detected'){
+      currentGeo = { lat:null, lng:null, city:e.target.value, country:'', source:'manual' };
+      document.getElementById('geoSource').textContent = 'fonte: seleção manual';
+      loadGeoList();
+    }
+  });
+
+  detectLocation();
+
+  // clock
+  function tick(){
+    const el = document.getElementById('liveClock');
+    el.textContent = new Date().toLocaleTimeString('pt-BR');
+  }
+  tick(); setInterval(tick, 1000);
+
+  // small "real time" counters
+  let likes = 2100000, pets = 128400;
+  setInterval(()=>{
+    likes += Math.floor(Math.random()*40);
+    pets += Math.random() < 0.3 ? 1 : 0;
+    document.getElementById('statLikes').textContent = (likes/1e6).toFixed(1) + 'M';
+    document.getElementById('statPets').textContent = (pets/1000).toFixed(1) + 'k';
+  }, 3500);
+
+  // login modal
+  const overlay = document.getElementById('loginModal');
+  function openModal(mode){
+    document.getElementById('modalTitle').textContent = mode === 'signup' ? 'Crie a carteirinha do seu pet' : 'Bem-vindo de volta';
+    document.getElementById('modalSub').textContent = mode === 'signup' ? 'Cadastre-se em segundos e ganhe sua carteirinha digital.' : 'Entre para acessar a carteirinha do seu pet.';
+    document.getElementById('modalSubmit').textContent = mode === 'signup' ? 'Criar conta' : 'Entrar';
+    overlay.classList.add('open');
+  }
+  document.getElementById('openLogin').onclick = ()=> openModal('login');
+  document.getElementById('openSignup').onclick = ()=> openModal('signup');
+  document.getElementById('heroCta').onclick = ()=> openModal('signup');
+  document.getElementById('closeModal').onclick = ()=> overlay.classList.remove('open');
+  overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.classList.remove('open'); });
+
+  // feed data
+  const feedData = {
+    bairro: [
+      {emoji:'🐶', name:'Toby', loc:'Marco, Belém', likes:'1.2k', rank:'#1'},
+      {emoji:'🐱', name:'Mimi', loc:'Pedreira, Belém', likes:'980', rank:'#2'},
+      {emoji:'🐰', name:'Fofuxo', loc:'Umarizal, Belém', likes:'740', rank:'#3'},
+    ],
+    cidade: [
+      {emoji:'🐶', name:'Thor', loc:'Belém, PA', likes:'8.4k', rank:'#1'},
+      {emoji:'🦜', name:'Periquito', loc:'Belém, PA', likes:'6.1k', rank:'#2'},
+      {emoji:'🐱', name:'Luna', loc:'Belém, PA', likes:'5.7k', rank:'#3'},
+    ],
+    pais: [
+      {emoji:'🐶', name:'Caramelo', loc:'Brasil', likes:'410k', rank:'#1'},
+      {emoji:'🐱', name:'Garfield Jr.', loc:'Brasil', likes:'388k', rank:'#2'},
+      {emoji:'🦎', name:'Iguana Bob', loc:'Brasil', likes:'301k', rank:'#3'},
+    ]
+  };
+  async function renderFeed(scope){
+    const grid = document.getElementById('feedGrid');
+    if(DB_READY){
+      let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(6);
+      if(scope === 'cidade' && currentGeo.city) query = query.eq('city', currentGeo.city);
+      if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
+      const { data, error } = await query;
+      if(!error && data && data.length){
+        grid.innerHTML = data.map((p,i) => `
+          <div class="pet-card">
+            <div class="media">🐾<span class="rank-chip">#${i+1} · Liga</span></div>
+            <div class="info">
+              <h4>${esc(p.name)}</h4>
+              <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''}</div>
+              <div class="actions">
+                <button class="like-btn" data-post="${esc(p.latest_post_id || '')}">❤ ${esc(p.rank_score)}</button>
+                <button class="icon-btn">↗ compartilhar</button>
+              </div>
+            </div>
+          </div>`).join('');
+        return;
+      }
+    }
+    grid.innerHTML = feedData[scope].map(p => `
+      <div class="pet-card">
+        <div class="media">${p.emoji}<span class="rank-chip">${p.rank} · Liga</span></div>
+        <div class="info">
+          <h4>${p.name}</h4>
+          <div class="loc">${p.loc}</div>
+          <div class="actions">
+            <button class="like-btn">❤ ${p.likes}</button>
+            <button class="icon-btn">↗ compartilhar</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  renderFeed('bairro');
+  document.querySelectorAll('#rankTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#rankTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFeed(btn.dataset.scope);
+    };
+  });
+
+  // realtime: atualiza ranking sempre que alguém curte (qualquer cidade/país)
+  if(DB_READY){
+    supa.channel('public:likes')
+      .on('postgres_changes', { event:'*', schema:'public', table:'likes' }, () => {
+        const activeScope = document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro';
+        renderFeed(activeScope);
+      })
+      .subscribe();
+  }
+
+  // like animation + persistência
+  document.addEventListener('click', async e=>{
+    if(e.target.closest('.like-btn')){
+      const b = e.target.closest('.like-btn');
+      if(b.disabled) return;
+      if(DB_READY && b.dataset.post){
+        const { data:{ user } } = await supa.auth.getUser();
+        if(!user){ openModal('login'); return; }
+        b.disabled = true;
+        const { error } = await supa.from('likes').insert({ post_id: b.dataset.post, user_id: user.id });
+        b.disabled = false;
+        if(error){
+          console.warn('MeuPet: não foi possível registrar a curtida (talvez já curtido):', error.message);
+          return;
+        }
+      }
+      let n = parseFloat(b.textContent.replace('❤','').replace('k','').trim());
+      b.innerHTML = `❤ ${(n+ (b.dataset.post ? 1 : 0.1)).toFixed(1)}${b.dataset.post ? '' : 'k'}`;
+      b.style.background = 'rgba(255,107,74,0.25)';
+      setTimeout(()=> b.style.background = 'rgba(255,107,74,0.1)', 250);
+    }
+  });
+
+  const adoptData = [
+    {emoji:'🐕', name:'Bilu', species:'cao', dist:'1.2 km · ONG Patas Unidas'},
+    {emoji:'🐈', name:'Nina', species:'gato', dist:'2.8 km · Tutor independente'},
+    {emoji:'🐕‍🦺', name:'Rex', species:'cao', dist:'3.4 km · ONG Anjos de 4 Patas'},
+    {emoji:'🐈‍⬛', name:'Salem', species:'gato', dist:'4.1 km · ONG Patas Unidas'},
+  ];
+  const marketData = [
+    {emoji:'🦴', name:'Ração Premium 15kg', price:'R$ 189,90', shop:'PetCenter', spons:true},
+    {emoji:'🧸', name:'Brinquedo mordedor', price:'R$ 29,90', shop:'Zoo Brasil', spons:false},
+    {emoji:'🛁', name:'Shampoo neutro 500ml', price:'R$ 24,50', shop:'PetCenter', spons:false},
+    {emoji:'🦺', name:'Coleira ajustável', price:'R$ 39,90', shop:'Mundo Animal', spons:true},
+  ];
+  const geoData = [
+    {name:'PetCenter Marco', meta:'Aberto agora · 0,8 km · ⭐ 4.8'},
+    {name:'Zoo Brasil Umarizal', meta:'Aberto agora · 1,4 km · ⭐ 4.6'},
+    {name:'Mundo Animal Nazaré', meta:'Fecha às 19h · 2,1 km · ⭐ 4.5'},
+  ];
+  // classifica o campo livre "species" do banco (ou o dado de demo) em um dos
+  // 3 filtros da vitrine de adoção — texto livre no schema, então é heurística
+  function speciesBucket(s){
+    const t = (s || '').toLowerCase();
+    if(t.includes('cão') || t.includes('cachorro') || t.includes('dog') || t.includes('cao')) return 'cao';
+    if(t.includes('gat') || t.includes('cat')) return 'gato';
+    return 'outro';
+  }
+  const speciesEmoji = { cao:'🐶', gato:'🐱', outro:'🐾' };
+
+  const adoptFavorites = new Set();
+  let adoptFilter = 'todos';
+  let adoptItemsCache = [];
+
+  function renderAdoptCards(items){
+    const grid = document.getElementById('adoptGrid');
+    const filtered = adoptFilter === 'todos' ? items : items.filter(a => a.species === adoptFilter);
+    if(!filtered.length){
+      grid.innerHTML = '<div class="adopt-empty">Nenhum pet dessa categoria por perto ainda 🐾 — tente "Todos" ou volte mais tarde.</div>';
+      return;
+    }
+    grid.innerHTML = filtered.map(a => `
+      <div class="adopt-card">
+        <div class="media">
+          ${a.emoji}
+          <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="Favoritar" aria-label="Favoritar ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
+        </div>
+        <div class="info">
+          <h4>${esc(a.name)}</h4>
+          <div class="dist">📍 ${esc(a.dist)}</div>
+          <button class="btn-block" data-adopt="${esc(a.id)}">Quero adotar</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function loadAdoption(){
+    let items = null;
+    if(DB_READY){
+      const { data, error } = await supa.from('adoption_listings').select('*').eq('status','available').limit(30);
+      if(!error && data && data.length){
+        items = data.map(a => {
+          const bucket = speciesBucket(a.species);
+          const km = (currentGeo.lat && a.lat != null && a.lng != null) ? haversineKm(currentGeo.lat, currentGeo.lng, a.lat, a.lng) : null;
+          const dist = km != null
+            ? `${km.toFixed(1)} km · ${a.ong_name || 'Tutor independente'}`
+            : `${a.ong_name || 'Tutor independente'}${a.city ? ' · ' + a.city : ''}`;
+          return { id:a.id, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km };
+        });
+        items.sort((x,y) => (x.km ?? Infinity) - (y.km ?? Infinity));
+        items = items.slice(0, 8);
+      }
+    }
+    if(!items){
+      items = adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist }));
+    }
+    adoptItemsCache = items;
+    renderAdoptCards(items);
+  }
+  loadAdoption();
+
+  document.getElementById('adoptFilters').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-species]');
+    if(!btn) return;
+    document.querySelectorAll('#adoptFilters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    adoptFilter = btn.dataset.species;
+    renderAdoptCards(adoptItemsCache);
+  });
+
+  document.addEventListener('click', e=>{
+    const fav = e.target.closest('.fav-btn');
+    if(fav){
+      const id = fav.dataset.fav;
+      if(adoptFavorites.has(id)) adoptFavorites.delete(id); else adoptFavorites.add(id);
+      renderAdoptCards(adoptItemsCache);
+      return;
+    }
+    if(e.target.closest('[data-adopt]')) openModal('login');
+  });
+  document.getElementById('btnCadastrarAdocao').addEventListener('click', () => openModal('signup'));
+
+  async function loadMarket(){
+    const grid = document.getElementById('marketGrid');
+    // loja física real mais próxima (reaproveita a busca da seção Petshops) —
+    // prioriza nota real quando existe, nunca inventa avaliação
+    const nearby = bestNearbyPetshop();
+    const nearbyCta = nearby
+      ? `<a class="nearby-cta" href="${directionsUrl(nearby.lat, nearby.lng)}" target="_blank" rel="noopener">🧭 Loja perto de você: ${esc(nearby.name)}${nearby.dist != null ? ' · ' + nearby.dist.toFixed(1) + ' km' : ''}</a>`
+      : `<a class="nearby-cta" href="#petshops">🧭 Ver petshops perto de você</a>`;
+
+    if(DB_READY){
+      const { data, error } = await supa.from('products').select('*').limit(8);
+      if(!error && data && data.length){
+        // patrocinados aparecem primeiro — sempre com o selo "Parceiro" visível (transparência)
+        const sorted = [...data].sort((a,b) => (b.is_sponsored ? 1 : 0) - (a.is_sponsored ? 1 : 0));
+        grid.innerHTML = sorted.map(m=>`
+          <div class="product-card">
+            ${m.is_sponsored ? '<span class="spons">Parceiro</span>' : ''}
+            <div class="media">🛍️</div>
+            <h5>${esc(m.name)}</h5>
+            <div class="price">R$ ${(m.price_cents/100).toFixed(2)}</div>
+            <div class="shop"><a href="${safeUrl(m.affiliate_url)}" target="_blank" rel="sponsored noopener nofollow" data-affiliate="${esc(m.id)}">via ${esc(m.shop_name)} ↗</a></div>
+            ${nearbyCta}
+          </div>`).join('');
+        return;
+      }
+    }
+    const sortedDemo = [...marketData].sort((a,b) => (b.spons ? 1 : 0) - (a.spons ? 1 : 0));
+    grid.innerHTML = sortedDemo.map(m=>`
+      <div class="product-card">
+        ${m.spons ? '<span class="spons">Parceiro</span>' : ''}
+        <div class="media">${m.emoji}</div>
+        <h5>${m.name}</h5>
+        <div class="price">${m.price}</div>
+        <div class="shop">via ${m.shop}</div>
+        ${nearbyCta}
+      </div>`).join('');
+  }
+  loadMarket();
+
+  // clique em link de afiliado = evento monetizável real (comissão de parceiro)
+  document.getElementById('marketGrid').addEventListener('click', e=>{
+    const a = e.target.closest('[data-affiliate]');
+    if(a) logAdClick('affiliate:' + a.dataset.affiliate);
+  });
+
+  // =====================================================================
+  // BANNERS DE PATROCÍNIO DINÂMICOS — puxa da tabela sponsors (admin cadastra
+  // sem mexer em código); sem patrocinador ativo nesse slot, cai num CTA
+  // interno honesto (não inventa anunciante nem link externo fake).
+  // =====================================================================
+  async function loadSponsorSlot(elId, slotName, fallback){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    let sponsor = null;
+    if(DB_READY){
+      const { data, error } = await supa
+        .from('sponsors').select('*')
+        .eq('slot', slotName).eq('active', true)
+        .order('created_at', { ascending:false }).limit(1);
+      if(!error && data && data.length) sponsor = data[0];
+    }
+    if(sponsor){
+      el.href = safeUrl(sponsor.target_url);
+      el.target = '_blank';
+      el.rel = 'sponsored noopener';
+      el.querySelector('.ad-label').textContent = sponsor.label || 'Publicidade';
+      el.querySelector('.ad-headline').textContent = sponsor.headline;
+      el.querySelector('.ad-cta').textContent = (sponsor.cta_text || 'Ver oferta') + ' →';
+      el.dataset.adSlot = `sponsor:${sponsor.id}`;
+    } else {
+      el.dataset.adSlot = `house:${slotName}`;
+      // mantém o texto/âncora interna já presentes no HTML (fallback já está lá)
+    }
+    el.addEventListener('click', () => logAdClick(el.dataset.adSlot));
+    trackAdSlot(el);
+  }
+  loadSponsorSlot('adSlotFeed', 'banner_feed');
+  loadSponsorSlot('adSlotPetshops', 'banner_petshops');
+
+  // =====================================================================
+  // MEUPET BUSINESS — formulário de parceiros/patrocinadores (partner_leads).
+  // Nunca ativa o parceiro/patrocínio sozinho: só cria um "lead" — a ativação
+  // real (petshops.is_partner / linha em sponsors) é sempre manual, depois do
+  // time comercial combinar e confirmar o pagamento.
+  // =====================================================================
+  document.querySelectorAll('.partner-choose').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.getElementById('pfPlan').value = btn.dataset.plan;
+      document.getElementById('partnerForm').scrollIntoView({ behavior:'smooth', block:'center' });
+      document.getElementById('pfBusiness').focus();
+    });
+  });
+
+  document.getElementById('partnerForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const statusEl = document.getElementById('pfStatus');
+    const submitBtn = document.getElementById('pfSubmit');
+    const lead = {
+      business_name: document.getElementById('pfBusiness').value.trim(),
+      contact_name: document.getElementById('pfContact').value.trim(),
+      contact_email: document.getElementById('pfEmail').value.trim(),
+      contact_phone: document.getElementById('pfPhone').value.trim() || null,
+      city: document.getElementById('pfCity').value.trim() || null,
+      business_type: document.getElementById('pfType').value,
+      plan_interest: document.getElementById('pfPlan').value,
+      message: document.getElementById('pfMessage').value.trim() || null,
+    };
+    if(!lead.business_name || !lead.contact_name || !lead.contact_email){
+      statusEl.textContent = 'Preencha nome do negócio, seu nome e e-mail.';
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando…';
+
+    if(DB_READY){
+      const { data:{ user } } = await supa.auth.getUser();
+      const { error } = await supa.from('partner_leads').insert({ ...lead, created_by: user?.id || null });
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enviar solicitação';
+      if(error){
+        statusEl.textContent = 'Não deu pra enviar agora — tenta de novo em instantes.';
+        statusEl.className = 'partner-form-status err';
+        console.warn('MeuPet: falha ao enviar partner_lead', error.message);
+        return;
+      }
+      statusEl.textContent = 'Recebemos seu pedido! Nosso time entra em contato pra combinar a ativação e a cobrança (Pix ou boleto).';
+      statusEl.className = 'partner-form-status ok';
+      e.target.reset();
+      return;
+    }
+
+    // sem Supabase configurado: e-mail vira o canal alternativo, o lead não se perde
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enviar solicitação';
+    if(!SPONSOR_CONTACT_EMAIL){
+      statusEl.textContent = 'Cadastro ainda não conectado — configure SUPABASE_URL/ANON_KEY ou SPONSOR_CONTACT_EMAIL no código.';
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    const planLabel = { basico:'Básico (R$ 49/mês)', destaque:'Destaque (R$ 129/mês)', banner:'Banner patrocinado (R$ 199/mês)' }[lead.plan_interest] || lead.plan_interest;
+    const subject = encodeURIComponent(`MeuPet Business — ${lead.business_name}`);
+    const body = encodeURIComponent(
+      `Negócio: ${lead.business_name}\nContato: ${lead.contact_name}\nE-mail: ${lead.contact_email}\nWhatsApp: ${lead.contact_phone || '-'}\nCidade: ${lead.city || '-'}\nTipo: ${lead.business_type}\nPlano de interesse: ${planLabel}\nMensagem: ${lead.message || '-'}`
+    );
+    window.location.href = `mailto:${SPONSOR_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+    statusEl.textContent = 'Abrindo seu e-mail pra concluir o envio…';
+    statusEl.className = 'partner-form-status ok';
+  });
+
+  // service worker (PWA)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('MeuPet SW registrado:', reg.scope))
+        .catch(err => console.warn('MeuPet SW erro:', err));
+    });
+  }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "MeuPet — Carteirinha Digital do seu Pet",
+  "short_name": "MeuPet",
+  "description": "Feed, ranking por ligas, adoção responsável, vitrine de produtos e petshops perto de você.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8F0",
+  "theme_color": "#0F3D3E",
+  "lang": "pt-BR",
+  "categories": ["lifestyle", "social"],
+  "icons": [
+    { "src": "/icons/icon-48.png",  "sizes": "48x48",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "/icons/feature-graphic-1024x500.png", "sizes": "1024x500", "type": "image/png", "form_factor": "wide" }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}
