@@ -81,7 +81,10 @@ create table public.pets (
   name text not null,
   species text not null,
   breed text,
-  age_years numeric,
+  age_years numeric check (age_years >= 0 and age_years < 100),
+  weight_kg numeric check (weight_kg >= 0 and weight_kg < 200),
+  sex text check (sex in ('macho','femea')),
+  color text check (char_length(color) <= 40),
   bio text,
   photo_url text,
   vaccine_status jsonb default '[]'::jsonb,
@@ -90,6 +93,16 @@ create table public.pets (
   rank_score integer not null default 0, -- recalculado via trigger de likes
   created_at timestamptz not null default now()
 );
+
+-- lista de raças por espécie, cresce sozinha conforme os tutores cadastram
+-- (sem repetir nome — dedup por espécie + nome em minúsculas)
+create table public.breeds (
+  id uuid primary key default uuid_generate_v4(),
+  species text not null check (species in ('cao','gato','outro')),
+  name text not null check (char_length(name) <= 60),
+  created_at timestamptz not null default now()
+);
+create unique index idx_breeds_unique on public.breeds (species, lower(name));
 
 create index idx_pets_owner on public.pets(owner_id);
 create index idx_pets_city on public.pets(city, country);
@@ -352,6 +365,7 @@ create table public.reports (
 -- =====================================================================
 alter table public.profiles enable row level security;
 alter table public.pets enable row level security;
+alter table public.breeds enable row level security;
 alter table public.posts enable row level security;
 alter table public.likes enable row level security;
 alter table public.adoption_listings enable row level security;
@@ -377,9 +391,19 @@ create policy "pets_insert_own" on public.pets for insert with check (auth.uid()
 create policy "pets_update_own" on public.pets for update using (auth.uid() = owner_id or public.is_admin());
 create policy "pets_delete_own" on public.pets for delete using (auth.uid() = owner_id or public.is_admin());
 
+-- BREEDS: leitura pública (autocomplete), qualquer autenticado pode acrescentar
+-- uma raça nova (nunca editar/remover — é só uma lista de referência que cresce)
+create policy "breeds_select_public" on public.breeds for select using (true);
+create policy "breeds_insert_auth" on public.breeds for insert with check (auth.uid() is not null);
+
 -- POSTS: leitura pública, escrita do dono do pet
 create policy "posts_select_public" on public.posts for select using (true);
-create policy "posts_insert_own" on public.posts for insert with check (auth.uid() = owner_id);
+-- pet_id precisa mesmo pertencer a quem está postando — sem isso, qualquer
+-- autenticado poderia postar em nome do pet de outra pessoa (pets é leitura
+-- pública, então o id de qualquer pet é conhecível)
+create policy "posts_insert_own" on public.posts for insert with check (
+  auth.uid() = owner_id and exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+);
 create policy "posts_delete_own" on public.posts for delete using (auth.uid() = owner_id or public.is_admin());
 
 -- LIKES: leitura pública, qualquer autenticado curte/descurte só por si

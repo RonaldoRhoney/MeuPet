@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contato — MeuPet</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+  :root { --teal:#0F3D3E; --coral:#FF6B4A; --cream:#FFF8F0; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Segoe UI',sans-serif; background:var(--cream); color:#1B2B2A; line-height:1.7;}
+  header{background:var(--teal); color:white; padding:18px 24px; display:flex; align-items:center; gap:12px;}
+  header a{color:white; text-decoration:none; font-size:0.9rem; opacity:0.8;}
+  header h1{font-size:1.1rem;}
+  .content{max-width:640px; margin:60px auto; padding:0 24px 60px; text-align:center;}
+  h2{font-size:1.8rem; color:var(--teal); margin-bottom:10px; font-family:Georgia,serif;}
+  p.lead{color:#5C7472; margin-bottom:36px;}
+  .cards{display:grid; gap:16px;}
+  .card{
+    background:white; border:1px solid #ddd; border-radius:16px; padding:22px 24px;
+    display:flex; align-items:center; gap:16px; text-align:left; text-decoration:none; color:inherit;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{transform:translateY(-3px); box-shadow:0 12px 24px -12px rgba(0,0,0,0.2);}
+  .card .icon{width:48px; height:48px; border-radius:12px; background:var(--cream); display:grid; place-items:center; font-size:1.4rem; flex-shrink:0;}
+  .card h3{font-size:1rem; color:var(--teal); margin-bottom:2px;}
+  .card span{font-size:0.86rem; color:#7C9492;}
+  .note{margin-top:32px; font-size:0.82rem; color:#8AA1A0;}
+</style>
+</head>
+<body>
+<header>
+  <a href="/">← Voltar</a>
+  <h1>🐾 MeuPet — Contato</h1>
+</header>
+<div class="content">
+  <h2>Fale com a gente</h2>
+  <p class="lead">Dúvidas, sugestões, denúncias de conteúdo, parcerias (MeuPet Business) ou solicitações sobre seus dados (LGPD) — qualquer um desses canais chega até nós.</p>
+
+  <div class="cards">
+    <a class="card" href="mailto:rhoneyinc@gmail.com">
+      <span class="icon">✉️</span>
+      <div><h3>E-mail</h3><span>rhoneyinc@gmail.com</span></div>
+    </a>
+    <a class="card" href="https://wa.me/5591981015189" target="_blank" rel="noopener">
+      <span class="icon">💬</span>
+      <div><h3>WhatsApp</h3><span>(91) 9 8101-5189</span></div>
+    </a>
+    <a class="card" href="/privacidade.html">
+      <span class="icon">🔒</span>
+      <div><h3>Privacidade e dados (LGPD)</h3><span>Veja como tratamos suas informações</span></div>
+    </a>
+    <a class="card" href="/termos.html">
+      <span class="icon">📄</span>
+      <div><h3>Termos de Uso</h3><span>Regras de uso do MeuPet</span></div>
+    </a>
+  </div>
+
+  <p class="note">RhoneyInc — Belém, Pará, Brasil</p>
+</div>
+</body>
+</html>

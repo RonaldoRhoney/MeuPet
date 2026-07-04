@@ -387,6 +387,31 @@
   .partner-form-status{font-size:0.84rem; text-align:center; margin-top:12px; min-height:1.2em;}
   .partner-form-status.ok{color:var(--teal-light); font-weight:700;}
   .partner-form-status.err{color:var(--coral-dark); font-weight:700;}
+
+  .photo-upload{
+    display:flex; align-items:center; gap:12px; border:1.5px dashed var(--line); border-radius:14px;
+    padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:border-color .2s;
+  }
+  .photo-upload:hover{border-color:var(--teal);}
+  .photo-upload span:first-child{
+    width:44px; height:44px; border-radius:10px; background:var(--cream); display:grid; place-items:center;
+    font-size:1.3rem; overflow:hidden; flex-shrink:0;
+  }
+  .photo-upload span:first-child img{width:100%; height:100%; object-fit:cover;}
+  .photo-upload span:last-child{font-size:0.84rem; color:#5C7472; font-weight:600;}
+
+  .demo-modal{max-width:460px;}
+  .demo-slide-img{width:100%; height:230px; overflow:hidden; background:var(--cream);}
+  .demo-slide-img img{width:100%; height:100%; object-fit:cover; object-position:top;}
+  .demo-dots{display:flex; gap:6px; justify-content:center; margin:14px 0 18px;}
+  .demo-dots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
+  .demo-dots span.active{background:var(--coral);}
+  .demo-nav{display:flex; gap:10px;}
+  .demo-nav button{flex:1;}
+
+  .profile-modal{max-height:88vh; overflow-y:auto;}
+  .profile-section{border-top:1px solid var(--line); margin-top:16px; padding-top:16px;}
+  .profile-section h4{font-family:'Fraunces',serif; font-size:1rem; color:var(--teal); margin-bottom:10px;}
   @media (max-width:720px){
     .partner-plans-grid{grid-template-columns:1fr;}
     .partner-form-grid{grid-template-columns:1fr;}
@@ -559,7 +584,7 @@
         <p class="lead">Feed, ranking por ligas, adoção responsável, vitrine de produtos e petshops perto de você — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.</p>
         <div class="hero-cta">
           <button class="btn btn-primary" id="heroCta">Criar carteirinha grátis</button>
-          <button class="btn btn-ghost">Ver como funciona</button>
+          <button class="btn btn-ghost" id="btnDemo">Ver como funciona</button>
           <button class="btn-share-app" data-share="app" title="Compartilhar o MeuPet" aria-label="Compartilhar o MeuPet">↗</button>
         </div>
         <div class="hero-stats">
@@ -858,8 +883,8 @@
       <div class="footer-col">
         <h5>Legal</h5>
         <a href="/privacidade.html">Privacidade (LGPD)</a>
-        <a href="#">Termos de uso</a>
-        <a href="#">Contato</a>
+        <a href="/termos.html">Termos de uso</a>
+        <a href="/contato.html">Contato</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -912,8 +937,9 @@
       <input type="password" placeholder="Senha" id="modalPassword">
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="modalSubmit">Entrar</button>
       <p class="modal-status" id="modalStatus"></p>
+      <p class="modal-toggle" id="modalForgot"><a id="modalForgotLink">Esqueci minha senha</a></p>
       <p class="modal-toggle" id="modalToggle"></p>
-      <p class="terms">Ao continuar, você aceita os <a href="/privacidade.html" style="color:var(--teal)">Termos de uso e Privacidade (LGPD)</a> do MeuPet.</p>
+      <p class="terms">Ao continuar, você aceita os <a href="/termos.html" style="color:var(--teal)">Termos de Uso</a> e a <a href="/privacidade.html" style="color:var(--teal)">Privacidade (LGPD)</a> do MeuPet.</p>
     </div>
   </div>
 </div>
@@ -932,10 +958,27 @@
         <option value="gato">🐱 Gato</option>
         <option value="outro">🐾 Outro</option>
       </select>
-      <input type="text" placeholder="Raça (opcional)" id="petBreed">
-      <input type="number" placeholder="Idade em anos (opcional)" id="petAge" min="0" step="0.5">
+      <input type="text" placeholder="Raça — escolha ou digite uma nova" id="petBreed" list="petBreedList" autocomplete="off">
+      <datalist id="petBreedList"></datalist>
+
+      <div class="partner-form-grid">
+        <input type="number" placeholder="Idade (anos)" id="petAge" min="0" step="0.5">
+        <input type="number" placeholder="Peso (kg)" id="petWeight" min="0" step="0.1">
+        <select id="petSex" aria-label="Sexo">
+          <option value="">Sexo (opcional)</option>
+          <option value="macho">Macho</option>
+          <option value="femea">Fêmea</option>
+        </select>
+        <input type="text" placeholder="Cor/pelagem (opcional)" id="petColor">
+      </div>
+
       <textarea placeholder="Conte um pouco sobre seu pet (opcional)" id="petBio" rows="3"></textarea>
-      <input type="url" placeholder="URL de uma foto (opcional)" id="petPhotoUrl">
+
+      <label class="photo-upload" for="petPhotoFile">
+        <span id="petPhotoPreview">📷</span>
+        <span id="petPhotoLabel">Adicionar uma foto (opcional)</span>
+      </label>
+      <input type="file" accept="image/*" id="petPhotoFile" style="display:none;">
 
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="petSubmit">Criar carteirinha</button>
       <p class="modal-status" id="petStatus"></p>
@@ -943,13 +986,36 @@
   </div>
 </div>
 
+<!-- DEMONSTRAÇÃO RÁPIDA (Ver como funciona) -->
+<div class="modal-overlay" id="demoModal">
+  <div class="modal demo-modal">
+    <button class="modal-close" id="closeDemoModal">✕</button>
+    <div class="demo-slide-img"><img id="demoImg" src="docs/screenshot-hero.png" alt="Demonstração do MeuPet"></div>
+    <div class="modal-body">
+      <h3 id="demoTitle">Sua carteirinha, sempre com você</h3>
+      <p class="sub" id="demoText">Crie o perfil do seu pet em segundos e leve a carteirinha digital pra qualquer lugar.</p>
+      <div class="demo-dots" id="demoDots"></div>
+      <div class="demo-nav">
+        <button class="btn btn-ghost" id="demoPrev">← Voltar</button>
+        <button class="btn btn-primary" id="demoNext">Próximo →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PERFIL DO TUTOR -->
 <div class="modal-overlay" id="profileModal">
-  <div class="modal">
+  <div class="modal profile-modal">
     <button class="modal-close" id="closeProfileModal">✕</button>
     <div class="modal-body">
       <h3>Seu perfil</h3>
       <p class="sub" id="profileSub">Logado como —</p>
+
+      <label class="photo-upload" for="avatarFile">
+        <span id="avatarPreview">🙂</span>
+        <span id="avatarLabel">Foto de perfil (opcional)</span>
+      </label>
+      <input type="file" accept="image/*" id="avatarFile" style="display:none;">
 
       <input type="text" placeholder="Seu nome" id="profileName">
       <input type="text" placeholder="Cidade" id="profileCity">
@@ -957,6 +1023,28 @@
 
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="profileSubmit">Salvar perfil</button>
       <p class="modal-status" id="profileStatus"></p>
+
+      <div class="profile-section">
+        <h4>Postar no feed</h4>
+        <select id="postPetSelect" aria-label="Pet do post"></select>
+        <label class="photo-upload" for="postPhotoFile">
+          <span id="postPhotoPreview">📷</span>
+          <span id="postPhotoLabel">Foto do post</span>
+        </label>
+        <input type="file" accept="image/*" id="postPhotoFile" style="display:none;">
+        <textarea placeholder="Legenda (opcional)" id="postCaption" rows="2"></textarea>
+        <button class="btn btn-ghost" style="width:100%; padding:12px;" id="postSubmit">📣 Publicar no feed</button>
+        <p class="modal-status" id="postStatus"></p>
+      </div>
+
+      <div class="profile-section">
+        <h4>Trocar senha</h4>
+        <input type="password" placeholder="Nova senha" id="newPassword">
+        <input type="password" placeholder="Confirme a nova senha" id="newPasswordConfirm">
+        <button class="btn btn-ghost" style="width:100%; padding:12px;" id="passwordSubmit">🔒 Atualizar senha</button>
+        <p class="modal-status" id="passwordStatus"></p>
+      </div>
+
       <button class="btn btn-ghost" style="width:100%; padding:13px; margin-top:10px;" id="profileCreatePet">🐾 Criar carteirinha de um pet</button>
       <button class="btn-block" style="width:100%; margin-top:10px; background:var(--ink);" id="profileSignOut">Sair da conta</button>
     </div>
@@ -1441,12 +1529,14 @@
       ? 'Já tem carteirinha? <a id="modalToggleLink">Entrar</a>'
       : 'Ainda não tem conta? <a id="modalToggleLink">Criar carteirinha</a>';
     document.getElementById('modalToggleLink').onclick = ()=> openModal(mode === 'signup' ? 'login' : 'signup');
+    document.getElementById('modalForgot').style.display = mode === 'signup' ? 'none' : 'block';
     overlay.classList.add('open');
   }
   // se não logado, "Criar carteirinha"/"Entrar" abrem o modal de auth como
   // antes; se já logado, "Criar carteirinha" pula direto pro cadastro do pet
   // em vez de mostrar login de novo (esse era o bug relatado)
   let pendingIntent = null; // 'createPet' quando o clique original era criar carteirinha, mas o usuário ainda não estava logado
+  let onboardingInProgress = false; // true durante o fluxo cadastro -> pet -> perfil, encadeado
   document.getElementById('openLogin').onclick = ()=> openModal('login');
   document.getElementById('openSignup').onclick = ()=> {
     if(currentUser) return openPetModal();
@@ -1455,6 +1545,22 @@
   };
   document.getElementById('heroCta').onclick = ()=> document.getElementById('openSignup').onclick();
   document.getElementById('closeModal').onclick = ()=> overlay.classList.remove('open');
+  document.getElementById('modalForgotLink').onclick = async ()=>{
+    const statusEl = document.getElementById('modalStatus');
+    const email = document.getElementById('modalEmail').value.trim();
+    if(!DB_READY){ statusEl.textContent = 'Supabase não configurado ainda.'; statusEl.className = 'modal-status err'; return; }
+    if(!email){ statusEl.textContent = 'Digite seu e-mail acima primeiro.'; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = 'Enviando link de recuperação…';
+    statusEl.className = 'modal-status';
+    const { error } = await supa.auth.resetPasswordForEmail(email);
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    statusEl.textContent = '✅ Se esse e-mail tiver conta, um link de recuperação foi enviado.';
+    statusEl.className = 'modal-status ok';
+  };
 
   // e-mail/senha via Supabase Auth — antes só os botões sociais funcionavam,
   // o botão de e-mail/senha não tinha nenhum handler (clicar não fazia nada)
@@ -1481,9 +1587,14 @@
 
   function renderCarteirinha(pet){
     const bucket = speciesBucket(pet.species);
-    document.getElementById('cartPhoto').textContent = speciesEmoji[bucket];
+    const photoEl = document.getElementById('cartPhoto');
+    photoEl.innerHTML = pet.photo_url ? `<img src="${safeUrl(pet.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">` : speciesEmoji[bucket];
     document.getElementById('cartName').textContent = pet.name;
-    const metaParts = [pet.breed, pet.age_years != null ? `${pet.age_years} anos` : null].filter(Boolean);
+    const metaParts = [
+      pet.breed,
+      pet.age_years != null ? `${pet.age_years} anos` : null,
+      pet.weight_kg != null ? `${pet.weight_kg}kg` : null,
+    ].filter(Boolean);
     document.getElementById('cartMeta').textContent = metaParts.length ? metaParts.join(' · ') : 'Carteirinha digital';
     document.getElementById('cartId').textContent = '#' + pet.id.slice(0, 5).toUpperCase();
     document.getElementById('cartLiga').textContent = 'Novo por aqui';
@@ -1559,28 +1670,99 @@
       overlay.classList.remove('open');
       // se o clique original era "criar carteirinha" mas exigiu login antes,
       // continua o fluxo em vez de deixar a pessoa ter que clicar de novo
-      if(pendingIntent === 'createPet'){ pendingIntent = null; openPetModal(); }
+      if(pendingIntent === 'createPet'){ pendingIntent = null; onboardingInProgress = true; openPetModal(); }
     }, 900);
   });
   overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.classList.remove('open'); });
+
+  // =====================================================================
+  // "VER COMO FUNCIONA" — antes o botão não tinha nenhum handler (não fazia
+  // nada); agora abre uma demonstração rápida com telas reais do app
+  // =====================================================================
+  const demoSlides = [
+    { img:'docs/screenshot-hero.png', title:'Sua carteirinha, sempre com você', text:'Crie o perfil do seu pet em segundos e leve a carteirinha digital pra qualquer lugar.' },
+    { img:'docs/screenshot-feed.png', title:'Feed e ranking por ligas', text:'Curta, suba no ranking do seu bairro, da sua cidade e do país inteiro.' },
+    { img:'docs/screenshot-petshops.png', title:'Petshops reais perto de você', text:'Mapa de verdade, com rota até o petshop ou veterinário mais próximo.' },
+  ];
+  let demoIndex = 0;
+  const demoOverlay = document.getElementById('demoModal');
+  function renderDemoSlide(){
+    const s = demoSlides[demoIndex];
+    document.getElementById('demoImg').src = s.img;
+    document.getElementById('demoTitle').textContent = s.title;
+    document.getElementById('demoText').textContent = s.text;
+    document.getElementById('demoDots').innerHTML = demoSlides.map((_,i)=>`<span class="${i === demoIndex ? 'active' : ''}"></span>`).join('');
+    document.getElementById('demoPrev').style.visibility = demoIndex === 0 ? 'hidden' : 'visible';
+    document.getElementById('demoNext').textContent = demoIndex === demoSlides.length - 1 ? 'Criar carteirinha grátis' : 'Próximo →';
+  }
+  document.getElementById('btnDemo').onclick = ()=>{ demoIndex = 0; renderDemoSlide(); demoOverlay.classList.add('open'); };
+  document.getElementById('closeDemoModal').onclick = ()=> demoOverlay.classList.remove('open');
+  demoOverlay.addEventListener('click', e=>{ if(e.target === demoOverlay) demoOverlay.classList.remove('open'); });
+  document.getElementById('demoPrev').onclick = ()=>{ if(demoIndex > 0){ demoIndex--; renderDemoSlide(); } };
+  document.getElementById('demoNext').onclick = ()=>{
+    if(demoIndex < demoSlides.length - 1){ demoIndex++; renderDemoSlide(); return; }
+    demoOverlay.classList.remove('open');
+    document.getElementById('openSignup').onclick();
+  };
 
   // =====================================================================
   // CADASTRO DE PET (carteirinha) — antes só existia o botão/landing page,
   // sem nenhum formulário real por trás (clicar sempre voltava pro login)
   // =====================================================================
   const petOverlay = document.getElementById('petModal');
+  // upload genérico pro bucket pet-media (fotos de pet, avatar, posts) —
+  // sempre dentro da pasta do próprio usuário, igual a policy de storage exige
+  async function uploadToPetMedia(file, subfolder){
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${currentUser.id}/${subfolder}/${Date.now()}.${ext}`;
+    const { error } = await supa.storage.from('pet-media').upload(path, file, { upsert:false });
+    if(error) throw error;
+    const { data } = supa.storage.from('pet-media').getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  // lista de raças por espécie — cresce sozinha (ver tabela breeds), sem
+  // repetir nomes (índice único species+lower(name) no banco garante isso)
+  async function loadBreedList(speciesValue){
+    const list = document.getElementById('petBreedList');
+    if(!DB_READY){ list.innerHTML = ''; return; }
+    const { data } = await supa.from('breeds').select('name').eq('species', speciesValue).order('name');
+    list.innerHTML = (data || []).map(b => `<option value="${esc(b.name)}">`).join('');
+  }
+
+  let petPhotoFileSelected = null;
+  document.getElementById('petPhotoFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    petPhotoFileSelected = file || null;
+    if(file){
+      document.getElementById('petPhotoPreview').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+      document.getElementById('petPhotoLabel').textContent = file.name;
+    }
+  });
+
   function openPetModal(){
     if(!currentUser){ pendingIntent = 'createPet'; openModal('signup'); return; }
     document.getElementById('petName').value = '';
     document.getElementById('petSpecies').value = 'cao';
     document.getElementById('petBreed').value = '';
     document.getElementById('petAge').value = '';
+    document.getElementById('petWeight').value = '';
+    document.getElementById('petSex').value = '';
+    document.getElementById('petColor').value = '';
     document.getElementById('petBio').value = '';
-    document.getElementById('petPhotoUrl').value = '';
+    document.getElementById('petPhotoFile').value = '';
+    petPhotoFileSelected = null;
+    document.getElementById('petPhotoPreview').innerHTML = '📷';
+    document.getElementById('petPhotoLabel').textContent = 'Adicionar uma foto (opcional)';
     document.getElementById('petStatus').textContent = '';
     document.getElementById('petStatus').className = 'modal-status';
+    loadBreedList('cao');
     petOverlay.classList.add('open');
   }
+  document.getElementById('petSpecies').addEventListener('change', e=>{
+    document.getElementById('petBreed').value = '';
+    loadBreedList(e.target.value);
+  });
   document.getElementById('closePetModal').onclick = ()=> petOverlay.classList.remove('open');
   petOverlay.addEventListener('click', e=>{ if(e.target === petOverlay) petOverlay.classList.remove('open'); });
 
@@ -1593,8 +1775,11 @@
     const breed = document.getElementById('petBreed').value.trim() || null;
     const ageRaw = document.getElementById('petAge').value;
     const age_years = ageRaw ? parseFloat(ageRaw) : null;
+    const weightRaw = document.getElementById('petWeight').value;
+    const weight_kg = weightRaw ? parseFloat(weightRaw) : null;
+    const sex = document.getElementById('petSex').value || null;
+    const color = document.getElementById('petColor').value.trim() || null;
     const bio = document.getElementById('petBio').value.trim() || null;
-    const photo_url = document.getElementById('petPhotoUrl').value.trim() || null;
 
     if(!name){
       statusEl.textContent = 'Dá um nome pro seu pet :)';
@@ -1606,9 +1791,21 @@
     statusEl.textContent = '';
     statusEl.className = 'modal-status';
 
+    let photo_url = null;
+    if(petPhotoFileSelected){
+      statusEl.textContent = 'Enviando foto…';
+      try{ photo_url = await uploadToPetMedia(petPhotoFileSelected, 'pets'); }
+      catch(err){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Não deu pra enviar a foto: ' + err.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    }
+
     const { data, error } = await supa.from('pets').insert({
       owner_id: currentUser.id,
-      name, species: speciesLabel, breed, age_years, bio, photo_url,
+      name, species: speciesLabel, breed, age_years, weight_kg, sex, color, bio, photo_url,
       city: currentGeo.city || null, country: currentGeo.country || null,
     }).select().single();
 
@@ -1620,25 +1817,79 @@
       return;
     }
 
+    // raça digitada na mão e que não existia na lista: guarda pra próxima vez
+    // (índice único por espécie+nome evita duplicar caso duas pessoas digitem igual)
+    if(breed){
+      supa.from('breeds').insert({ species: speciesValue, name: breed }).then(({ error: breedErr })=>{
+        if(breedErr && breedErr.code !== '23505') console.warn('MeuPet: não deu pra salvar a raça nova', breedErr.message);
+      });
+    }
+
     currentUserPet = data;
     renderCarteirinha(data);
     statusEl.textContent = '✅ Carteirinha criada!';
     statusEl.className = 'modal-status ok';
-    setTimeout(()=> petOverlay.classList.remove('open'), 900);
+    setTimeout(()=>{
+      petOverlay.classList.remove('open');
+      // fluxo de onboarding (cadastro -> pet -> perfil): completa com os
+      // dados do tutor logo em seguida, tudo numa sequência só
+      if(onboardingInProgress){ onboardingInProgress = false; openProfileModal(); }
+    }, 900);
   });
 
   // =====================================================================
   // PERFIL DO TUTOR
   // =====================================================================
   const profileOverlay = document.getElementById('profileModal');
+  let avatarFileSelected = null;
+  let postPhotoFileSelected = null;
+  let currentUserProfile = null;
+
+  document.getElementById('avatarFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    avatarFileSelected = file || null;
+    if(file) document.getElementById('avatarPreview').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+  });
+  document.getElementById('postPhotoFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    postPhotoFileSelected = file || null;
+    if(file){
+      document.getElementById('postPhotoPreview').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+      document.getElementById('postPhotoLabel').textContent = file.name;
+    }
+  });
+
   async function openProfileModal(){
     document.getElementById('profileSub').textContent = 'Logado como ' + currentUser.email;
     document.getElementById('profileStatus').textContent = '';
     document.getElementById('profileStatus').className = 'modal-status';
+    document.getElementById('postStatus').textContent = '';
+    document.getElementById('postStatus').className = 'modal-status';
+    document.getElementById('passwordStatus').textContent = '';
+    document.getElementById('passwordStatus').className = 'modal-status';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newPasswordConfirm').value = '';
+    avatarFileSelected = null;
+    postPhotoFileSelected = null;
+    document.getElementById('avatarFile').value = '';
+    document.getElementById('postPhotoFile').value = '';
+    document.getElementById('postPhotoPreview').textContent = '📷';
+    document.getElementById('postPhotoLabel').textContent = 'Foto do post';
+    document.getElementById('postCaption').value = '';
+
     const { data } = await supa.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentUserProfile = data;
     document.getElementById('profileName').value = data?.full_name || '';
     document.getElementById('profileCity').value = data?.city || '';
     document.getElementById('profileCountry').value = data?.country || '';
+    document.getElementById('avatarPreview').innerHTML = data?.avatar_url ? `<img src="${safeUrl(data.avatar_url)}" alt="">` : '🙂';
+
+    const { data: pets } = await supa.from('pets').select('id,name').eq('owner_id', currentUser.id).order('created_at', { ascending:false });
+    const sel = document.getElementById('postPetSelect');
+    sel.innerHTML = (pets && pets.length)
+      ? pets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')
+      : '<option value="">Crie uma carteirinha primeiro</option>';
+
     profileOverlay.classList.add('open');
   }
   document.getElementById('closeProfileModal').onclick = ()=> profileOverlay.classList.remove('open');
@@ -1658,7 +1909,22 @@
     }
 
     submitBtn.disabled = true;
-    const { error } = await supa.from('profiles').update({ full_name, city, country }).eq('id', currentUser.id);
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+
+    let avatar_url = currentUserProfile?.avatar_url || null;
+    if(avatarFileSelected){
+      statusEl.textContent = 'Enviando foto…';
+      try{ avatar_url = await uploadToPetMedia(avatarFileSelected, 'avatar'); }
+      catch(err){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Não deu pra enviar a foto: ' + err.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    }
+
+    const { error } = await supa.from('profiles').update({ full_name, city, country, avatar_url }).eq('id', currentUser.id);
     submitBtn.disabled = false;
 
     if(error){
@@ -1666,8 +1932,89 @@
       statusEl.className = 'modal-status err';
       return;
     }
+    currentUserProfile = { ...currentUserProfile, full_name, city, country, avatar_url };
     statusEl.textContent = '✅ Perfil atualizado!';
     statusEl.className = 'modal-status ok';
+  });
+
+  document.getElementById('postSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('postStatus');
+    const submitBtn = document.getElementById('postSubmit');
+    const pet_id = document.getElementById('postPetSelect').value;
+
+    if(!pet_id){
+      statusEl.textContent = 'Crie a carteirinha de um pet antes de postar.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    if(!postPhotoFileSelected){
+      statusEl.textContent = 'Escolhe uma foto pro post.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Enviando…';
+    statusEl.className = 'modal-status';
+
+    let media_url;
+    try{ media_url = await uploadToPetMedia(postPhotoFileSelected, 'posts'); }
+    catch(err){
+      submitBtn.disabled = false;
+      statusEl.textContent = 'Não deu pra enviar a foto: ' + err.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    const caption = document.getElementById('postCaption').value.trim() || null;
+    const { error } = await supa.from('posts').insert({ pet_id, owner_id: currentUser.id, media_url, caption });
+    submitBtn.disabled = false;
+
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    statusEl.textContent = '✅ Publicado no feed!';
+    statusEl.className = 'modal-status ok';
+    document.getElementById('postCaption').value = '';
+    postPhotoFileSelected = null;
+    document.getElementById('postPhotoFile').value = '';
+    document.getElementById('postPhotoPreview').textContent = '📷';
+    document.getElementById('postPhotoLabel').textContent = 'Foto do post';
+    renderFeed(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+  });
+
+  document.getElementById('passwordSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('passwordStatus');
+    const submitBtn = document.getElementById('passwordSubmit');
+    const p1 = document.getElementById('newPassword').value;
+    const p2 = document.getElementById('newPasswordConfirm').value;
+
+    if(!p1 || p1.length < 6){
+      statusEl.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    if(p1 !== p2){
+      statusEl.textContent = 'As senhas não são iguais.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    const { error } = await supa.auth.updateUser({ password: p1 });
+    submitBtn.disabled = false;
+
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    statusEl.textContent = '✅ Senha atualizada!';
+    statusEl.className = 'modal-status ok';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newPasswordConfirm').value = '';
   });
 
   document.getElementById('profileCreatePet').onclick = ()=>{
