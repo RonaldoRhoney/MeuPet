@@ -486,6 +486,8 @@
   .modal-status{font-size:0.82rem; text-align:center; margin:10px 0 0; min-height:1.2em;}
   .modal-status.ok{color:var(--teal-light); font-weight:700;}
   .modal-status.err{color:var(--coral-dark); font-weight:700;}
+  .modal-toggle{font-size:0.82rem; text-align:center; margin:12px 0 0; color:#7C9492;}
+  .modal-toggle a{color:var(--teal); font-weight:700; cursor:pointer; text-decoration:underline;}
 
   /* ---------- FOOTER (padrão FinWise) ---------- */
   footer.site{
@@ -909,6 +911,7 @@
       <input type="password" placeholder="Senha" id="modalPassword">
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="modalSubmit">Entrar</button>
       <p class="modal-status" id="modalStatus"></p>
+      <p class="modal-toggle" id="modalToggle"></p>
       <p class="terms">Ao continuar, você aceita os <a href="/privacidade.html" style="color:var(--teal)">Termos de uso e Privacidade (LGPD)</a> do MeuPet.</p>
     </div>
   </div>
@@ -1388,6 +1391,10 @@
     document.getElementById('modalSubmit').textContent = mode === 'signup' ? 'Criar conta' : 'Entrar';
     document.getElementById('modalStatus').textContent = '';
     document.getElementById('modalStatus').className = 'modal-status';
+    document.getElementById('modalToggle').innerHTML = mode === 'signup'
+      ? 'Já tem carteirinha? <a id="modalToggleLink">Entrar</a>'
+      : 'Ainda não tem conta? <a id="modalToggleLink">Criar carteirinha</a>';
+    document.getElementById('modalToggleLink').onclick = ()=> openModal(mode === 'signup' ? 'login' : 'signup');
     overlay.classList.add('open');
   }
   document.getElementById('openLogin').onclick = ()=> openModal('login');
@@ -1430,17 +1437,33 @@
     statusEl.textContent = '';
     statusEl.className = 'modal-status';
 
-    const { data, error } = modalMode === 'signup'
+    let { data, error } = modalMode === 'signup'
       ? await supa.auth.signUp({ email, password })
       : await supa.auth.signInWithPassword({ email, password });
 
-    submitBtn.disabled = false;
-
-    if(error){
+    // "Criar conta" com um e-mail que já existe: a Supabase não avisa isso
+    // explicitamente por segurança (evita revelar quais e-mails têm conta) —
+    // ela devolve um "sucesso" fake com identities:[] vazio. Detectamos esse
+    // caso e tentamos logar direto com a senha que a pessoa acabou de digitar,
+    // em vez de deixar um "confira seu e-mail" confuso pra quem só errou o botão.
+    if(modalMode === 'signup' && !error && data.user && data.user.identities && data.user.identities.length === 0){
+      statusEl.textContent = 'Essa conta já existe — tentando entrar…';
+      statusEl.className = 'modal-status';
+      ({ data, error } = await supa.auth.signInWithPassword({ email, password }));
+      if(error){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Essa conta já existe. ' + (error.message === 'Invalid login credentials' ? 'Senha incorreta — tente "Entrar" com a senha certa.' : error.message);
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    } else if(error){
+      submitBtn.disabled = false;
       statusEl.textContent = error.message;
       statusEl.className = 'modal-status err';
       return;
     }
+
+    submitBtn.disabled = false;
 
     if(modalMode === 'signup' && !data.session){
       statusEl.textContent = '✅ Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
