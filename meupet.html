@@ -333,10 +333,11 @@
   .product-card .shop a{color:inherit; font-weight:600;}
   .product-card .shop a:hover{color:var(--coral-dark); text-decoration:underline;}
   .product-card .nearby-cta{
-    display:flex; align-items:center; gap:5px; font-size:0.7rem; color:var(--teal-light);
+    display:flex; flex-direction:column; gap:3px; font-size:0.7rem; color:var(--teal-light);
     margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-weight:600;
   }
-  .product-card .nearby-cta:hover{color:var(--coral-dark);}
+  .product-card .nearby-cta:hover .nearby-cta-title{color:var(--coral-dark);}
+  .product-card .nearby-cta-detail{font-weight:500; color:#7C9492;}
 
   /* ---------- PETSHOPS / GEO ---------- */
   .geo-panel{display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:stretch;}
@@ -357,6 +358,9 @@
   .geo-row:last-child{border-bottom:none;}
   .geo-row .name{font-weight:700; color:var(--teal);}
   .geo-row .meta{font-size:0.74rem; color:#7C9492;}
+  .geo-address{font-size:0.76rem; color:#5C7472; margin:2px 0;}
+  .geo-phone{font-size:0.76rem; color:var(--teal-light); font-weight:700; display:inline-block; margin-top:3px;}
+  .geo-phone:hover{color:var(--coral-dark);}
   .city-select{
     display:flex; gap:10px; align-items:center; margin-top:14px; font-size:0.82rem; color:#5C7472;
   }
@@ -1494,11 +1498,18 @@
     const data = await res.json();
     return (data.elements || [])
       .filter(el => el.lat != null && el.lon != null)
-      .map(el => ({
-        name: el.tags?.name || (el.tags?.amenity === 'veterinary' ? 'Veterinário' : 'Petshop'),
-        kind: el.tags?.amenity === 'veterinary' ? 'Veterinário' : 'Petshop',
-        lat: el.lat, lng: el.lon
-      }));
+      .map(el => {
+        const t = el.tags || {};
+        const addrParts = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(', ');
+        return {
+          name: t.name || (t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop'),
+          kind: t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop',
+          address: addrParts || t['addr:full'] || null,
+          phone: t.phone || t['contact:phone'] || null,
+          website: t.website || t['contact:website'] || null,
+          lat: el.lat, lng: el.lon,
+        };
+      });
   }
 
   // cache da última busca de petshops perto do usuário — reaproveitada pela
@@ -1531,8 +1542,8 @@
       const { data, error } = await supa.rpc('petshops_near', { p_lat: currentGeo.lat, p_lng: currentGeo.lng, p_radius_km: 15 });
       if(!error && data && data.length){
         items = data.map(p => ({
-          name:p.name,
-          meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}${p.address || ''} · ⭐ ${p.rating ?? '-'}`,
+          name:p.name, address: p.address || null, phone: p.phone || null,
+          meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}⭐ ${p.rating ?? '-'}`,
           lat:p.lat, lng:p.lng, isPartner: !!p.is_partner,
           rating: p.rating ?? null, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng)
         }));
@@ -1550,7 +1561,10 @@
             .map(p => ({ ...p, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng) }))
             .sort((a,b) => a.dist - b.dist)
             .slice(0, 8)
-            .map(p => ({ name:p.name, meta:`${p.kind} · ${p.dist.toFixed(1)} km`, lat:p.lat, lng:p.lng, rating:null, dist:p.dist }));
+            .map(p => ({
+              name:p.name, address:p.address, phone:p.phone, website:p.website,
+              meta:`${p.kind} · ${p.dist.toFixed(1)} km`, lat:p.lat, lng:p.lng, rating:null, dist:p.dist
+            }));
         }
       }catch(err){
         console.warn('MeuPet: Overpass/OSM indisponível, usando dados de demonstração.', err);
@@ -1559,12 +1573,17 @@
 
     // 3) último recurso: dados de demonstração (sem coordenadas)
     if(!items){
-      items = geoData.map(g => ({ name:g.name, meta:g.meta, lat:null, lng:null, rating:null, dist:null }));
+      items = geoData.map(g => ({ name:g.name, meta:g.meta, address:null, phone:null, lat:null, lng:null, rating:null, dist:null }));
     }
 
     list.innerHTML = items.map(p => `
       <div class="geo-row">
-        <div><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.meta)}</div></div>
+        <div>
+          <div class="name">${esc(p.name)}</div>
+          ${p.address ? `<div class="geo-address">📍 ${esc(p.address)}</div>` : ''}
+          <div class="meta">${esc(p.meta)}</div>
+          ${p.phone ? `<a class="geo-phone" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>` : ''}
+        </div>
         ${p.lat != null
           ? `<a class="icon-btn" href="${directionsUrl(p.lat, p.lng)}" target="_blank" rel="noopener" title="Como chegar">🧭</a>`
           : '<span class="icon-btn">→</span>'}
@@ -2638,8 +2657,12 @@
     // prioriza nota real quando existe, nunca inventa avaliação
     const nearby = bestNearbyPetshop();
     const nearbyCta = nearby
-      ? `<a class="nearby-cta" href="${directionsUrl(nearby.lat, nearby.lng)}" target="_blank" rel="noopener">🧭 Loja perto de você: ${esc(nearby.name)}${nearby.dist != null ? ' · ' + nearby.dist.toFixed(1) + ' km' : ''}</a>`
-      : `<a class="nearby-cta" href="#petshops">🧭 Ver petshops perto de você</a>`;
+      ? `<a class="nearby-cta" href="${directionsUrl(nearby.lat, nearby.lng)}" target="_blank" rel="noopener">
+           <span class="nearby-cta-title">🧭 Loja perto de você: ${esc(nearby.name)}${nearby.dist != null ? ' · ' + nearby.dist.toFixed(1) + ' km' : ''}</span>
+           ${nearby.address ? `<span class="nearby-cta-detail">📍 ${esc(nearby.address)}</span>` : ''}
+           ${nearby.phone ? `<span class="nearby-cta-detail">📞 ${esc(nearby.phone)}</span>` : ''}
+         </a>`
+      : `<a class="nearby-cta" href="#petshops"><span class="nearby-cta-title">🧭 Ver petshops perto de você</span></a>`;
 
     if(DB_READY){
       const { data, error } = await supa.from('products').select('*').limit(8);
@@ -2649,7 +2672,7 @@
         grid.innerHTML = sorted.map(m=>`
           <div class="product-card">
             ${m.is_sponsored ? '<span class="spons">Parceiro</span>' : ''}
-            <div class="media">🛍️</div>
+            <div class="media">${m.image_url ? `<img src="${safeUrl(m.image_url)}" alt="${esc(m.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : '🛍️'}</div>
             <h5>${esc(m.name)}</h5>
             <div class="price">R$ ${(m.price_cents/100).toFixed(2)}</div>
             <div class="shop"><a href="${safeUrl(m.affiliate_url)}" target="_blank" rel="sponsored noopener nofollow" data-affiliate="${esc(m.id)}">via ${esc(m.shop_name)} ↗</a></div>
