@@ -116,7 +116,14 @@
     nav.links.open{display:flex;}
     nav.links a{padding:10px 0; border-bottom:1px solid var(--line);}
     .burger{display:block;}
-    .nav-actions .btn-ghost{display:none;}
+    /* #openLogin também abre o Perfil quando logado — não pode sumir no
+       mobile, só fica mais compacto pra caber ao lado do burger */
+    .nav-actions .btn-ghost{padding:9px 12px; font-size:0.8rem; max-width:118px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .nav-actions .btn-primary{padding:9px 14px; font-size:0.8rem;}
+    .nav-actions{gap:6px;}
+  }
+  @media (max-width:420px){
+    .nav-actions .btn-primary{display:none;} /* "Criar carteirinha" some antes do "Entrar"/Perfil — mesmo pattern do hero-cta */
   }
 
   /* ---------- HERO ---------- */
@@ -241,7 +248,8 @@
   .section-head h2{font-size:clamp(1.6rem,2.6vw,2.2rem); color:var(--teal);}
   .section-head .kicker{font-family:'JetBrains Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--coral-dark); margin-bottom:6px; display:block;}
   .section-head p{color:#5C7472; max-width:480px; font-size:0.95rem;}
-  .pill-tabs{display:flex; gap:8px; background:white; border-radius:var(--radius-pill); padding:5px; border:1px solid var(--line);}
+  .pill-tabs{display:flex; gap:8px; background:white; border-radius:var(--radius-pill); padding:5px; border:1px solid var(--line); flex-wrap:wrap; max-width:100%;}
+  .species-tabs{width:fit-content; margin:0 0 20px;}
   .pill-tabs button{
     border:none; background:transparent; padding:8px 16px; border-radius:var(--radius-pill);
     font-weight:700; font-size:0.82rem; color:#6A8482;
@@ -266,13 +274,23 @@
   .pet-card .info{padding:16px 16px 18px;}
   .pet-card .info h4{font-family:'Fraunces', serif; font-size:1.05rem; margin-bottom:2px;}
   .pet-card .info .loc{font-size:0.76rem; color:#7C9492; margin-bottom:12px;}
-  .pet-card .actions{display:flex; justify-content:space-between; align-items:center;}
-  .like-btn{
-    display:flex; align-items:center; gap:6px; border:none; background:rgba(255,107,74,0.1);
-    color:var(--coral-dark); padding:7px 12px; border-radius:var(--radius-pill); font-weight:700; font-size:0.82rem;
+  .pet-card .actions{display:flex; align-items:center; gap:5px; flex-wrap:wrap;}
+  .reaction-btn{
+    border:none; background:rgba(255,107,74,0.08); padding:6px 9px; border-radius:var(--radius-pill);
+    font-size:0.92rem; line-height:1; transition:transform .15s ease, background .15s ease;
   }
-  .like-btn:active{transform:scale(0.95);}
+  .reaction-btn:hover{background:rgba(255,107,74,0.2);}
+  .reaction-btn:active{transform:scale(0.9);}
+  .reaction-count{font-size:0.8rem; font-weight:700; color:var(--coral-dark); margin-right:auto; white-space:nowrap;}
   .icon-btn{border:none; background:transparent; color:#7C9492; font-size:1rem;}
+  .follow-pet-btn{
+    position:absolute; top:10px; right:10px; border:none; background:rgba(255,255,255,0.92);
+    color:var(--teal); font-size:0.66rem; font-weight:700; padding:5px 10px; border-radius:var(--radius-pill); white-space:nowrap;
+  }
+  .follow-pet-btn.following{background:var(--teal); color:white;}
+  .owner-link{font-weight:700; color:var(--teal-light); cursor:pointer;}
+  .owner-link.following{color:var(--coral-dark); text-decoration:underline;}
+  .feed-empty{grid-column:1/-1; text-align:center; padding:40px 20px; color:#7C9492; font-size:0.9rem;}
 
   /* ---------- ADOPTION ---------- */
   .adopt-filters{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
@@ -429,6 +447,25 @@
     padding:8px 14px; font-size:0.84rem; font-weight:700; color:var(--ink); cursor:pointer;
   }
   .profile-pet-item:hover{border-color:var(--teal); color:var(--teal);}
+
+  .post-modal{max-height:88vh; overflow-y:auto;}
+  .comments-list{max-height:44vh; overflow-y:auto; margin:12px 0; padding-right:4px;}
+  .comment-node{margin-top:10px; max-width:100%;}
+  .comment-bubble{background:var(--cream); border-radius:14px; padding:9px 13px; display:inline-block; max-width:100%;}
+  .comment-bubble b{font-size:0.82rem; color:var(--teal); display:block;}
+  .comment-bubble p{font-size:0.86rem; color:var(--ink); margin:2px 0 0; word-break:break-word;}
+  .comment-meta{font-size:0.72rem; color:#8AA1A0; margin:4px 0 0 6px; display:flex; gap:10px;}
+  .comment-meta .reply-link{cursor:pointer; font-weight:700; color:var(--teal-light);}
+  .reply-box{margin:8px 0 0 6px; display:flex; flex-direction:column; gap:6px; max-width:100%;}
+  .reply-box textarea{
+    width:100%; border-radius:10px; border:1.5px solid var(--line); padding:8px 10px;
+    font-family:inherit; font-size:0.84rem; resize:vertical;
+  }
+  .comment-compose{display:flex; flex-direction:column; gap:8px; margin-top:14px;}
+  .comment-compose textarea{
+    width:100%; border-radius:12px; border:1.5px solid var(--line); padding:10px 12px;
+    font-family:inherit; font-size:0.88rem; resize:vertical;
+  }
   @media (max-width:720px){
     .partner-plans-grid{grid-template-columns:1fr;}
     .partner-form-grid{grid-template-columns:1fr;}
@@ -654,7 +691,14 @@
           <button class="active" data-scope="bairro">Bairro</button>
           <button data-scope="cidade">Cidade</button>
           <button data-scope="pais">País</button>
+          <button data-scope="seguindo">Seguindo</button>
         </div>
+      </div>
+      <div class="pill-tabs species-tabs" id="speciesTabs">
+        <button class="active" data-species="geral">Geral</button>
+        <button data-species="cao">🐶 Cães</button>
+        <button data-species="gato">🐱 Gatos</button>
+        <button data-species="outro">🐾 Outros</button>
       </div>
       <div class="feed-grid" id="feedGrid"></div>
     </div>
@@ -1020,6 +1064,22 @@
         <button class="btn btn-ghost" id="demoPrev">← Voltar</button>
         <button class="btn btn-primary" id="demoNext">Próximo →</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST + COMENTÁRIOS (aninhados) -->
+<div class="modal-overlay" id="postModal">
+  <div class="modal post-modal">
+    <button class="modal-close" id="closePostModal">✕</button>
+    <div class="modal-body">
+      <h3 id="postModalTitle">Post</h3>
+      <div class="comments-list" id="commentsList"></div>
+      <div class="comment-compose">
+        <textarea id="newCommentText" placeholder="Escreva um comentário..." rows="2"></textarea>
+        <button class="btn btn-primary" id="commentSubmit">Comentar</button>
+      </div>
+      <p class="modal-status" id="commentStatus"></p>
     </div>
   </div>
 </div>
@@ -1604,14 +1664,16 @@
     badge: document.getElementById('cartBadge').textContent,
   };
 
-  function updateAuthNav(user){
+  async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(user){
-      btn.textContent = user.email.length > 20 ? user.email.slice(0, 18) + '…' : user.email;
-      btn.title = 'Logado como ' + user.email + ' — clique pra ver seu perfil';
-      btn.onclick = ()=> openProfileModal();
-    }
+    if(!user) return;
+    const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
+    currentUserProfile = profile || currentUserProfile;
+    const label = profile?.full_name || user.email;
+    btn.textContent = label.length > 20 ? label.slice(0, 18) + '…' : label;
+    btn.title = 'Logado como ' + label + ' — clique pra ver seu perfil';
+    btn.onclick = ()=> openProfileModal();
   }
 
   // carrega TODOS os pets do tutor e reflete o primeiro na carteirinha do Hero
@@ -1957,6 +2019,114 @@
   });
 
   // =====================================================================
+  // POST + COMENTÁRIOS ANINHADOS (comentário -> resposta -> resposta da
+  // resposta, sem limite de profundidade — igual ao Facebook de verdade)
+  // =====================================================================
+  const postOverlay = document.getElementById('postModal');
+  let currentPostId = null;
+
+  function buildCommentTree(comments){
+    const byId = {};
+    comments.forEach(c => byId[c.id] = { ...c, children: [] });
+    const roots = [];
+    comments.forEach(c => {
+      if(c.parent_comment_id && byId[c.parent_comment_id]) byId[c.parent_comment_id].children.push(byId[c.id]);
+      else roots.push(byId[c.id]);
+    });
+    return roots;
+  }
+
+  function renderCommentNode(c, depth){
+    const name = c.profiles?.full_name || 'Tutor';
+    const indent = Math.min(depth, 6) * 18;
+    const when = new Date(c.created_at).toLocaleDateString('pt-BR');
+    return `
+      <div class="comment-node" style="margin-left:${indent}px">
+        <div class="comment-bubble">
+          <b>${esc(name)}</b>
+          <p>${esc(c.content)}</p>
+        </div>
+        <div class="comment-meta">
+          <span>${when}</span>
+          <a class="reply-link" data-comment-id="${esc(c.id)}">Responder</a>
+        </div>
+        <div class="reply-box" id="replyBox-${esc(c.id)}" style="display:none;">
+          <textarea rows="2" placeholder="Escreva uma resposta..."></textarea>
+          <button class="btn btn-ghost reply-submit" data-parent-id="${esc(c.id)}" style="align-self:flex-start; padding:8px 16px;">Responder</button>
+        </div>
+        ${c.children.map(child => renderCommentNode(child, depth + 1)).join('')}
+      </div>`;
+  }
+
+  async function loadComments(postId){
+    const list = document.getElementById('commentsList');
+    const { data, error } = await supa.from('comments').select('*, profiles(full_name)').eq('post_id', postId).order('created_at');
+    if(error || !data || !data.length){
+      list.innerHTML = '<p class="sub" style="margin:0;">Nenhum comentário ainda. Seja o primeiro!</p>';
+      return;
+    }
+    list.innerHTML = buildCommentTree(data).map(c => renderCommentNode(c, 0)).join('');
+  }
+
+  function openPostModal(postId, petName){
+    currentPostId = postId || null;
+    document.getElementById('postModalTitle').textContent = petName ? `Post de ${petName}` : 'Post';
+    document.getElementById('newCommentText').value = '';
+    document.getElementById('commentStatus').textContent = '';
+    document.getElementById('commentStatus').className = 'modal-status';
+    if(!currentPostId){
+      document.getElementById('commentsList').innerHTML = '<p class="sub" style="margin:0;">Esse pet ainda não tem nenhum post pra comentar.</p>';
+    } else if(DB_READY){
+      loadComments(currentPostId);
+    } else {
+      document.getElementById('commentsList').innerHTML = '<p class="sub" style="margin:0;">Comentários precisam do Supabase configurado.</p>';
+    }
+    postOverlay.classList.add('open');
+  }
+  document.getElementById('closePostModal').onclick = ()=> postOverlay.classList.remove('open');
+  postOverlay.addEventListener('click', e=>{ if(e.target === postOverlay) postOverlay.classList.remove('open'); });
+
+  document.getElementById('commentSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('commentStatus');
+    const content = document.getElementById('newCommentText').value.trim();
+    if(!currentPostId){ statusEl.textContent = 'Esse pet ainda não tem post pra comentar.'; statusEl.className = 'modal-status err'; return; }
+    if(!content){ statusEl.textContent = 'Escreve algo primeiro.'; statusEl.className = 'modal-status err'; return; }
+    if(!DB_READY){ statusEl.textContent = 'Supabase não configurado.'; statusEl.className = 'modal-status err'; return; }
+    const { data:{ user } } = await supa.auth.getUser();
+    if(!user){ openModal('login'); return; }
+    const { error } = await supa.from('comments').insert({ post_id: currentPostId, user_id: user.id, content });
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    document.getElementById('newCommentText').value = '';
+    statusEl.textContent = '';
+    loadComments(currentPostId);
+  });
+
+  document.getElementById('commentsList').addEventListener('click', async e=>{
+    const replyLink = e.target.closest('.reply-link');
+    if(replyLink){
+      const box = document.getElementById('replyBox-' + replyLink.dataset.commentId);
+      if(box) box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+      return;
+    }
+    const replySubmit = e.target.closest('.reply-submit');
+    if(replySubmit){
+      const parentId = replySubmit.dataset.parentId;
+      const box = document.getElementById('replyBox-' + parentId);
+      const textarea = box.querySelector('textarea');
+      const content = textarea.value.trim();
+      if(!content) return;
+      if(!DB_READY) return;
+      const { data:{ user } } = await supa.auth.getUser();
+      if(!user){ openModal('login'); return; }
+      replySubmit.disabled = true;
+      const { error } = await supa.from('comments').insert({ post_id: currentPostId, user_id: user.id, parent_comment_id: parentId, content });
+      replySubmit.disabled = false;
+      if(error){ console.warn('MeuPet: não deu pra responder', error.message); return; }
+      loadComments(currentPostId);
+    }
+  });
+
+  // =====================================================================
   // PERFIL DO TUTOR
   // =====================================================================
   const profileOverlay = document.getElementById('profileModal');
@@ -2159,52 +2329,112 @@
   // feed data
   const feedData = {
     bairro: [
-      {emoji:'🐶', name:'Toby', loc:'Marco, Belém', likes:'1.2k', rank:'#1'},
-      {emoji:'🐱', name:'Mimi', loc:'Pedreira, Belém', likes:'980', rank:'#2'},
-      {emoji:'🐰', name:'Fofuxo', loc:'Umarizal, Belém', likes:'740', rank:'#3'},
+      {emoji:'🐶', species:'cao', name:'Toby', loc:'Marco, Belém', likes:'1.2k', rank:'#1'},
+      {emoji:'🐱', species:'gato', name:'Mimi', loc:'Pedreira, Belém', likes:'980', rank:'#2'},
+      {emoji:'🐰', species:'outro', name:'Fofuxo', loc:'Umarizal, Belém', likes:'740', rank:'#3'},
     ],
     cidade: [
-      {emoji:'🐶', name:'Thor', loc:'Belém, PA', likes:'8.4k', rank:'#1'},
-      {emoji:'🦜', name:'Periquito', loc:'Belém, PA', likes:'6.1k', rank:'#2'},
-      {emoji:'🐱', name:'Luna', loc:'Belém, PA', likes:'5.7k', rank:'#3'},
+      {emoji:'🐶', species:'cao', name:'Thor', loc:'Belém, PA', likes:'8.4k', rank:'#1'},
+      {emoji:'🦜', species:'outro', name:'Periquito', loc:'Belém, PA', likes:'6.1k', rank:'#2'},
+      {emoji:'🐱', species:'gato', name:'Luna', loc:'Belém, PA', likes:'5.7k', rank:'#3'},
     ],
     pais: [
-      {emoji:'🐶', name:'Caramelo', loc:'Brasil', likes:'410k', rank:'#1'},
-      {emoji:'🐱', name:'Garfield Jr.', loc:'Brasil', likes:'388k', rank:'#2'},
-      {emoji:'🦎', name:'Iguana Bob', loc:'Brasil', likes:'301k', rank:'#3'},
+      {emoji:'🐶', species:'cao', name:'Caramelo', loc:'Brasil', likes:'410k', rank:'#1'},
+      {emoji:'🐱', species:'gato', name:'Garfield Jr.', loc:'Brasil', likes:'388k', rank:'#2'},
+      {emoji:'🦎', species:'outro', name:'Iguana Bob', loc:'Brasil', likes:'301k', rank:'#3'},
     ]
   };
+  let currentSpecies = 'geral';
+  const speciesLabelMap = { cao:'Cachorro', gato:'Gato', outro:'Outro' };
+
   async function renderFeed(scope){
     const grid = document.getElementById('feedGrid');
     if(DB_READY){
-      let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(6);
-      if(scope === 'cidade' && currentGeo.city) query = query.eq('city', currentGeo.city);
-      if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
-      const { data, error } = await query;
-      if(!error && data && data.length){
-        grid.innerHTML = data.map((p,i) => `
+      let items = null;
+
+      if(scope === 'seguindo'){
+        const { data:{ user } } = await supa.auth.getUser();
+        if(!user){ grid.innerHTML = '<div class="feed-empty">Entre na sua conta pra ver quem você segue.</div>'; return; }
+        const [{ data:pf }, { data:prf }] = await Promise.all([
+          supa.from('pet_follows').select('pet_id').eq('follower_id', user.id),
+          supa.from('profile_follows').select('followed_id').eq('follower_id', user.id),
+        ]);
+        const petIds = (pf || []).map(r => r.pet_id);
+        const ownerIds = (prf || []).map(r => r.followed_id);
+        if(!petIds.length && !ownerIds.length){
+          grid.innerHTML = '<div class="feed-empty">Você ainda não segue nenhum pet ou tutor — que tal começar agora?</div>';
+          return;
+        }
+        let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(24);
+        const orParts = [];
+        if(petIds.length) orParts.push(`id.in.(${petIds.join(',')})`);
+        if(ownerIds.length) orParts.push(`owner_id.in.(${ownerIds.join(',')})`);
+        query = query.or(orParts.join(','));
+        if(currentSpecies !== 'geral') query = query.eq('species', speciesLabelMap[currentSpecies]);
+        const { data, error } = await query;
+        if(!error) items = data;
+      } else {
+        let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(6);
+        if(scope === 'cidade' && currentGeo.city) query = query.eq('city', currentGeo.city);
+        if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
+        if(currentSpecies !== 'geral') query = query.eq('species', speciesLabelMap[currentSpecies]);
+        const { data, error } = await query;
+        if(!error) items = data;
+      }
+
+      if(items && items.length){
+        // pré-carrega, numa tacada só, o que o tutor logado já segue (pra marcar os bot��es certos)
+        const { data:{ user } } = await supa.auth.getUser();
+        let myPets = new Set(), myOwners = new Set();
+        if(user){
+          const ids = items.map(p => p.id), owners = items.map(p => p.owner_id);
+          const [{ data:pf }, { data:prf }] = await Promise.all([
+            supa.from('pet_follows').select('pet_id').eq('follower_id', user.id).in('pet_id', ids),
+            supa.from('profile_follows').select('followed_id').eq('follower_id', user.id).in('followed_id', owners),
+          ]);
+          myPets = new Set((pf || []).map(r => r.pet_id));
+          myOwners = new Set((prf || []).map(r => r.followed_id));
+        }
+
+        grid.innerHTML = items.map((p,i) => `
           <div class="pet-card">
-            <div class="media">🐾<span class="rank-chip">#${i+1} · Liga</span></div>
+            <div class="media">
+              ${p.photo_url ? `<img src="${safeUrl(p.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '🐾'}
+              <span class="rank-chip">#${i+1} · Liga</span>
+              <button class="follow-pet-btn ${myPets.has(p.id) ? 'following' : ''}" data-pet-id="${esc(p.id)}">${myPets.has(p.id) ? '✓ Seguindo' : '+ Seguir'}</button>
+            </div>
             <div class="info">
               <h4>${esc(p.name)}</h4>
-              <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''}</div>
+              <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''} · por <a class="owner-link ${myOwners.has(p.owner_id) ? 'following' : ''}" data-owner-id="${esc(p.owner_id)}">${esc(p.owner_name || 'tutor')}</a></div>
               <div class="actions">
-                <button class="like-btn" data-post="${esc(p.latest_post_id || '')}">❤ ${esc(p.rank_score)}</button>
+                <button class="reaction-btn" data-reaction="curtir" data-post="${esc(p.latest_post_id || '')}" title="Curtir">👍</button>
+                <button class="reaction-btn" data-reaction="amei" data-post="${esc(p.latest_post_id || '')}" title="Amei">❤️</button>
+                <span class="reaction-count">${esc(p.rank_score)}</span>
+                <button class="icon-btn comment-btn" data-post="${esc(p.latest_post_id || '')}" data-pet-name="${esc(p.name)}" title="Comentários">💬</button>
                 <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="Compartilhar" aria-label="Compartilhar ${esc(p.name)}">🐾</button>
               </div>
             </div>
           </div>`).join('');
         return;
       }
+      if(scope === 'seguindo') return; // mensagem de vazio já tratada acima
     }
-    grid.innerHTML = feedData[scope].map(p => `
+    const demoScope = feedData[scope] ? scope : 'bairro';
+    const demoSpeciesFilter = currentSpecies === 'geral' ? feedData[demoScope] : feedData[demoScope].filter(p => p.species === currentSpecies);
+    if(!demoSpeciesFilter.length){
+      grid.innerHTML = '<div class="feed-empty">Nenhum pet dessa espécie nesse recorte ainda.</div>';
+      return;
+    }
+    grid.innerHTML = demoSpeciesFilter.map(p => `
       <div class="pet-card">
         <div class="media">${p.emoji}<span class="rank-chip">${p.rank} · Liga</span></div>
         <div class="info">
           <h4>${p.name}</h4>
           <div class="loc">${p.loc}</div>
           <div class="actions">
-            <button class="like-btn">❤ ${p.likes}</button>
+            <button class="reaction-btn" data-reaction="curtir" title="Curtir">👍</button>
+            <button class="reaction-btn" data-reaction="amei" title="Amei">❤️</button>
+            <span class="reaction-count">${p.likes}</span>
             <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="Compartilhar" aria-label="Compartilhar ${esc(p.name)}">🐾</button>
           </div>
         </div>
@@ -2218,8 +2448,16 @@
       renderFeed(btn.dataset.scope);
     };
   });
+  document.querySelectorAll('#speciesTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#speciesTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSpecies = btn.dataset.species;
+      renderFeed(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+    };
+  });
 
-  // realtime: atualiza ranking sempre que alguém curte (qualquer cidade/país)
+  // realtime: atualiza ranking sempre que alguém reage (qualquer cidade/país)
   if(DB_READY){
     supa.channel('public:likes')
       .on('postgres_changes', { event:'*', schema:'public', table:'likes' }, () => {
@@ -2229,26 +2467,70 @@
       .subscribe();
   }
 
-  // like animation + persistência
+  // reações (curtir/amei) — upsert: 1 reação por pessoa por post, troca o tipo se clicar na outra
   document.addEventListener('click', async e=>{
-    if(e.target.closest('.like-btn')){
-      const b = e.target.closest('.like-btn');
-      if(b.disabled) return;
-      if(DB_READY && b.dataset.post){
+    const rBtn = e.target.closest('.reaction-btn');
+    if(rBtn){
+      if(rBtn.disabled) return;
+      if(DB_READY && rBtn.dataset.post){
         const { data:{ user } } = await supa.auth.getUser();
         if(!user){ openModal('login'); return; }
-        b.disabled = true;
-        const { error } = await supa.from('likes').insert({ post_id: b.dataset.post, user_id: user.id });
-        b.disabled = false;
-        if(error){
-          console.warn('MeuPet: não foi possível registrar a curtida (talvez já curtido):', error.message);
-          return;
-        }
+        rBtn.disabled = true;
+        const { error } = await supa.from('likes')
+          .upsert({ post_id: rBtn.dataset.post, user_id: user.id, reaction_type: rBtn.dataset.reaction }, { onConflict: 'post_id,user_id' });
+        rBtn.disabled = false;
+        if(error){ console.warn('MeuPet: não foi possível reagir', error.message); return; }
       }
-      let n = parseFloat(b.textContent.replace('❤','').replace('k','').trim());
-      b.innerHTML = `❤ ${(n+ (b.dataset.post ? 1 : 0.1)).toFixed(1)}${b.dataset.post ? '' : 'k'}`;
-      b.style.background = 'rgba(255,107,74,0.25)';
-      setTimeout(()=> b.style.background = 'rgba(255,107,74,0.1)', 250);
+      const countEl = rBtn.parentElement.querySelector('.reaction-count');
+      if(countEl && !rBtn.dataset.post){
+        let n = parseFloat(countEl.textContent.replace('k','').trim());
+        countEl.textContent = (n + 0.1).toFixed(1) + 'k';
+      }
+      rBtn.style.transform = 'scale(1.3)';
+      setTimeout(()=> rBtn.style.transform = 'scale(1)', 150);
+      return;
+    }
+
+    // seguir/deixar de seguir um pet
+    const followPetBtn = e.target.closest('.follow-pet-btn');
+    if(followPetBtn){
+      if(!DB_READY) return;
+      const { data:{ user } } = await supa.auth.getUser();
+      if(!user){ openModal('login'); return; }
+      const petId = followPetBtn.dataset.petId;
+      const isFollowing = followPetBtn.classList.contains('following');
+      followPetBtn.disabled = true;
+      const { error } = isFollowing
+        ? await supa.from('pet_follows').delete().eq('follower_id', user.id).eq('pet_id', petId)
+        : await supa.from('pet_follows').insert({ follower_id: user.id, pet_id: petId });
+      followPetBtn.disabled = false;
+      if(error){ console.warn('MeuPet: não foi possível seguir/deixar de seguir o pet', error.message); return; }
+      followPetBtn.classList.toggle('following');
+      followPetBtn.textContent = isFollowing ? '+ Seguir' : '✓ Seguindo';
+      return;
+    }
+
+    // seguir/deixar de seguir um tutor (clique no nome dele no card)
+    const ownerLink = e.target.closest('.owner-link');
+    if(ownerLink){
+      if(!DB_READY) return;
+      const { data:{ user } } = await supa.auth.getUser();
+      if(!user){ openModal('login'); return; }
+      const ownerId = ownerLink.dataset.ownerId;
+      if(ownerId === user.id) return; // não segue a si mesmo
+      const isFollowing = ownerLink.classList.contains('following');
+      const { error } = isFollowing
+        ? await supa.from('profile_follows').delete().eq('follower_id', user.id).eq('followed_id', ownerId)
+        : await supa.from('profile_follows').insert({ follower_id: user.id, followed_id: ownerId });
+      if(error){ console.warn('MeuPet: não foi possível seguir/deixar de seguir o tutor', error.message); return; }
+      ownerLink.classList.toggle('following');
+      return;
+    }
+
+    // abre o post (comentários)
+    const commentBtn = e.target.closest('.comment-btn');
+    if(commentBtn && commentBtn.dataset.post){
+      openPostModal(commentBtn.dataset.post, commentBtn.dataset.petName);
     }
   });
 

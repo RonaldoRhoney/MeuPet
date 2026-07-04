@@ -129,8 +129,9 @@ create table public.likes (
   id uuid primary key default uuid_generate_v4(),
   post_id uuid not null references public.posts(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
+  reaction_type text not null default 'curtir' check (reaction_type in ('curtir','amei')),
   created_at timestamptz not null default now(),
-  unique (post_id, user_id)
+  unique (post_id, user_id) -- 1 reação por pessoa por post (troca o tipo, não duplica)
 );
 
 create index idx_likes_post on public.likes(post_id);
@@ -158,11 +159,65 @@ create trigger trg_likes_recalc
 -- expõe latest_post_id porque "likes" referencia posts(id), não pets(id) —
 -- o app precisa desse id para saber em qual post registrar a curtida
 create or replace view public.pet_rankings as
-  select p.id, p.name, p.photo_url, p.city, p.country, p.rank_score,
+  select p.id, p.name, p.photo_url, p.city, p.country, p.rank_score, p.species, p.owner_id,
+         pr.full_name as owner_name,
          (select po.id from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_id,
          rank() over (partition by p.city order by p.rank_score desc) as rank_city,
          rank() over (partition by p.country order by p.rank_score desc) as rank_country
-  from public.pets p;
+  from public.pets p
+  join public.profiles pr on pr.id = p.owner_id;
+
+-- ---------------------------------------------------------------------
+-- 5b. COMMENTS (aninhados — comentário e resposta a resposta, tipo Facebook)
+-- ---------------------------------------------------------------------
+create table public.comments (
+  id uuid primary key default uuid_generate_v4(),
+  post_id uuid not null references public.posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  parent_comment_id uuid references public.comments(id) on delete cascade,
+  content text not null check (char_length(content) > 0 and char_length(content) <= 2000),
+  created_at timestamptz not null default now()
+);
+create index idx_comments_post on public.comments(post_id);
+create index idx_comments_parent on public.comments(parent_comment_id);
+
+-- trava parent_comment_id pra só apontar pra comentário do MESMO post — sem
+-- isso, a policy de insert (só valida user_id) deixaria criar uma resposta
+-- "filha" de um comentário de outro post, gerando uma linha órfã/inconsistente
+create or replace function public.check_comment_same_post()
+returns trigger language plpgsql as $$
+declare parent_post uuid;
+begin
+  if new.parent_comment_id is not null then
+    select post_id into parent_post from public.comments where id = new.parent_comment_id;
+    if parent_post is null or parent_post <> new.post_id then
+      raise exception 'parent_comment_id deve pertencer ao mesmo post_id';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_comments_same_post
+  before insert or update on public.comments
+  for each row execute procedure public.check_comment_same_post();
+
+-- ---------------------------------------------------------------------
+-- 5c. FOLLOWS (seguir pet e/ou seguir tutor — os dois, independentes)
+-- ---------------------------------------------------------------------
+create table public.pet_follows (
+  follower_id uuid not null references public.profiles(id) on delete cascade,
+  pet_id uuid not null references public.pets(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, pet_id)
+);
+create table public.profile_follows (
+  follower_id uuid not null references public.profiles(id) on delete cascade,
+  followed_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, followed_id),
+  check (follower_id <> followed_id)
+);
 
 -- ---------------------------------------------------------------------
 -- 6. ADOPTION_LISTINGS
@@ -368,6 +423,9 @@ alter table public.pets enable row level security;
 alter table public.breeds enable row level security;
 alter table public.posts enable row level security;
 alter table public.likes enable row level security;
+alter table public.comments enable row level security;
+alter table public.pet_follows enable row level security;
+alter table public.profile_follows enable row level security;
 alter table public.adoption_listings enable row level security;
 alter table public.petshops enable row level security;
 alter table public.products enable row level security;
@@ -406,10 +464,28 @@ create policy "posts_insert_own" on public.posts for insert with check (
 );
 create policy "posts_delete_own" on public.posts for delete using (auth.uid() = owner_id or public.is_admin());
 
--- LIKES: leitura pública, qualquer autenticado curte/descurte só por si
+-- LIKES: leitura pública, qualquer autenticado curte/descurte só por si.
+-- update_own existe pra trocar o tipo de reação (curtir <-> amei) sem duplicar linha
 create policy "likes_select_public" on public.likes for select using (true);
 create policy "likes_insert_own" on public.likes for insert with check (auth.uid() = user_id);
+create policy "likes_update_own" on public.likes for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "likes_delete_own" on public.likes for delete using (auth.uid() = user_id);
+
+-- COMMENTS: leitura pública, escrita/edição/remoção só de quem comentou (ou admin)
+create policy "comments_select_public" on public.comments for select using (true);
+create policy "comments_insert_own" on public.comments for insert with check (auth.uid() = user_id);
+create policy "comments_update_own" on public.comments for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "comments_delete_own" on public.comments for delete using (auth.uid() = user_id or public.is_admin());
+
+-- PET_FOLLOWS / PROFILE_FOLLOWS: leitura pública (contagem de seguidores),
+-- só o próprio seguidor cria/remove o próprio follow
+create policy "pet_follows_select_public" on public.pet_follows for select using (true);
+create policy "pet_follows_insert_own" on public.pet_follows for insert with check (auth.uid() = follower_id);
+create policy "pet_follows_delete_own" on public.pet_follows for delete using (auth.uid() = follower_id);
+
+create policy "profile_follows_select_public" on public.profile_follows for select using (true);
+create policy "profile_follows_insert_own" on public.profile_follows for insert with check (auth.uid() = follower_id);
+create policy "profile_follows_delete_own" on public.profile_follows for delete using (auth.uid() = follower_id);
 
 -- ADOPTION_LISTINGS: leitura pública, escrita de quem criou
 create policy "adoption_select_public" on public.adoption_listings for select using (true);
