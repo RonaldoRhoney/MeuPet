@@ -148,7 +148,26 @@
   .hero h1{font-size:clamp(2.3rem, 4.2vw, 3.6rem); line-height:1.05; color:var(--teal);}
   .hero h1 em{font-style:italic; color:var(--coral-dark);}
   .hero p.lead{font-size:1.08rem; color:#3C5453; max-width:480px; margin:18px 0 28px; line-height:1.55;}
-  .hero-cta{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:28px;}
+  .hero-cta{display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom:28px;}
+  .btn-share-app{
+    width:46px; height:46px; border-radius:50%; border:1.5px solid var(--line); background:white;
+    color:var(--teal); font-size:1.15rem; display:grid; place-items:center; flex-shrink:0;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .btn-share-app:hover{border-color:var(--teal); transform:translateY(-2px);}
+  .btn-share-app:active{transform:scale(0.95);}
+
+  /* ---------- MENU DE COMPARTILHAMENTO (fallback sem Web Share API) ---------- */
+  .share-menu{
+    position:fixed; z-index:200; background:var(--paper); border:1px solid var(--line); border-radius:16px;
+    box-shadow:0 20px 40px -16px rgba(0,0,0,0.35); padding:8px; display:none; min-width:200px;
+  }
+  .share-menu.open{display:block;}
+  .share-menu button{
+    display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:none; background:none;
+    border-radius:10px; font-size:0.86rem; font-weight:600; color:var(--ink); text-align:left; cursor:pointer;
+  }
+  .share-menu button:hover{background:rgba(15,61,62,0.06);}
   .hero-stats{display:flex; gap:28px; flex-wrap:wrap;}
   .stat b{display:block; font-family:'Fraunces', serif; font-size:1.5rem; color:var(--teal);}
   .stat span{font-size:0.78rem; color:#6A8482; font-weight:600;}
@@ -535,6 +554,7 @@
         <div class="hero-cta">
           <button class="btn btn-primary" id="heroCta">Criar carteirinha grátis</button>
           <button class="btn btn-ghost">Ver como funciona</button>
+          <button class="btn-share-app" data-share="app" title="Compartilhar o MeuPet" aria-label="Compartilhar o MeuPet">↗</button>
         </div>
         <div class="hero-stats">
           <div class="stat"><b id="statPets">128.4k</b><span>pets cadastrados</span></div>
@@ -927,6 +947,128 @@
   }
 
   // =====================================================================
+  // COMPARTILHAMENTO — usa a Web Share API nativa quando disponível (no
+  // celular, o próprio sistema mostra Instagram/WhatsApp/Facebook e tudo
+  // mais que estiver instalado, num toque só). Sem suporte (a maioria dos
+  // navegadores desktop), cai num menu próprio com links diretos — o
+  // Instagram não tem URL pública de compartilhamento (mesma limitação que
+  // qualquer site enfrenta), então nesse caso copiamos o texto pro usuário
+  // colar no story/post, prática comum (Linktree etc. fazem o mesmo).
+  // =====================================================================
+  function appUrl(hash){
+    return window.location.origin + window.location.pathname + (hash ? '#' + hash : '');
+  }
+
+  function buildShareMenu(){
+    let menu = document.getElementById('shareMenu');
+    if(menu) return menu;
+    menu = document.createElement('div');
+    menu.className = 'share-menu';
+    menu.id = 'shareMenu';
+    menu.innerHTML = `
+      <button data-action="whatsapp">🟢 WhatsApp</button>
+      <button data-action="facebook">🔵 Facebook</button>
+      <button data-action="instagram">🟣 Instagram</button>
+      <button data-action="twitter">⬛ X (Twitter)</button>
+      <button data-action="copy">🔗 Copiar link</button>
+    `;
+    document.body.appendChild(menu);
+    return menu;
+  }
+
+  let shareMenuPayload = null;
+  function openShareMenu(anchorEl, payload){
+    const menu = buildShareMenu();
+    shareMenuPayload = payload;
+    menu.querySelectorAll('button[data-action]').forEach(b=>{
+      b.textContent = { whatsapp:'🟢 WhatsApp', facebook:'🔵 Facebook', instagram:'🟣 Instagram', twitter:'⬛ X (Twitter)', copy:'🔗 Copiar link' }[b.dataset.action];
+    });
+    const r = anchorEl.getBoundingClientRect();
+    menu.classList.add('open');
+    menu.style.top = Math.min(r.bottom + 8, window.innerHeight - menu.offsetHeight - 12) + 'px';
+    menu.style.left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 12) + 'px';
+  }
+  function closeShareMenu(){
+    document.getElementById('shareMenu')?.classList.remove('open');
+  }
+
+  async function shareContent(payload, anchorEl){
+    if(navigator.share){
+      try{ await navigator.share(payload); }
+      catch(err){ if(err.name !== 'AbortError') console.warn('MeuPet: compartilhamento cancelado/falhou', err); }
+      return;
+    }
+    openShareMenu(anchorEl, payload);
+  }
+
+  document.addEventListener('click', e=>{
+    const shareTrigger = e.target.closest('[data-share]');
+    if(shareTrigger){
+      if(shareTrigger.dataset.share === 'app'){
+        shareContent({
+          title: 'MeuPet',
+          text: 'Conheci o MeuPet — a carteirinha digital do seu pet! Feed, ranking, adoção e petshops perto de você 🐾',
+          url: appUrl()
+        }, shareTrigger);
+      } else if(shareTrigger.dataset.share === 'pet'){
+        const name = shareTrigger.dataset.petName || 'Meu pet';
+        shareContent({
+          title: 'MeuPet',
+          text: `Olha o(a) ${name} bombando no MeuPet! 🐾 Vem curtir e criar a carteirinha do seu pet também:`,
+          url: appUrl('feed')
+        }, shareTrigger);
+      }
+      return;
+    }
+
+    const actionBtn = e.target.closest('#shareMenu button[data-action]');
+    if(actionBtn){
+      const { text, url } = shareMenuPayload || {};
+      const fullText = [text, url].filter(Boolean).join(' ');
+      const action = actionBtn.dataset.action;
+      if(action === 'copy' || action === 'instagram'){
+        // Instagram não tem nenhuma URL pública que aceite conteúdo
+        // pré-preenchido vindo de um site externo (diferente de WhatsApp/
+        // Facebook/Twitter) — restrição da própria plataforma. O mais perto
+        // de "ir direto pro feed" que existe de verdade é abrir o Instagram
+        // numa aba nova e copiar o texto pra pessoa colar lá.
+        //
+        // window.open precisa disparar SÍNCRONO dentro do clique — se
+        // esperasse a Promise do clipboard (que pode nunca resolver, ex:
+        // prompt de permissão ignorado), o navegador barraria o popup por
+        // não reconhecer mais como ação direta do usuário.
+        if(action === 'instagram') window.open('https://www.instagram.com/', '_blank', 'noopener');
+
+        const copyPromise = navigator.clipboard?.writeText(fullText) ?? Promise.reject(new Error('Clipboard API indisponível'));
+        copyPromise
+          .then(()=>{
+            actionBtn.textContent = action === 'copy' ? '✅ Link copiado!' : '✅ Copiado! Cole no Instagram';
+          })
+          .catch(err=>{
+            console.warn('MeuPet: não foi possível copiar automaticamente', err);
+            actionBtn.textContent = action === 'copy'
+              ? '⚠️ Não deu pra copiar — selecione o link manualmente'
+              : '⚠️ Instagram aberto — copie o link manualmente pra colar';
+          })
+          .finally(()=> setTimeout(closeShareMenu, 1400));
+        return;
+      }
+      const links = {
+        whatsapp: `https://wa.me/?text=${encodeURIComponent(fullText)}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url || appUrl())}`,
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text || '')}&url=${encodeURIComponent(url || appUrl())}`,
+      };
+      window.open(links[action], '_blank', 'noopener,width=600,height=520');
+      closeShareMenu();
+      return;
+    }
+
+    if(!e.target.closest('.share-menu')) closeShareMenu();
+  });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeShareMenu(); });
+  window.addEventListener('scroll', closeShareMenu, { passive:true, capture:true });
+
+  // =====================================================================
   // MONETIZAÇÃO — telemetria real de anúncios/afiliados (tabela ad_impressions
   // já existia no schema mas nunca era usada). Sem banco conectado, os
   // registros só ficam no console — nenhuma função quebra.
@@ -1280,7 +1422,7 @@
               <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''}</div>
               <div class="actions">
                 <button class="like-btn" data-post="${esc(p.latest_post_id || '')}">❤ ${esc(p.rank_score)}</button>
-                <button class="icon-btn">↗ compartilhar</button>
+                <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="Compartilhar" aria-label="Compartilhar ${esc(p.name)}">🐾</button>
               </div>
             </div>
           </div>`).join('');
@@ -1295,7 +1437,7 @@
           <div class="loc">${p.loc}</div>
           <div class="actions">
             <button class="like-btn">❤ ${p.likes}</button>
-            <button class="icon-btn">↗ compartilhar</button>
+            <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="Compartilhar" aria-label="Compartilhar ${esc(p.name)}">🐾</button>
           </div>
         </div>
       </div>`).join('');
