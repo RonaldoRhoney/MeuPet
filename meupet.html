@@ -483,6 +483,9 @@
   }
   .modal-body input:focus{border-color:var(--teal);}
   .modal-body .terms{font-size:0.7rem; color:#8AA1A0; margin-top:14px; text-align:center; line-height:1.5;}
+  .modal-status{font-size:0.82rem; text-align:center; margin:10px 0 0; min-height:1.2em;}
+  .modal-status.ok{color:var(--teal-light); font-weight:700;}
+  .modal-status.err{color:var(--coral-dark); font-weight:700;}
 
   /* ---------- FOOTER (padrão FinWise) ---------- */
   footer.site{
@@ -905,6 +908,7 @@
       <input type="email" placeholder="seu@email.com" id="modalEmail">
       <input type="password" placeholder="Senha" id="modalPassword">
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="modalSubmit">Entrar</button>
+      <p class="modal-status" id="modalStatus"></p>
       <p class="terms">Ao continuar, você aceita os <a href="/privacidade.html" style="color:var(--teal)">Termos de uso e Privacidade (LGPD)</a> do MeuPet.</p>
     </div>
   </div>
@@ -1376,16 +1380,79 @@
 
   // login modal
   const overlay = document.getElementById('loginModal');
+  let modalMode = 'login';
   function openModal(mode){
+    modalMode = mode;
     document.getElementById('modalTitle').textContent = mode === 'signup' ? 'Crie a carteirinha do seu pet' : 'Bem-vindo de volta';
     document.getElementById('modalSub').textContent = mode === 'signup' ? 'Cadastre-se em segundos e ganhe sua carteirinha digital.' : 'Entre para acessar a carteirinha do seu pet.';
     document.getElementById('modalSubmit').textContent = mode === 'signup' ? 'Criar conta' : 'Entrar';
+    document.getElementById('modalStatus').textContent = '';
+    document.getElementById('modalStatus').className = 'modal-status';
     overlay.classList.add('open');
   }
   document.getElementById('openLogin').onclick = ()=> openModal('login');
   document.getElementById('openSignup').onclick = ()=> openModal('signup');
   document.getElementById('heroCta').onclick = ()=> openModal('signup');
   document.getElementById('closeModal').onclick = ()=> overlay.classList.remove('open');
+
+  // e-mail/senha via Supabase Auth — antes só os botões sociais funcionavam,
+  // o botão de e-mail/senha não tinha nenhum handler (clicar não fazia nada)
+  function updateAuthNav(user){
+    const btn = document.getElementById('openLogin');
+    if(user){
+      btn.textContent = user.email.length > 20 ? user.email.slice(0, 18) + '…' : user.email;
+      btn.title = 'Logado como ' + user.email + ' — clique para sair';
+      btn.onclick = async ()=>{ await supa.auth.signOut(); location.reload(); };
+    }
+  }
+  if(DB_READY){
+    supa.auth.getUser().then(({ data }) => { if(data?.user) updateAuthNav(data.user); });
+  }
+
+  document.getElementById('modalSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('modalStatus');
+    const submitBtn = document.getElementById('modalSubmit');
+    const email = document.getElementById('modalEmail').value.trim();
+    const password = document.getElementById('modalPassword').value;
+
+    if(!DB_READY){
+      statusEl.textContent = 'Supabase não configurado ainda — login por e-mail indisponível.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    if(!email || !password){
+      statusEl.textContent = 'Preencha e-mail e senha.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+
+    const { data, error } = modalMode === 'signup'
+      ? await supa.auth.signUp({ email, password })
+      : await supa.auth.signInWithPassword({ email, password });
+
+    submitBtn.disabled = false;
+
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    if(modalMode === 'signup' && !data.session){
+      statusEl.textContent = '✅ Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
+      statusEl.className = 'modal-status ok';
+      return;
+    }
+
+    statusEl.textContent = '✅ Tudo certo! Entrando…';
+    statusEl.className = 'modal-status ok';
+    if(data.user) updateAuthNav(data.user);
+    setTimeout(()=> overlay.classList.remove('open'), 900);
+  });
   overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.classList.remove('open'); });
 
   // feed data
