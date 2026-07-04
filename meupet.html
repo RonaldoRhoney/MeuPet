@@ -173,7 +173,18 @@
   .stat span{font-size:0.78rem; color:#6A8482; font-weight:600;}
 
   /* Carteirinha — signature element */
-  .carteirinha-stage{position:relative; display:flex; justify-content:center;}
+  .carteirinha-stage{position:relative; display:flex; justify-content:center; align-items:center; gap:6px;}
+  .carteirinha.editable{cursor:pointer;}
+  .carteirinha.editable:hover{transform:rotate(0deg) translateY(-6px) scale(1.01);}
+  .cart-nav{
+    width:36px; height:36px; border-radius:50%; border:1.5px solid var(--line); background:white;
+    color:var(--teal); font-size:1.3rem; line-height:1; flex-shrink:0; z-index:3;
+    display:grid; place-items:center; transition:transform .15s ease, border-color .15s ease;
+  }
+  .cart-nav:hover{border-color:var(--teal); transform:translateY(-2px);}
+  .cart-dots{position:absolute; bottom:10px; left:0; right:0; display:flex; gap:5px; justify-content:center;}
+  .cart-dots span{width:6px; height:6px; border-radius:50%; background:rgba(255,248,240,0.3);}
+  .cart-dots span.active{background:var(--mustard);}
   .carteirinha{
     width:340px; border-radius:24px;
     background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
@@ -412,6 +423,12 @@
   .profile-modal{max-height:88vh; overflow-y:auto;}
   .profile-section{border-top:1px solid var(--line); margin-top:16px; padding-top:16px;}
   .profile-section h4{font-family:'Fraunces',serif; font-size:1rem; color:var(--teal); margin-bottom:10px;}
+  .profile-pets-list{display:flex; flex-wrap:wrap; gap:8px;}
+  .profile-pet-item{
+    border:1.5px solid var(--line); background:white; border-radius:var(--radius-pill);
+    padding:8px 14px; font-size:0.84rem; font-weight:700; color:var(--ink); cursor:pointer;
+  }
+  .profile-pet-item:hover{border-color:var(--teal); color:var(--teal);}
   @media (max-width:720px){
     .partner-plans-grid{grid-template-columns:1fr;}
     .partner-form-grid{grid-template-columns:1fr;}
@@ -594,7 +611,8 @@
         </div>
       </div>
       <div class="carteirinha-stage">
-        <div class="carteirinha">
+        <button class="cart-nav prev" id="cartPrev" aria-label="Pet anterior" style="display:none;">‹</button>
+        <div class="carteirinha" id="carteirinhaCard" tabindex="0" role="button" aria-label="Editar carteirinha">
           <div class="carteirinha-top">
             <span class="tag">Carteirinha MeuPet</span>
             <span class="stamp" id="cartLiga">Liga Ouro</span>
@@ -609,7 +627,9 @@
             <span class="fill"></span><span class="fill"></span><span class="fill"></span><span></span><span></span>
           </div>
           <div class="badge-float" id="cartBadge">🏆 Top 3 em Belém</div>
+          <div class="cart-dots" id="cartDots" style="display:none;"></div>
         </div>
+        <button class="cart-nav next" id="cartNext" aria-label="Próximo pet" style="display:none;">›</button>
       </div>
     </div>
   </section>
@@ -949,7 +969,7 @@
   <div class="modal">
     <button class="modal-close" id="closePetModal">✕</button>
     <div class="modal-body">
-      <h3>Criar a carteirinha do seu pet</h3>
+      <h3 id="petModalTitle">Criar a carteirinha do seu pet</h3>
       <p class="sub">Leva menos de um minuto — dá pra editar depois.</p>
 
       <input type="text" placeholder="Nome do pet" id="petName">
@@ -982,6 +1002,7 @@
 
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="petSubmit">Criar carteirinha</button>
       <p class="modal-status" id="petStatus"></p>
+      <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark); display:none;" id="petDeleteBtn">🗑️ Excluir carteirinha</button>
     </div>
   </div>
 </div>
@@ -1023,6 +1044,11 @@
 
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="profileSubmit">Salvar perfil</button>
       <p class="modal-status" id="profileStatus"></p>
+
+      <div class="profile-section">
+        <h4>Seus pets</h4>
+        <div class="profile-pets-list" id="profilePetsList"></div>
+      </div>
 
       <div class="profile-section">
         <h4>Postar no feed</h4>
@@ -1565,7 +1591,18 @@
   // e-mail/senha via Supabase Auth — antes só os botões sociais funcionavam,
   // o botão de e-mail/senha não tinha nenhum handler (clicar não fazia nada)
   let currentUser = null;
-  let currentUserPet = null;
+  let currentUserPets = []; // todos os pets do tutor logado, mais recente primeiro
+  let cartIndex = 0; // qual pet está em destaque no carrossel do Hero
+
+  // valores originais do HTML (demo) — restaurados se o tutor excluir o último pet
+  const demoCartDefaults = {
+    liga: document.getElementById('cartLiga').textContent,
+    photo: document.getElementById('cartPhoto').innerHTML,
+    name: document.getElementById('cartName').textContent,
+    meta: document.getElementById('cartMeta').textContent,
+    id: document.getElementById('cartId').textContent,
+    badge: document.getElementById('cartBadge').textContent,
+  };
 
   function updateAuthNav(user){
     currentUser = user;
@@ -1577,12 +1614,14 @@
     }
   }
 
-  // carrega perfil + primeiro pet do usuário e reflete na carteirinha do Hero
+  // carrega TODOS os pets do tutor e reflete o primeiro na carteirinha do Hero
   async function loadOwnPetAndRenderCard(){
     if(!currentUser) return;
-    const { data } = await supa.from('pets').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending:false }).limit(1);
-    currentUserPet = data && data[0] ? data[0] : null;
-    if(currentUserPet) renderCarteirinha(currentUserPet);
+    const { data } = await supa.from('pets').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending:false });
+    currentUserPets = data || [];
+    cartIndex = 0;
+    if(currentUserPets.length) renderCarteirinhaAt(cartIndex);
+    updateCartNav();
   }
 
   function renderCarteirinha(pet){
@@ -1600,6 +1639,49 @@
     document.getElementById('cartLiga').textContent = 'Novo por aqui';
     document.getElementById('cartBadge').textContent = '🎉 Carteirinha criada!';
   }
+
+  function resetCarteirinhaToDemo(){
+    document.getElementById('cartLiga').textContent = demoCartDefaults.liga;
+    document.getElementById('cartPhoto').innerHTML = demoCartDefaults.photo;
+    document.getElementById('cartName').textContent = demoCartDefaults.name;
+    document.getElementById('cartMeta').textContent = demoCartDefaults.meta;
+    document.getElementById('cartId').textContent = demoCartDefaults.id;
+    document.getElementById('cartBadge').textContent = demoCartDefaults.badge;
+  }
+
+  function renderCarteirinhaAt(i){
+    renderCarteirinha(currentUserPets[i]);
+    updateCartNav();
+  }
+
+  function updateCartNav(){
+    const has = currentUserPets.length > 1;
+    document.getElementById('cartPrev').style.display = has ? 'grid' : 'none';
+    document.getElementById('cartNext').style.display = has ? 'grid' : 'none';
+    const dots = document.getElementById('cartDots');
+    dots.style.display = has ? 'flex' : 'none';
+    if(has) dots.innerHTML = currentUserPets.map((_,i)=>`<span class="${i === cartIndex ? 'active' : ''}"></span>`).join('');
+    document.getElementById('carteirinhaCard').classList.toggle('editable', currentUserPets.length > 0);
+  }
+
+  document.getElementById('cartPrev').onclick = e=>{
+    e.stopPropagation();
+    if(!currentUserPets.length) return;
+    cartIndex = (cartIndex - 1 + currentUserPets.length) % currentUserPets.length;
+    renderCarteirinhaAt(cartIndex);
+  };
+  document.getElementById('cartNext').onclick = e=>{
+    e.stopPropagation();
+    if(!currentUserPets.length) return;
+    cartIndex = (cartIndex + 1) % currentUserPets.length;
+    renderCarteirinhaAt(cartIndex);
+  };
+  document.getElementById('carteirinhaCard').addEventListener('click', ()=>{
+    if(currentUserPets.length) openPetModal(currentUserPets[cartIndex]);
+  });
+  document.getElementById('carteirinhaCard').addEventListener('keydown', e=>{
+    if((e.key === 'Enter' || e.key === ' ') && currentUserPets.length){ e.preventDefault(); openPetModal(currentUserPets[cartIndex]); }
+  });
 
   if(DB_READY){
     supa.auth.getUser().then(({ data }) => {
@@ -1740,23 +1822,34 @@
     }
   });
 
-  function openPetModal(){
+  let editingPetId = null;
+  let editingPetExistingPhoto = null;
+
+  function openPetModal(petToEdit){
     if(!currentUser){ pendingIntent = 'createPet'; openModal('signup'); return; }
-    document.getElementById('petName').value = '';
-    document.getElementById('petSpecies').value = 'cao';
-    document.getElementById('petBreed').value = '';
-    document.getElementById('petAge').value = '';
-    document.getElementById('petWeight').value = '';
-    document.getElementById('petSex').value = '';
-    document.getElementById('petColor').value = '';
-    document.getElementById('petBio').value = '';
+    editingPetId = petToEdit ? petToEdit.id : null;
+    editingPetExistingPhoto = petToEdit ? (petToEdit.photo_url || null) : null;
+    const speciesValue = petToEdit ? speciesBucket(petToEdit.species) : 'cao';
+
+    document.getElementById('petModalTitle').textContent = petToEdit ? `Editar carteirinha de ${petToEdit.name}` : 'Criar a carteirinha do seu pet';
+    document.getElementById('petSubmit').textContent = petToEdit ? 'Salvar alterações' : 'Criar carteirinha';
+    document.getElementById('petDeleteBtn').style.display = petToEdit ? 'block' : 'none';
+
+    document.getElementById('petName').value = petToEdit?.name || '';
+    document.getElementById('petSpecies').value = speciesValue;
+    document.getElementById('petBreed').value = petToEdit?.breed || '';
+    document.getElementById('petAge').value = petToEdit?.age_years ?? '';
+    document.getElementById('petWeight').value = petToEdit?.weight_kg ?? '';
+    document.getElementById('petSex').value = petToEdit?.sex || '';
+    document.getElementById('petColor').value = petToEdit?.color || '';
+    document.getElementById('petBio').value = petToEdit?.bio || '';
     document.getElementById('petPhotoFile').value = '';
     petPhotoFileSelected = null;
-    document.getElementById('petPhotoPreview').innerHTML = '📷';
-    document.getElementById('petPhotoLabel').textContent = 'Adicionar uma foto (opcional)';
+    document.getElementById('petPhotoPreview').innerHTML = petToEdit?.photo_url ? `<img src="${safeUrl(petToEdit.photo_url)}" alt="">` : '📷';
+    document.getElementById('petPhotoLabel').textContent = petToEdit ? 'Trocar foto (opcional)' : 'Adicionar uma foto (opcional)';
     document.getElementById('petStatus').textContent = '';
     document.getElementById('petStatus').className = 'modal-status';
-    loadBreedList('cao');
+    loadBreedList(speciesValue);
     petOverlay.classList.add('open');
   }
   document.getElementById('petSpecies').addEventListener('change', e=>{
@@ -1791,7 +1884,7 @@
     statusEl.textContent = '';
     statusEl.className = 'modal-status';
 
-    let photo_url = null;
+    let photo_url = editingPetExistingPhoto;
     if(petPhotoFileSelected){
       statusEl.textContent = 'Enviando foto…';
       try{ photo_url = await uploadToPetMedia(petPhotoFileSelected, 'pets'); }
@@ -1803,11 +1896,11 @@
       }
     }
 
-    const { data, error } = await supa.from('pets').insert({
-      owner_id: currentUser.id,
-      name, species: speciesLabel, breed, age_years, weight_kg, sex, color, bio, photo_url,
-      city: currentGeo.city || null, country: currentGeo.country || null,
-    }).select().single();
+    const payload = { name, species: speciesLabel, breed, age_years, weight_kg, sex, color, bio, photo_url };
+    const query = editingPetId
+      ? supa.from('pets').update(payload).eq('id', editingPetId).select().single()
+      : supa.from('pets').insert({ ...payload, owner_id: currentUser.id, city: currentGeo.city || null, country: currentGeo.country || null }).select().single();
+    const { data, error } = await query;
 
     submitBtn.disabled = false;
 
@@ -1825,9 +1918,15 @@
       });
     }
 
-    currentUserPet = data;
-    renderCarteirinha(data);
-    statusEl.textContent = '✅ Carteirinha criada!';
+    if(editingPetId){
+      const idx = currentUserPets.findIndex(p => p.id === editingPetId);
+      if(idx !== -1){ currentUserPets[idx] = data; cartIndex = idx; } else { currentUserPets.unshift(data); cartIndex = 0; }
+    } else {
+      currentUserPets.unshift(data);
+      cartIndex = 0;
+    }
+    renderCarteirinhaAt(cartIndex);
+    statusEl.textContent = editingPetId ? '✅ Alterações salvas!' : '✅ Carteirinha criada!';
     statusEl.className = 'modal-status ok';
     setTimeout(()=>{
       petOverlay.classList.remove('open');
@@ -1835,6 +1934,26 @@
       // dados do tutor logo em seguida, tudo numa sequência só
       if(onboardingInProgress){ onboardingInProgress = false; openProfileModal(); }
     }, 900);
+  });
+
+  document.getElementById('petDeleteBtn').addEventListener('click', async ()=>{
+    if(!editingPetId) return;
+    const name = document.getElementById('petName').value || 'este pet';
+    if(!confirm(`Excluir a carteirinha de ${name}? Os posts dele também serão removidos. Essa ação não pode ser desfeita.`)) return;
+
+    const statusEl = document.getElementById('petStatus');
+    const { error } = await supa.from('pets').delete().eq('id', editingPetId);
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    currentUserPets = currentUserPets.filter(p => p.id !== editingPetId);
+    cartIndex = 0;
+    if(currentUserPets.length) renderCarteirinhaAt(0);
+    else { resetCarteirinhaToDemo(); updateCartNav(); }
+    petOverlay.classList.remove('open');
   });
 
   // =====================================================================
@@ -1884,15 +2003,26 @@
     document.getElementById('profileCountry').value = data?.country || '';
     document.getElementById('avatarPreview').innerHTML = data?.avatar_url ? `<img src="${safeUrl(data.avatar_url)}" alt="">` : '🙂';
 
-    const { data: pets } = await supa.from('pets').select('id,name').eq('owner_id', currentUser.id).order('created_at', { ascending:false });
+    if(!currentUserPets.length) await loadOwnPetAndRenderCard();
+
+    document.getElementById('profilePetsList').innerHTML = currentUserPets.length
+      ? currentUserPets.map(p => `<button class="profile-pet-item" data-pet-id="${esc(p.id)}">${speciesEmoji[speciesBucket(p.species)]} ${esc(p.name)}</button>`).join('')
+      : '<p class="sub" style="margin:0;">Você ainda não tem nenhum pet — clique em "Criar carteirinha de um pet" abaixo.</p>';
+
     const sel = document.getElementById('postPetSelect');
-    sel.innerHTML = (pets && pets.length)
-      ? pets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')
+    sel.innerHTML = currentUserPets.length
+      ? currentUserPets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')
       : '<option value="">Crie uma carteirinha primeiro</option>';
 
     profileOverlay.classList.add('open');
   }
   document.getElementById('closeProfileModal').onclick = ()=> profileOverlay.classList.remove('open');
+  document.getElementById('profilePetsList').addEventListener('click', e=>{
+    const btn = e.target.closest('.profile-pet-item');
+    if(!btn) return;
+    const pet = currentUserPets.find(p => p.id === btn.dataset.petId);
+    if(pet){ profileOverlay.classList.remove('open'); openPetModal(pet); }
+  });
   profileOverlay.addEventListener('click', e=>{ if(e.target === profileOverlay) profileOverlay.classList.remove('open'); });
 
   document.getElementById('profileSubmit').addEventListener('click', async ()=>{
