@@ -439,6 +439,10 @@
   .map-mock{
     border-radius:20px; background:linear-gradient(160deg,#DCEEE0,#BFE0C5);
     position:relative; height:320px; overflow:hidden; border:1px solid var(--line);
+    /* isolation:isolate contém os z-index internos do Leaflet (até 700 nos
+       seus panes) numa bolha própria — sem isso eles vazam pro contexto de
+       empilhamento global e o mapa passa por cima de modais (z-index 100) */
+    isolation:isolate;
   }
   .map-mock .leaflet-container{border-radius:20px; font-family:'Plus Jakarta Sans', sans-serif;}
   .emoji-pin{
@@ -1096,7 +1100,7 @@
       <div id="adminContent">
         <div class="admin-stat-grid" id="adminStatGrid"></div>
         <div class="admin-chart-grid">
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_gender">Gênero dos tutores</h4><canvas id="chartGender"></canvas></div>
+          <div class="admin-chart-card"><h4 data-i18n="admin_chart_gender">Gênero dos pets</h4><canvas id="chartGender"></canvas></div>
           <div class="admin-chart-card"><h4 data-i18n="admin_chart_device">Dispositivos</h4><canvas id="chartDevice"></canvas></div>
           <div class="admin-chart-card"><h4 data-i18n="admin_chart_age">Faixa etária</h4><canvas id="chartAge"></canvas></div>
           <div class="admin-chart-card"><h4 data-i18n="admin_chart_country">Países</h4><canvas id="chartCountry"></canvas></div>
@@ -1747,7 +1751,7 @@
     admin_stat_pets:{pt:'Pets cadastrados',en:'Registered pets'},
     admin_stat_posts:{pt:'Posts no feed',en:'Feed posts'},
     admin_stat_feedbacks:{pt:'Feedbacks enviados',en:'Feedback submitted'},
-    admin_chart_gender:{pt:'Gênero dos tutores',en:'Tutor gender'},
+    admin_chart_gender:{pt:'Gênero dos pets',en:'Pet gender'},
     admin_chart_device:{pt:'Dispositivos',en:'Devices'},
     admin_chart_age:{pt:'Faixa etária',en:'Age range'},
     admin_chart_country:{pt:'Países',en:'Countries'},
@@ -2151,7 +2155,10 @@
       node["shop"="pet"](around:${radiusM},${lat},${lng});
       node["amenity"="veterinary"](around:${radiusM},${lat},${lng});
     );out 20;`;
-    const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body: query });
+    // overpass-api.de (endpoint padrão) não envia cabeçalho CORS e bloqueia
+    // TODA chamada feita direto do navegador — lz4.overpass-api.de é a
+    // mesma infraestrutura oficial, só uma instância com CORS liberado
+    const res = await fetch('https://lz4.overpass-api.de/api/interpreter', { method:'POST', body: query });
     if(!res.ok) throw new Error('Overpass indisponível: ' + res.status);
     const data = await res.json();
     return (data.elements || [])
@@ -4004,7 +4011,9 @@
       <div class="admin-stat-card"><div class="num">${data.total_posts}</div><div class="label">${t('admin_stat_posts')}</div></div>
       <div class="admin-stat-card"><div class="num">${data.total_feedbacks}</div><div class="label">${t('admin_stat_feedbacks')}</div></div>
     `;
-    const gender = labelMap(data.by_gender);
+    const petSexLabels = { macho: t('sex_macho'), femea: t('sex_femea') };
+    const petSexRaw = Object.fromEntries(Object.entries(data.by_pet_sex || {}).map(([k,v]) => [petSexLabels[k] || k, v]));
+    const gender = labelMap(petSexRaw);
     renderAdminChart('chartGender', 'doughnut', gender.labels, gender.values, ADMIN_PALETTE);
     const device = labelMap(data.by_device);
     renderAdminChart('chartDevice', 'doughnut', device.labels, device.values, ADMIN_PALETTE);

@@ -704,12 +704,12 @@ begin
     'total_pets', (select count(*) from public.pets),
     'total_posts', (select count(*) from public.posts),
     'total_feedbacks', (select count(*) from public.feedback_posts),
-    'by_gender', (
-      select coalesce(jsonb_object_agg(g.label, g.cnt), '{}'::jsonb) from (
-        select coalesce(ppi.gender, 'nao_informado') as label, count(*) as cnt
-        from public.profiles p left join public.profile_private_info ppi on ppi.profile_id = p.id
+    'by_pet_sex', (
+      select coalesce(jsonb_object_agg(s.label, s.cnt), '{}'::jsonb) from (
+        select coalesce(pt.sex, 'nao_informado') as label, count(*) as cnt
+        from public.pets pt
         group by 1
-      ) g
+      ) s
     ),
     'by_device', (
       select coalesce(jsonb_object_agg(d.label, d.cnt), '{}'::jsonb) from (
