@@ -115,6 +115,7 @@ create table public.posts (
   pet_id uuid not null references public.pets(id) on delete cascade,
   owner_id uuid not null references public.profiles(id) on delete cascade,
   media_url text,
+  media_type text not null default 'image' check (media_type in ('image','video')),
   caption text,
   created_at timestamptz not null default now()
 );
@@ -136,16 +137,23 @@ create table public.likes (
 
 create index idx_likes_post on public.likes(post_id);
 
--- recalcula rank_score do pet sempre que um like é criado/removido
+-- recalcula rank_score do pet sempre que um like OU comentário é criado/removido
+-- (comentário também pontua no ranking — decisão de produto: interação de
+-- verdade, não só curtida rápida, deve pesar no posicionamento).
+-- comentário conta por (post, autor) DISTINTO, não por linha — diferente de
+-- likes (que já tem "unique(post_id,user_id)"), comments não tem essa
+-- constraint, e contar count(*) bruto deixava qualquer conta autenticada
+-- inflar o próprio rank_score comentando em loop no próprio post. Achado da
+-- auditoria meupet-security nesta mesma sessão em que o campo foi criado.
 create or replace function public.recalc_pet_rank()
 returns trigger language plpgsql security definer as $$
 declare target_pet uuid;
 begin
   select pet_id into target_pet from public.posts where id = coalesce(new.post_id, old.post_id);
   update public.pets set rank_score = (
-    select count(*) from public.likes l
-    join public.posts p on p.id = l.post_id
-    where p.pet_id = target_pet
+    (select count(*) from public.likes l join public.posts p on p.id = l.post_id where p.pet_id = target_pet)
+    +
+    (select count(distinct (c.post_id, c.user_id)) from public.comments c join public.posts p on p.id = c.post_id where p.pet_id = target_pet)
   ) where id = target_pet;
   return null;
 end;
@@ -155,9 +163,15 @@ create trigger trg_likes_recalc
   after insert or delete on public.likes
   for each row execute procedure public.recalc_pet_rank();
 
+create trigger trg_comments_recalc
+  after insert or delete on public.comments
+  for each row execute procedure public.recalc_pet_rank();
+
 -- view de ranking por escopo geográfico (bairro fica a cargo do app, aqui vai cidade/país)
 -- expõe latest_post_id porque "likes" referencia posts(id), não pets(id) —
--- o app precisa desse id para saber em qual post registrar a curtida
+-- o app precisa desse id para saber em qual post registrar a curtida.
+-- latest_post_media_url/type alimentam o card do feed (foto ou vídeo do
+-- último post, em vez de só a foto de perfil do pet)
 create or replace view public.pet_rankings as
   select p.id, p.name, p.photo_url, p.city, p.country, p.rank_score,
          rank() over (partition by p.city order by p.rank_score desc) as rank_city,
@@ -165,7 +179,9 @@ create or replace view public.pet_rankings as
          (select po.id from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_id,
          p.species, p.owner_id,
          pr.full_name as owner_name,
-         p.sex
+         p.sex,
+         (select po.media_url from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_media_url,
+         (select po.media_type from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_media_type
   from public.pets p
   join public.profiles pr on pr.id = p.owner_id;
 
@@ -635,10 +651,11 @@ create policy "admins_select_admin" on public.admins for select using (public.is
 -- =====================================================================
 -- 1) Criar o bucket "pet-media" pelo painel Storage (público = true)
 --    ou via SQL:
--- limite de 8MB e só tipos de imagem — sem isso, avatar/post (que não passam
--- pelo recorte via canvas) podiam subir qualquer arquivo de qualquer tamanho
+-- limite de 20MB e só imagem/vídeo — sem isso, avatar/post (que não passam
+-- pelo recorte via canvas) podiam subir qualquer arquivo de qualquer tamanho.
+-- 20MB dá pra uns 20-30s de vídeo curto no feed sem estourar o plano grátis.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('pet-media', 'pet-media', true, 8388608, array['image/jpeg','image/png','image/webp','image/gif'])
+values ('pet-media', 'pet-media', true, 20971520, array['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm'])
 on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
