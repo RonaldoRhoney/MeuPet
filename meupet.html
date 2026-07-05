@@ -435,6 +435,37 @@
   .photo-upload span:first-child img{width:100%; height:100%; object-fit:cover;}
   .photo-upload span:last-child{font-size:0.84rem; color:#5C7472; font-weight:600;}
 
+  /* recorte/zoom da foto do pet */
+  .crop-modal{max-width:360px;}
+  .crop-viewport{
+    width:100%; aspect-ratio:1/1; border-radius:16px; overflow:hidden; position:relative;
+    background:repeating-conic-gradient(#eee 0% 25%, #f7f7f7 0% 50%) 0 0/20px 20px;
+    margin-bottom:14px; touch-action:none; cursor:grab; border:1.5px solid var(--line);
+  }
+  .crop-viewport.grabbing{cursor:grabbing;}
+  .crop-viewport img{position:absolute; top:0; left:0; max-width:none; max-height:none; user-select:none; -webkit-user-drag:none; will-change:transform;}
+  .crop-zoom-row{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .crop-zoom-btn{
+    width:34px; height:34px; flex-shrink:0; border-radius:50%; border:1.5px solid var(--line);
+    background:white; color:var(--teal); font-size:1.2rem; font-weight:700; cursor:pointer; display:grid; place-items:center;
+  }
+  .crop-zoom-btn:hover{border-color:var(--teal);}
+  .crop-zoom-row input[type="range"]{flex:1; accent-color:var(--teal);}
+
+  /* moldura + selo de acordo com o sexo do pet */
+  .sex-badge{
+    position:absolute; top:10px; right:10px; z-index:2;
+    background:rgba(255,248,240,0.95); font-size:0.8rem; font-weight:700;
+    padding:4px 8px; border-radius:var(--radius-pill); box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    display:flex; align-items:center; gap:2px; line-height:1;
+  }
+  .sex-badge.sex-macho{color:var(--teal-light);}
+  .sex-badge.sex-femea{color:var(--coral-dark);}
+  .pet-card .media.sex-macho{box-shadow:inset 0 0 0 3px var(--teal-light);}
+  .pet-card .media.sex-femea{box-shadow:inset 0 0 0 3px var(--coral);}
+  .carteirinha-photo.sex-macho{border-color:var(--teal-light); box-shadow:inset 0 0 0 4px rgba(23,92,86,0.6), 0 0 0 2px var(--teal-light);}
+  .carteirinha-photo.sex-femea{border-color:var(--coral); box-shadow:inset 0 0 0 4px rgba(255,107,74,0.4), 0 0 0 2px var(--coral);}
+
   .demo-modal{max-width:460px;}
   .demo-slide-img{width:100%; height:230px; overflow:hidden; background:var(--cream);}
   .demo-slide-img img{width:100%; height:100%; object-fit:cover; object-position:top;}
@@ -1053,6 +1084,27 @@
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="petSubmit">Criar carteirinha</button>
       <p class="modal-status" id="petStatus"></p>
       <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark); display:none;" id="petDeleteBtn">🗑️ Excluir carteirinha</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECORTE/ZOOM DA FOTO DO PET -->
+<div class="modal-overlay" id="cropModal">
+  <div class="modal crop-modal">
+    <button class="modal-close" id="closeCropModal">✕</button>
+    <div class="modal-body">
+      <h3>Ajustar a foto</h3>
+      <p class="sub">Arraste a foto para posicionar e use o zoom para enquadrar melhor.</p>
+      <div class="crop-viewport" id="cropViewport">
+        <img id="cropImg" draggable="false" alt="">
+      </div>
+      <div class="crop-zoom-row">
+        <button type="button" class="crop-zoom-btn" id="cropZoomOut" aria-label="Diminuir zoom">−</button>
+        <input type="range" id="cropZoomRange" min="0" max="100" value="0" step="1" aria-label="Zoom">
+        <button type="button" class="crop-zoom-btn" id="cropZoomIn" aria-label="Aumentar zoom">+</button>
+      </div>
+      <button class="btn btn-primary" style="width:100%; padding:13px;" id="cropConfirm">Usar essa foto</button>
+      <button class="btn-block" style="width:100%; margin-top:8px;" id="cropCancel">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1710,7 +1762,10 @@
   function renderCarteirinha(pet){
     const bucket = speciesBucket(pet.species);
     const photoEl = document.getElementById('cartPhoto');
-    photoEl.innerHTML = pet.photo_url ? `<img src="${safeUrl(pet.photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover;object-position:center;">` : speciesEmoji[bucket];
+    const sexBadge = pet.sex === 'macho' ? '🐾♂' : pet.sex === 'femea' ? '🐾♀' : '';
+    photoEl.className = 'carteirinha-photo' + (pet.sex ? ` sex-${pet.sex}` : '');
+    photoEl.innerHTML = (pet.photo_url ? `<img src="${safeUrl(pet.photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover;object-position:center;">` : speciesEmoji[bucket])
+      + (sexBadge ? `<span class="sex-badge sex-${pet.sex}">${sexBadge}</span>` : '');
     document.getElementById('cartName').textContent = pet.name;
     const metaParts = [
       pet.breed,
@@ -1725,6 +1780,7 @@
 
   function resetCarteirinhaToDemo(){
     document.getElementById('cartLiga').textContent = demoCartDefaults.liga;
+    document.getElementById('cartPhoto').className = 'carteirinha-photo';
     document.getElementById('cartPhoto').innerHTML = demoCartDefaults.photo;
     document.getElementById('cartName').textContent = demoCartDefaults.name;
     document.getElementById('cartMeta').textContent = demoCartDefaults.meta;
@@ -1896,13 +1952,131 @@
   }
 
   let petPhotoFileSelected = null;
+
+  // ===================================================================
+  // RECORTE/ZOOM DA FOTO DO PET — arrastar + zoom antes de enviar, pra
+  // garantir que o pet fique bem enquadrado em qualquer card (feed,
+  // carteirinha etc.). Gera UMA imagem final via canvas; é ela que sobe
+  // pro Storage, então todo card que já usa object-fit:cover se beneficia
+  // sem precisar guardar/replicar transform em cada lugar.
+  // ===================================================================
+  const cropOverlay = document.getElementById('cropModal');
+  const cropViewport = document.getElementById('cropViewport');
+  const cropImgEl = document.getElementById('cropImg');
+  const cropZoomRange = document.getElementById('cropZoomRange');
+  const CROP_OUTPUT_SIZE = 800;
+  let cropState = null; // { naturalW, naturalH, minScale, maxScale, scale, x, y }
+
+  function cropClamp(){
+    const vp = cropViewport.clientWidth;
+    const w = cropState.naturalW * cropState.scale;
+    const h = cropState.naturalH * cropState.scale;
+    cropState.x = Math.min(0, Math.max(vp - w, cropState.x));
+    cropState.y = Math.min(0, Math.max(vp - h, cropState.y));
+  }
+
+  function cropRender(){
+    cropImgEl.style.width = (cropState.naturalW * cropState.scale) + 'px';
+    cropImgEl.style.height = (cropState.naturalH * cropState.scale) + 'px';
+    cropImgEl.style.transform = `translate(${cropState.x}px, ${cropState.y}px)`;
+  }
+
+  function cropSetScale(newScale, anchorX, anchorY){
+    const vp = cropViewport.clientWidth;
+    const ax = anchorX ?? vp / 2, ay = anchorY ?? vp / 2;
+    const imgX = (ax - cropState.x) / cropState.scale;
+    const imgY = (ay - cropState.y) / cropState.scale;
+    cropState.scale = Math.min(cropState.maxScale, Math.max(cropState.minScale, newScale));
+    cropState.x = ax - imgX * cropState.scale;
+    cropState.y = ay - imgY * cropState.scale;
+    cropClamp();
+    cropRender();
+    cropZoomRange.value = cropState.maxScale > cropState.minScale
+      ? Math.round((cropState.scale - cropState.minScale) / (cropState.maxScale - cropState.minScale) * 100)
+      : 0;
+  }
+
+  function openCropModal(file){
+    cropOverlay.classList.add('open');
+    const url = URL.createObjectURL(file);
+    const probe = new Image();
+    probe.onload = ()=>{
+      const vp = cropViewport.clientWidth || 300;
+      const minScale = Math.max(vp / probe.naturalWidth, vp / probe.naturalHeight);
+      cropState = {
+        naturalW: probe.naturalWidth, naturalH: probe.naturalHeight,
+        minScale, maxScale: minScale * 4, scale: minScale,
+        x: (vp - probe.naturalWidth * minScale) / 2,
+        y: (vp - probe.naturalHeight * minScale) / 2,
+      };
+      cropImgEl.src = url;
+      cropZoomRange.value = 0;
+      cropRender();
+    };
+    probe.src = url;
+  }
+
+  function closeCropModal(){
+    cropOverlay.classList.remove('open');
+    if(cropImgEl.src) URL.revokeObjectURL(cropImgEl.src);
+    cropImgEl.src = '';
+    cropState = null;
+    document.getElementById('petPhotoFile').value = '';
+  }
+
+  // arrastar (mouse + touch, via Pointer Events unificados)
+  let cropDrag = null;
+  cropViewport.addEventListener('pointerdown', e=>{
+    if(!cropState) return;
+    cropDrag = { startX: e.clientX, startY: e.clientY, origX: cropState.x, origY: cropState.y };
+    cropViewport.setPointerCapture(e.pointerId);
+    cropViewport.classList.add('grabbing');
+  });
+  cropViewport.addEventListener('pointermove', e=>{
+    if(!cropDrag || !cropState) return;
+    cropState.x = cropDrag.origX + (e.clientX - cropDrag.startX);
+    cropState.y = cropDrag.origY + (e.clientY - cropDrag.startY);
+    cropClamp();
+    cropRender();
+  });
+  const cropEndDrag = ()=>{ cropDrag = null; cropViewport.classList.remove('grabbing'); };
+  cropViewport.addEventListener('pointerup', cropEndDrag);
+  cropViewport.addEventListener('pointercancel', cropEndDrag);
+  cropViewport.addEventListener('pointerleave', ()=>{ if(cropDrag) cropEndDrag(); });
+
+  document.getElementById('cropZoomIn').onclick = ()=>{ if(cropState) cropSetScale(cropState.scale * 1.25); };
+  document.getElementById('cropZoomOut').onclick = ()=>{ if(cropState) cropSetScale(cropState.scale / 1.25); };
+  cropZoomRange.addEventListener('input', ()=>{
+    if(!cropState) return;
+    const pct = Number(cropZoomRange.value) / 100;
+    cropSetScale(cropState.minScale + pct * (cropState.maxScale - cropState.minScale));
+  });
+
+  document.getElementById('closeCropModal').onclick = closeCropModal;
+  document.getElementById('cropCancel').onclick = closeCropModal;
+  cropOverlay.addEventListener('click', e=>{ if(e.target === cropOverlay) closeCropModal(); });
+
+  document.getElementById('cropConfirm').onclick = ()=>{
+    if(!cropState) return;
+    const vp = cropViewport.clientWidth;
+    const sx = -cropState.x / cropState.scale;
+    const sy = -cropState.y / cropState.scale;
+    const sSize = vp / cropState.scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = CROP_OUTPUT_SIZE;
+    canvas.height = CROP_OUTPUT_SIZE;
+    canvas.getContext('2d').drawImage(cropImgEl, sx, sy, sSize, sSize, 0, 0, CROP_OUTPUT_SIZE, CROP_OUTPUT_SIZE);
+    canvas.toBlob(blob=>{
+      petPhotoFileSelected = new File([blob], 'pet-foto.jpg', { type: 'image/jpeg' });
+      document.getElementById('petPhotoPreview').innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.9)}" alt="">`;
+      document.getElementById('petPhotoLabel').textContent = 'Foto ajustada ✓';
+      closeCropModal();
+    }, 'image/jpeg', 0.9);
+  };
+
   document.getElementById('petPhotoFile').addEventListener('change', e=>{
     const file = e.target.files[0];
-    petPhotoFileSelected = file || null;
-    if(file){
-      document.getElementById('petPhotoPreview').innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
-      document.getElementById('petPhotoLabel').textContent = file.name;
-    }
+    if(file) openCropModal(file);
   });
 
   let editingPetId = null;
@@ -2419,9 +2593,10 @@
 
         grid.innerHTML = items.map((p,i) => `
           <div class="pet-card">
-            <div class="media">
+            <div class="media${p.sex ? ` sex-${p.sex}` : ''}">
               ${p.photo_url ? `<img src="${safeUrl(p.photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">` : '🐾'}
               <span class="rank-chip">#${i+1} · Liga</span>
+              ${p.sex ? `<span class="sex-badge sex-${p.sex}">${p.sex === 'macho' ? '🐾♂' : '🐾♀'}</span>` : ''}
             </div>
             <div class="info">
               <h4>${esc(p.name)}</h4>

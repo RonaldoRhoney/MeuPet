@@ -159,11 +159,13 @@ create trigger trg_likes_recalc
 -- expõe latest_post_id porque "likes" referencia posts(id), não pets(id) —
 -- o app precisa desse id para saber em qual post registrar a curtida
 create or replace view public.pet_rankings as
-  select p.id, p.name, p.photo_url, p.city, p.country, p.rank_score, p.species, p.owner_id,
-         pr.full_name as owner_name,
-         (select po.id from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_id,
+  select p.id, p.name, p.photo_url, p.city, p.country, p.rank_score,
          rank() over (partition by p.city order by p.rank_score desc) as rank_city,
-         rank() over (partition by p.country order by p.rank_score desc) as rank_country
+         rank() over (partition by p.country order by p.rank_score desc) as rank_country,
+         (select po.id from public.posts po where po.pet_id = p.id order by po.created_at desc limit 1) as latest_post_id,
+         p.species, p.owner_id,
+         pr.full_name as owner_name,
+         p.sex
   from public.pets p
   join public.profiles pr on pr.id = p.owner_id;
 
@@ -552,9 +554,13 @@ create policy "admins_select_admin" on public.admins for select using (public.is
 -- =====================================================================
 -- 1) Criar o bucket "pet-media" pelo painel Storage (público = true)
 --    ou via SQL:
-insert into storage.buckets (id, name, public)
-values ('pet-media', 'pet-media', true)
-on conflict (id) do nothing;
+-- limite de 8MB e só tipos de imagem — sem isso, avatar/post (que não passam
+-- pelo recorte via canvas) podiam subir qualquer arquivo de qualquer tamanho
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('pet-media', 'pet-media', true, 8388608, array['image/jpeg','image/png','image/webp','image/gif'])
+on conflict (id) do update set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 -- 2) Policies do bucket: leitura pública, upload/edição só dentro da
 --    própria pasta do usuário (ex: pet-media/<user_id>/foto.jpg)
