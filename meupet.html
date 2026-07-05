@@ -123,21 +123,30 @@
     display:grid; place-items:center; color:white; font-size:1.1rem;
     box-shadow:var(--shadow-soft);
   }
-  nav.links{display:flex; gap:26px; align-items:center;}
+  nav.links{display:flex; gap:22px; align-items:center;}
   nav.links a{
-    font-size:0.92rem; font-weight:600; color:var(--heading);
-    position:relative; padding:6px 0;
+    font-size:0.88rem; font-weight:600; color:var(--heading);
+    position:relative; padding:6px 1px 8px; white-space:nowrap;
+    transition:color .15s ease;
+  }
+  nav.links a::after{
+    content:''; position:absolute; left:0; right:100%; bottom:0; height:2px;
+    border-radius:2px; background:linear-gradient(90deg, var(--coral), var(--mustard));
+    transition:right .22s cubic-bezier(.4,0,.2,1);
   }
   nav.links a:hover{color:var(--coral-dark);}
+  nav.links a:hover::after{right:0;}
   .nav-actions{display:flex; align-items:center; gap:12px;}
   .btn{
     border:none; border-radius:var(--radius-pill);
     padding:11px 20px; font-weight:700; font-size:0.9rem;
-    transition:transform .15s ease, box-shadow .15s ease;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
   }
   .btn:active{transform:scale(0.97);}
   .btn-primary{background:var(--coral); color:white; box-shadow:0 8px 18px -6px rgba(255,107,74,0.55);}
   .btn-primary:hover{background:var(--coral-dark);}
+  .nav-actions .btn-ghost{background:var(--surface); border-color:var(--line);}
+  .nav-actions .btn-ghost:hover{border-color:var(--teal); background:var(--paper); color:var(--teal);}
   .btn-ghost{background:transparent; color:var(--heading); border:1.5px solid var(--line);}
   .btn-ghost:hover{border-color:var(--teal);}
   .burger{display:none; background:none; border:none; font-size:1.6rem; color:var(--heading);}
@@ -743,21 +752,20 @@
   <div class="nav">
     <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
     <nav class="links" id="navLinks">
-      <a href="#feed" data-i18n="nav_feed">Feed</a>
-      <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
-      <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
-      <a href="#loja" data-i18n="nav_loja">Loja</a>
-      <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
-      <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
-      <a href="#games" data-i18n="nav_games">Games</a>
-      <a href="#planos" data-i18n="nav_planos">Planos</a>
-      <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
-      <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
-      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
+      <a href="#feed" data-i18n="nav_feed">📰 Feed</a>
+      <a href="#ranque" data-i18n="nav_ranque">🏆 Ranque</a>
+      <a href="#adocao" data-i18n="nav_adocao">🐾 Adoção</a>
+      <a href="#petshops" data-i18n="nav_petshops">🏪 Petshops</a>
+      <a href="#cuidados" data-i18n="nav_cuidados">💉 Cuidados</a>
+      <a href="#games" data-i18n="nav_games">🎮 Games</a>
+      <a href="#planos" data-i18n="nav_planos">✨ Planos</a>
+      <a href="#parceiros" data-i18n="nav_parceiros">📢 Anuncie no MeuPet</a>
+      <a href="#feedback" data-i18n="nav_feedback">💬 Feedback</a>
+      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">📊 Admin</a>
     </nav>
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin" data-i18n="nav_entrar">Entrar</button>
-      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha">Criar carteirinha</button>
+      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha">🐾 Criar carteirinha</button>
       <button class="burger" id="burgerBtn" aria-label="Abrir menu" data-i18n-aria="nav_abrir_menu" aria-expanded="false" aria-controls="navLinks">☰</button>
     </div>
   </div>
@@ -806,7 +814,7 @@
   </section>
 
   <div class="wrap">
-    <a class="ad-slot" id="adSlotFeed" href="#loja" target="_self">
+    <a class="ad-slot" id="adSlotFeed" href="#petshops" target="_self">
       <span><span class="ad-label" data-i18n="ad_label">Publicidade</span> <span class="ad-headline" data-i18n="ad_headline_feed">Ração premium com 20% off para novos tutores</span></span>
       <span class="mono ad-cta" data-i18n="ad_cta_ver_oferta">Ver oferta →</span>
     </a>
@@ -877,27 +885,7 @@
   </section>
 
   <!-- MARKETPLACE -->
-  <section class="block" id="loja">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <span class="kicker" data-i18n="loja_kicker">Vitrine de produtos</span>
-          <h2 data-i18n="loja_title">Tudo pro seu pet, num clique</h2>
-          <p data-i18n="loja_desc">Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.</p>
-        </div>
-      </div>
-      <div class="market-grid" id="marketGrid"></div>
-    </div>
-  </section>
-
-  <div class="wrap">
-    <a class="ad-slot" id="adSlotPetshops" href="#planos" target="_self">
-      <span><span class="ad-label" data-i18n="ad_label">Publicidade</span> <span class="ad-headline" data-i18n="ad_headline_petshops">Plano de saúde pet a partir de R$ 29/mês</span></span>
-      <span class="mono ad-cta" data-i18n="ad_cta_simular">Simular →</span>
-    </a>
-  </div>
-
-  <!-- PETSHOPS / GEO -->
+  <!-- PETSHOPS / GEO + VITRINE DE PRODUTOS (mesclados numa seção só) -->
   <section class="block" id="petshops" style="background:var(--surface);">
     <div class="wrap">
       <div class="section-head">
@@ -907,26 +895,43 @@
           <p data-i18n="petshops_desc">Localização por GPS (fallback por IP ou seleção manual) e busca real via OpenStreetMap — clique em "como chegar" pra traçar a rota.</p>
         </div>
       </div>
-      <div class="geo-panel">
-        <div class="map-mock">
-          <div id="petMap" style="height:100%; width:100%;"></div>
-        </div>
-        <div>
-          <div class="geo-list" id="geoList"></div>
-          <div class="city-select">
-            <span id="geoLabel" data-i18n="geo_detectando">📍 Detectando localização ·</span>
-            <select id="citySelect">
-              <option>Belém, PA</option>
-              <option>São Paulo, SP</option>
-              <option>Lisboa, Portugal</option>
-              <option data-i18n="geo_outra_cidade">Outra cidade…</option>
-            </select>
+      <div class="pill-tabs" id="petshopsTabs">
+        <button class="active" data-tab="mapa" data-i18n="petshops_tab_mapa">📍 Mapa</button>
+        <button data-tab="produtos" data-i18n="petshops_tab_produtos">🛒 Produtos</button>
+      </div>
+      <div id="petshopsTabMapa">
+        <div class="geo-panel">
+          <div class="map-mock">
+            <div id="petMap" style="height:100%; width:100%;"></div>
           </div>
-          <span class="geo-source mono" id="geoSource">fonte: gps · precisão alta</span>
+          <div>
+            <div class="geo-list" id="geoList"></div>
+            <div class="city-select">
+              <span id="geoLabel" data-i18n="geo_detectando">📍 Detectando localização ·</span>
+              <select id="citySelect">
+                <option>Belém, PA</option>
+                <option>São Paulo, SP</option>
+                <option>Lisboa, Portugal</option>
+                <option data-i18n="geo_outra_cidade">Outra cidade…</option>
+              </select>
+            </div>
+            <span class="geo-source mono" id="geoSource">fonte: gps · precisão alta</span>
+          </div>
         </div>
+      </div>
+      <div id="petshopsTabProdutos" style="display:none;">
+        <p class="sub" style="margin:16px 0 0;" data-i18n="loja_desc">Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.</p>
+        <div class="market-grid" id="marketGrid"></div>
       </div>
     </div>
   </section>
+
+  <div class="wrap">
+    <a class="ad-slot" id="adSlotPetshops" href="#planos" target="_self">
+      <span><span class="ad-label" data-i18n="ad_label">Publicidade</span> <span class="ad-headline" data-i18n="ad_headline_petshops">Plano de saúde pet a partir de R$ 29/mês</span></span>
+      <span class="mono ad-cta" data-i18n="ad_cta_simular">Simular →</span>
+    </a>
+  </div>
 
   <!-- CUIDADOS (dicas por espécie/idade/peso + vacinação) -->
   <section class="block" id="cuidados" style="background:var(--surface);">
@@ -1143,7 +1148,7 @@
         <a href="#feed" data-i18n="nav_feed">Feed</a>
         <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
         <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
-        <a href="#loja" data-i18n="nav_loja">Loja</a>
+        <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
         <a href="#planos" data-i18n="nav_planos">Planos</a>
         <a href="#parceiros">MeuPet Business</a>
       </div>
@@ -1522,10 +1527,11 @@
   // =====================================================================
   let currentLang = localStorage.getItem('meupet_lang') || 'pt';
   const I18N = {
-    nav_feed:{pt:'Feed',en:'Feed'}, nav_adocao:{pt:'Adoção',en:'Adoption'}, nav_loja:{pt:'Loja',en:'Shop'},
-    nav_petshops:{pt:'Petshops',en:'Pet Shops'}, nav_games:{pt:'Games',en:'Games'}, nav_planos:{pt:'Planos',en:'Plans'},
-    nav_parceiros:{pt:'Anuncie no MeuPet',en:'Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
-    nav_criar_carteirinha:{pt:'Criar carteirinha',en:'Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
+    nav_feed:{pt:'📰 Feed',en:'📰 Feed'}, nav_adocao:{pt:'🐾 Adoção',en:'🐾 Adoption'},
+    nav_petshops:{pt:'🏪 Petshops',en:'🏪 Pet Shops'}, nav_games:{pt:'🎮 Games',en:'🎮 Games'}, nav_planos:{pt:'✨ Planos',en:'✨ Plans'},
+    nav_parceiros:{pt:'📢 Anuncie no MeuPet',en:'📢 Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
+    nav_meu_pet:{pt:'🐾 Meu Pet',en:'🐾 My Pet'},
+    nav_criar_carteirinha:{pt:'🐾 Criar carteirinha',en:'🐾 Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
 
     hero_eyebrow:{pt:'Atualizado agora',en:'Updated now'},
     hero_h1:{pt:'A carteirinha digital<br>do seu <em>melhor amigo.</em>',en:'The digital ID card<br>for your <em>best friend.</em>'},
@@ -1547,7 +1553,7 @@
     feed_kicker:{pt:'Feed',en:'Feed'}, feed_title:{pt:'O que os pets andam aprontando',en:'What the pets have been up to'},
     feed_desc:{pt:'Fotos e vídeos postados pelos tutores, mais recentes primeiro.',en:'Photos and videos posted by pet parents, newest first.'},
     feed_scope_todos:{pt:'Todos',en:'All'},
-    nav_ranque:{pt:'Ranque',en:'Ranking'},
+    nav_ranque:{pt:'🏆 Ranque',en:'🏆 Ranking'},
     rank_kicker:{pt:'Ranque',en:'Ranking'}, rank_title:{pt:'Top 5 postagens',en:'Top 5 posts'},
     rank_desc:{pt:'Calculado automaticamente por curtidas, amei, compartilhamentos e seguidores — ligas do bairro até o país.',
       en:'Calculated automatically from likes, loves, shares and followers — leagues from your neighborhood to the whole country.'},
@@ -1565,9 +1571,9 @@
       en:'Animals from partner shelters and pet parents in your area, sorted by distance to you.'},
     adopt_cadastrar_btn:{pt:'Cadastrar pet para adoção',en:'List a pet for adoption'},
 
-    loja_kicker:{pt:'Vitrine de produtos',en:'Product showcase'}, loja_title:{pt:'Tudo pro seu pet, num clique',en:'Everything for your pet, one click away'},
     loja_desc:{pt:'Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.',
       en:'Partner and store links — MeuPet earns a small commission on each purchase. We also show the nearest physical store for pickup.'},
+    petshops_tab_mapa:{pt:'📍 Mapa',en:'📍 Map'}, petshops_tab_produtos:{pt:'🛒 Produtos',en:'🛒 Products'},
 
     petshops_kicker:{pt:'Petshops perto de você',en:'Pet shops near you'}, petshops_title:{pt:'Petshops e vets reais no mapa',en:'Real pet shops and vets on the map'},
     petshops_desc:{pt:'Localização por GPS (fallback por IP ou seleção manual) e busca real via OpenStreetMap — clique em "como chegar" pra traçar a rota.',
@@ -1652,7 +1658,7 @@
     theme_claro:{pt:'Claro',en:'Light'}, theme_escuro:{pt:'Escuro',en:'Dark'}, theme_sistema:{pt:'Igual ao sistema',en:'Same as system'},
     profile_criar_pet:{pt:'🐾 Criar carteirinha de um pet',en:'🐾 Create a pet ID'}, profile_sair:{pt:'Sair da conta',en:'Log out'},
 
-    nav_cuidados:{pt:'Cuidados',en:'Care'},
+    nav_cuidados:{pt:'💉 Cuidados',en:'💉 Care'},
     care_kicker:{pt:'Cuidados',en:'Care'}, care_title:{pt:'Dicas e vacinação pro seu pet',en:"Tips and vaccinations for your pet"},
     care_desc:{pt:'Recomendações automáticas de acordo com espécie, idade e peso — e um lembrete pra não perder nenhuma vacina.',
       en:"Automatic recommendations based on species, age and weight — plus a reminder so you never miss a vaccine."},
@@ -1743,7 +1749,7 @@
     geo_detectando_curto:{pt:'detectando localização…',en:'detecting location…'}, geo_selecione_cidade:{pt:'Selecione sua cidade',en:'Select your city'},
     feed_empty_especie:{pt:'Nenhum pet dessa espécie nesse recorte ainda.',en:'No pets of this species in this scope yet.'},
 
-    nav_feedback:{pt:'Feedback',en:'Feedback'}, nav_admin:{pt:'Admin',en:'Admin'},
+    nav_feedback:{pt:'💬 Feedback',en:'💬 Feedback'}, nav_admin:{pt:'📊 Admin',en:'📊 Admin'},
     feedback_kicker:{pt:'Feedback',en:'Feedback'},
     feedback_title:{pt:'O que você achou do MeuPet?',en:'What did you think of MeuPet?'},
     feedback_desc:{pt:'Deixe sua opinião ou sugestão. Qualquer pessoa pode responder e curtir.',en:'Leave your opinion or suggestion. Anyone can reply and like it.'},
@@ -1814,6 +1820,7 @@
     if(typeof renderRanking === 'function') renderRanking(rankScope);
     if(typeof loadAdoption === 'function') loadAdoption();
     if(typeof loadMarket === 'function') loadMarket();
+    if(typeof updateAuthNav === 'function' && currentUser) updateAuthNav(currentUser);
   }
 
   // e-mail comercial que recebe pedidos do formulário MeuPet Business (#parceiros)
@@ -2383,7 +2390,7 @@
     const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
     currentUserProfile = profile || currentUserProfile;
     const label = profile?.full_name || user.email;
-    btn.textContent = label.length > 20 ? label.slice(0, 18) + '…' : label;
+    btn.textContent = t('nav_meu_pet');
     btn.title = 'Logado como ' + label + ' — clique pra ver seu perfil';
     btn.onclick = ()=> openProfileModal();
 
@@ -3561,6 +3568,14 @@
       document.querySelectorAll('#rankTabs button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       renderRanking(btn.dataset.scope);
+    };
+  });
+  document.querySelectorAll('#petshopsTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#petshopsTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('petshopsTabMapa').style.display = btn.dataset.tab === 'mapa' ? '' : 'none';
+      document.getElementById('petshopsTabProdutos').style.display = btn.dataset.tab === 'produtos' ? '' : 'none';
     };
   });
   document.querySelectorAll('#speciesTabs button').forEach(btn=>{
