@@ -455,6 +455,8 @@
   .geo-list{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:6px;}
   .geo-row{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); font-size:0.88rem;}
   .geo-row:last-child{border-bottom:none;}
+  .geo-row.clickable{cursor:pointer; transition:background .15s ease;}
+  .geo-row.clickable:hover{background:var(--surface);}
   .geo-row .name{font-weight:700; color:var(--heading);}
   .geo-row .meta{font-size:0.74rem; color:var(--text-muted);}
   .geo-address{font-size:0.76rem; color:var(--text-muted-2); margin:2px 0;}
@@ -1743,6 +1745,7 @@
     card_comentarios_title:{pt:'Comentários',en:'Comments'}, card_compartilhar_title:{pt:'Compartilhar',en:'Share'},
     adopt_quero_adotar:{pt:'Quero adotar',en:'I want to adopt'}, adopt_favoritar_title:{pt:'Favoritar',en:'Favorite'},
     geo_detectando_curto:{pt:'detectando localização…',en:'detecting location…'}, geo_selecione_cidade:{pt:'Selecione sua cidade',en:'Select your city'},
+    geo_ver_no_mapa:{pt:'Ver no mapa',en:'View on map'},
     feed_empty_especie:{pt:'Nenhum pet dessa espécie nesse recorte ainda.',en:'No pets of this species in this scope yet.'},
 
     nav_feedback:{pt:'Feedback',en:'Feedback'}, nav_admin:{pt:'Admin',en:'Admin'},
@@ -2105,7 +2108,7 @@
   // ===================================================================
   // MAPA REAL (Leaflet + tiles do OpenStreetMap, sem chave de API)
   // ===================================================================
-  let petMap = null, petMarkers = [];
+  let petMap = null, petMarkers = [], petMarkersByIndex = {};
 
   function emojiIcon(emoji, extraClass){
     return L.divIcon({
@@ -2131,20 +2134,31 @@
     if(!petMap) return;
     petMarkers.forEach(m => petMap.removeLayer(m));
     petMarkers = [];
+    petMarkersByIndex = {};
     if(currentGeo.lat && currentGeo.lng){
       petMarkers.push(
         L.marker([currentGeo.lat, currentGeo.lng], { icon: emojiIcon('📍','me') })
           .addTo(petMap).bindPopup('Você está aqui')
       );
     }
-    items.forEach(p=>{
+    items.forEach((p, idx)=>{
       if(p.lat == null || p.lng == null) return;
       const icon = p.isPartner ? emojiIcon('🏅','partner') : emojiIcon('🐾','shop');
-      petMarkers.push(
-        L.marker([p.lat, p.lng], { icon })
-          .addTo(petMap).bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.meta || '')}`)
-      );
+      const marker = L.marker([p.lat, p.lng], { icon })
+        .addTo(petMap).bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.meta || '')}`);
+      petMarkers.push(marker);
+      petMarkersByIndex[idx] = marker;
     });
+  }
+
+  // clicar numa linha da lista centraliza o mapa no pin e abre o popup —
+  // "ativa" aquele local no mapa sem precisar clicar exatamente na setinha
+  function focusPetshopOnMap(idx){
+    const marker = petMarkersByIndex[idx];
+    if(!marker || !petMap) return;
+    petMap.setView(marker.getLatLng(), 16);
+    marker.openPopup();
+    document.getElementById('petMap').scrollIntoView({ behavior:'smooth', block:'center' });
   }
 
   // link universal de rota (abre o app de mapas do usuário — Google/Apple Maps —
@@ -2256,8 +2270,8 @@
       items = geoData.map(g => ({ name:g.name, meta:g.meta, address:null, phone:null, lat:null, lng:null, rating:null, dist:null }));
     }
 
-    list.innerHTML = items.map(p => `
-      <div class="geo-row">
+    list.innerHTML = items.map((p, i) => `
+      <div class="geo-row${p.lat != null ? ' clickable' : ''}" ${p.lat != null ? `data-idx="${i}" title="${t('geo_ver_no_mapa')}"` : ''}>
         <div>
           <div class="name">${esc(p.name)}</div>
           ${p.address ? `<div class="geo-address">📍 ${esc(p.address)}</div>` : ''}
@@ -2273,6 +2287,13 @@
     nearbyPetshopsCache = items;
     loadMarket(); // atualiza o CTA de "loja física perto de você" na vitrine
   }
+
+  document.getElementById('geoList').addEventListener('click', e=>{
+    if(e.target.closest('a')) return; // deixa "como chegar"/telefone navegarem normalmente
+    const row = e.target.closest('.geo-row.clickable');
+    if(!row) return;
+    focusPetshopOnMap(row.dataset.idx);
+  });
 
   document.getElementById('citySelect').addEventListener('change', e=>{
     if(e.target.value !== 'detected'){
