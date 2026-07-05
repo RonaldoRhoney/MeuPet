@@ -582,6 +582,21 @@
   }
   .profile-pet-item:hover{border-color:var(--teal); color:var(--heading);}
 
+  /* Meu Pet: Tutor e Pet lado a lado, dois painéis claramente distintos
+     dentro do mesmo hub — em vez de duas telas separadas */
+  .modal.profile-modal{max-width:760px;}
+  .profile-columns{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:8px;}
+  .profile-col{background:var(--surface); border:1.5px solid var(--line); border-radius:18px; padding:16px;}
+  .profile-col-title{
+    font-family:'Fraunces',serif; font-size:0.95rem; color:var(--heading);
+    margin:0 0 12px; display:flex; align-items:center; gap:6px;
+  }
+  .profile-col-pet .profile-pets-list{flex-direction:column; align-items:stretch;}
+  .profile-col-pet .profile-pet-item{width:100%; text-align:left;}
+  @media (max-width:640px){
+    .profile-columns{grid-template-columns:1fr;}
+  }
+
   .comments-list{max-height:44vh; overflow-y:auto; margin:12px 0; padding-right:4px;}
   .comment-node{margin-top:10px; max-width:100%;}
   .comment-bubble{background:var(--cream); border-radius:14px; padding:9px 13px; display:inline-block; max-width:100%;}
@@ -1381,31 +1396,37 @@
       <h3 data-i18n="profile_title">Seu perfil</h3>
       <p class="sub" id="profileSub">Logado como —</p>
 
-      <label class="photo-upload" for="avatarFile">
-        <span id="avatarPreview">🙂</span>
-        <span id="avatarLabel" data-i18n="ph_foto_perfil">Foto de perfil (opcional)</span>
-      </label>
-      <input type="file" accept="image/*" id="avatarFile" style="display:none;">
+      <div class="profile-columns">
+        <div class="profile-col profile-col-tutor">
+          <h4 class="profile-col-title" data-i18n="profile_col_tutor">🧑 Tutor</h4>
+          <label class="photo-upload" for="avatarFile">
+            <span id="avatarPreview">🙂</span>
+            <span id="avatarLabel" data-i18n="ph_foto_perfil">Foto de perfil (opcional)</span>
+          </label>
+          <input type="file" accept="image/*" id="avatarFile" style="display:none;">
 
-      <input type="text" placeholder="Seu nome" id="profileName" data-i18n-placeholder="ph_seu_nome">
-      <input type="text" placeholder="Cidade" id="profileCity" data-i18n-placeholder="ph_cidade">
-      <input type="text" placeholder="País" id="profileCountry" data-i18n-placeholder="ph_pais">
-      <input type="text" id="profileNeighborhood" data-i18n-placeholder="profile_neighborhood_ph" placeholder="Bairro (opcional)">
-      <select id="profileGender" aria-label="Gênero">
-        <option value="" data-i18n="profile_gender_placeholder">Prefiro não informar</option>
-        <option value="masculino" data-i18n="profile_gender_masculino">Masculino</option>
-        <option value="feminino" data-i18n="profile_gender_feminino">Feminino</option>
-        <option value="outro" data-i18n="profile_gender_outro">Outro</option>
-      </select>
-      <label class="sub" for="profileBirthDate" data-i18n="profile_birthdate_label" style="display:block; margin:4px 0 -6px;">Data de nascimento (opcional)</label>
-      <input type="date" id="profileBirthDate">
+          <input type="text" placeholder="Seu nome" id="profileName" data-i18n-placeholder="ph_seu_nome">
+          <input type="text" placeholder="Cidade" id="profileCity" data-i18n-placeholder="ph_cidade">
+          <input type="text" placeholder="País" id="profileCountry" data-i18n-placeholder="ph_pais">
+          <input type="text" id="profileNeighborhood" data-i18n-placeholder="profile_neighborhood_ph" placeholder="Bairro (opcional)">
+          <select id="profileGender" aria-label="Gênero">
+            <option value="" data-i18n="profile_gender_placeholder">Prefiro não informar</option>
+            <option value="masculino" data-i18n="profile_gender_masculino">Masculino</option>
+            <option value="feminino" data-i18n="profile_gender_feminino">Feminino</option>
+            <option value="outro" data-i18n="profile_gender_outro">Outro</option>
+          </select>
+          <label class="sub" for="profileBirthDate" data-i18n="profile_birthdate_label" style="display:block; margin:4px 0 -6px;">Data de nascimento (opcional)</label>
+          <input type="date" id="profileBirthDate">
 
-      <button class="btn btn-primary" style="width:100%; padding:13px;" id="profileSubmit" data-i18n="profile_salvar">Salvar perfil</button>
-      <p class="modal-status" id="profileStatus"></p>
+          <button class="btn btn-primary" style="width:100%; padding:13px;" id="profileSubmit" data-i18n="profile_salvar">Salvar perfil</button>
+          <p class="modal-status" id="profileStatus"></p>
+        </div>
 
-      <div class="profile-section">
-        <h4 data-i18n="profile_seus_pets">Seus pets</h4>
-        <div class="profile-pets-list" id="profilePetsList"></div>
+        <div class="profile-col profile-col-pet">
+          <h4 class="profile-col-title" data-i18n="profile_col_pet">🐾 Pet</h4>
+          <div class="profile-pets-list" id="profilePetsList"></div>
+          <button class="btn btn-ghost" style="width:100%; padding:13px; margin-top:12px;" id="profileCreatePet" data-i18n="profile_criar_pet">🐾 Criar carteirinha de um pet</button>
+        </div>
       </div>
 
       <div class="profile-section">
@@ -1443,7 +1464,6 @@
         </select>
       </div>
 
-      <button class="btn btn-ghost" style="width:100%; padding:13px; margin-top:10px;" id="profileCreatePet" data-i18n="profile_criar_pet">🐾 Criar carteirinha de um pet</button>
       <button class="btn-block" style="width:100%; margin-top:10px; background:#1B2B2A;" id="profileSignOut" data-i18n="profile_sair">Sair da conta</button>
     </div>
   </div>
@@ -1604,7 +1624,8 @@
 
     profile_title:{pt:'Seu perfil',en:'Your profile'}, ph_foto_perfil:{pt:'Foto de perfil (opcional)',en:'Profile photo (optional)'},
     ph_pais:{pt:'País',en:'Country'}, profile_salvar:{pt:'Salvar perfil',en:'Save profile'},
-    profile_seus_pets:{pt:'Seus pets',en:'Your pets'}, profile_postar_feed:{pt:'Postar no feed',en:'Post to feed'},
+    profile_col_tutor:{pt:'🧑 Tutor',en:'🧑 Owner'}, profile_col_pet:{pt:'🐾 Pet',en:'🐾 Pet'},
+    profile_postar_feed:{pt:'Postar no feed',en:'Post to feed'},
     ph_foto_video_post:{pt:'Foto ou vídeo do post',en:'Post photo or video'}, ph_legenda:{pt:'Legenda (opcional)',en:'Caption (optional)'},
     profile_publicar_feed:{pt:'📣 Publicar no feed',en:'📣 Post to feed'},
     settings_seguranca:{pt:'🔒 Segurança',en:'🔒 Security'}, ph_nova_senha:{pt:'Nova senha',en:'New password'},
