@@ -1,1 +1,6 @@
-{"outputDirectory": "."}
+{
+  "outputDirectory": ".",
+  "crons": [
+    { "path": "/api/send-petshop-alerts", "schedule": "0 12 * * *" }
+  ]
+}

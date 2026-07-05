@@ -31,7 +31,7 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
@@ -1466,6 +1466,11 @@
           <option value="dark" data-i18n="theme_escuro">Escuro</option>
           <option value="system" data-i18n="theme_sistema">Igual ao sistema</option>
         </select>
+
+        <h4 style="margin-top:18px;" data-i18n="settings_alertas">🔔 Alertas</h4>
+        <p class="sub" style="margin:0 0 10px;" data-i18n="push_desc">Receba um aviso de tempos em tempos quando houver petshops perto de você — mesmo com o app fechado.</p>
+        <button class="btn btn-ghost" style="width:100%; padding:12px;" id="pushToggle" data-i18n="push_ativar">🔔 Ativar alertas de petshops</button>
+        <p class="modal-status" id="pushStatus"></p>
       </div>
 
       <button class="btn-block" style="width:100%; margin-top:10px; background:#1B2B2A;" id="profileSignOut" data-i18n="profile_sair">Sair da conta</button>
@@ -1637,6 +1642,16 @@
     settings_recuperar_acesso:{pt:'Esqueceu a senha atual? Recuperar acesso por e-mail',en:'Forgot your current password? Recover access by email'},
     settings_idioma:{pt:'🌐 Idioma',en:'🌐 Language'}, settings_aparencia:{pt:'🎨 Aparência',en:'🎨 Appearance'},
     theme_claro:{pt:'Claro',en:'Light'}, theme_escuro:{pt:'Escuro',en:'Dark'}, theme_sistema:{pt:'Igual ao sistema',en:'Same as system'},
+    settings_alertas:{pt:'🔔 Alertas',en:'🔔 Alerts'},
+    push_desc:{pt:'Receba um aviso de tempos em tempos quando houver petshops perto de você — mesmo com o app fechado.',en:'Get an occasional alert when there are pet shops near you — even with the app closed.'},
+    push_ativar:{pt:'🔔 Ativar alertas de petshops',en:'🔔 Enable pet shop alerts'},
+    push_desativar:{pt:'🔕 Desativar alertas de petshops',en:'🔕 Disable pet shop alerts'},
+    push_ativando:{pt:'Ativando…',en:'Enabling…'},
+    push_ativado:{pt:'✅ Alertas ativados!',en:'✅ Alerts enabled!'},
+    push_desativado:{pt:'Alertas desativados.',en:'Alerts disabled.'},
+    push_permissao_negada:{pt:'Permissão de notificação negada. Habilite nas configurações do navegador.',en:'Notification permission denied. Enable it in your browser settings.'},
+    push_indisponivel:{pt:'Notificações push não são suportadas neste navegador.',en:'Push notifications are not supported in this browser.'},
+    push_precisa_login:{pt:'Entre na sua conta pra ativar os alertas.',en:'Log in to enable alerts.'},
     profile_criar_pet:{pt:'🐾 Criar carteirinha de um pet',en:'🐾 Create a pet ID'}, profile_sair:{pt:'Sair da conta',en:'Log out'},
 
     nav_cuidados:{pt:'Cuidados',en:'Care'},
@@ -3209,6 +3224,7 @@
 
     document.getElementById('settingsLang').value = currentLang;
     document.getElementById('settingsTheme').value = localStorage.getItem('meupet_theme') || 'system';
+    if(typeof refreshPushToggleUI === 'function') refreshPushToggleUI();
 
     profileOverlay.classList.add('open');
   }
@@ -3362,6 +3378,95 @@
     await supa.auth.signOut();
     location.reload();
   };
+
+  // =====================================================================
+  // ALERTAS PUSH (petshops perto de você, mesmo com o app fechado) — a
+  // chave pública VAPID abaixo é segura pra ficar no cliente (é assim que
+  // o Push API funciona: só a privada, usada só no job que ENVIA o push,
+  // fica em segredo no servidor)
+  // =====================================================================
+  const VAPID_PUBLIC_KEY = 'BJECTqNpZky_wSM8XQWfCsSSACIQ9iygZOro-Kqxv-fWopE_fRbJiTvdpsNSX4C8ZHNm9gLvzvHr5uI6n8GI6k0';
+
+  function urlBase64ToUint8Array(base64String){
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function getExistingPushSubscription(){
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+
+  async function refreshPushToggleUI(){
+    const btn = document.getElementById('pushToggle');
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+      btn.disabled = true;
+      btn.textContent = t('push_indisponivel');
+      return;
+    }
+    const sub = await getExistingPushSubscription();
+    btn.textContent = sub ? t('push_desativar') : t('push_ativar');
+  }
+
+  document.getElementById('pushToggle').addEventListener('click', async ()=>{
+    const btn = document.getElementById('pushToggle');
+    const statusEl = document.getElementById('pushStatus');
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+
+    if(!currentUser){ statusEl.textContent = t('push_precisa_login'); statusEl.className = 'modal-status err'; return; }
+    if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+      statusEl.textContent = t('push_indisponivel'); statusEl.className = 'modal-status err'; return;
+    }
+
+    btn.disabled = true;
+    try{
+      const existing = await getExistingPushSubscription();
+      if(existing){
+        // filtra por profile_id também (a RLS já garante isso, mas evita
+        // que um dispositivo compartilhado com sessão trocada mate a
+        // inscrição de outro tutor sem sequer checar se o delete deu certo)
+        const { error: delError, count } = await supa.from('push_subscriptions')
+          .delete({ count: 'exact' }).eq('endpoint', existing.endpoint).eq('profile_id', currentUser.id);
+        if(delError){ statusEl.textContent = delError.message; statusEl.className = 'modal-status err'; btn.disabled = false; return; }
+        await existing.unsubscribe();
+        statusEl.textContent = t('push_desativado');
+        statusEl.className = 'modal-status';
+      } else {
+        const permission = await Notification.requestPermission();
+        if(permission !== 'granted'){
+          statusEl.textContent = t('push_permissao_negada');
+          statusEl.className = 'modal-status err';
+          btn.disabled = false;
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        const raw = sub.toJSON();
+        const { error } = await supa.from('push_subscriptions').upsert({
+          profile_id: currentUser.id,
+          endpoint: raw.endpoint,
+          p256dh: raw.keys.p256dh,
+          auth: raw.keys.auth,
+          lat: currentGeo.lat, lng: currentGeo.lng, city: currentGeo.city,
+        }, { onConflict: 'endpoint' });
+        if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; btn.disabled = false; return; }
+        statusEl.textContent = t('push_ativado');
+        statusEl.className = 'modal-status ok';
+      }
+    }catch(err){
+      statusEl.textContent = err.message || 'Não deu pra atualizar os alertas.';
+      statusEl.className = 'modal-status err';
+    }
+    await refreshPushToggleUI();
+    btn.disabled = false;
+  });
 
   document.getElementById('settingsForgotLink').onclick = async e=>{
     e.preventDefault();

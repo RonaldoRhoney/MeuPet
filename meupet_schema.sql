@@ -40,14 +40,19 @@ $$;
 -- ---------------------------------------------------------------------
 -- 2. PROFILES (dono do pet)
 -- ---------------------------------------------------------------------
+-- NUNCA guarde lat/lng exatos aqui: profiles é select-público
+-- ("profiles_select_public ... using (true)"), então qualquer coisa
+-- nessa tabela é lida por qualquer um com a anon key (embutida no HTML).
+-- Já existiu uma coluna lat/lng aqui, sem uso real (0 linhas populadas) e
+-- publicamente exposta — achado de auditoria de segurança. Coordenada
+-- precisa de localização só entra em tabela owner-only, tipo
+-- profile_private_info ou push_subscriptions.
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
   avatar_url text,
   city text,
   country text,
-  lat double precision,
-  lng double precision,
   plan text not null default 'free' check (plan in ('free','premium','petshop_partner')),
   is_petshop boolean not null default false,
   created_at timestamptz not null default now(),
@@ -761,6 +766,36 @@ end;
 $$;
 revoke all on function public.admin_dashboard_stats() from public;
 grant execute on function public.admin_dashboard_stats() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 12. PUSH SUBSCRIPTIONS (alertas de petshops perto de você, mesmo com
+--     o app fechado — enviados por um job agendado fora do banco, via
+--     service_role, que ignora RLS; o cliente só gerencia a própria linha)
+-- ---------------------------------------------------------------------
+create table public.push_subscriptions (
+  id uuid primary key default uuid_generate_v4(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  -- localização capturada no momento em que o tutor ativa o alerta (o
+  -- currentGeo já detectado na sessão) — fica aqui, tabela owner-only,
+  -- em vez de profiles (select-público) ou de exigir profiles.lat/lng
+  lat double precision,
+  lng double precision,
+  city text,
+  last_notified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index idx_push_subscriptions_profile on public.push_subscriptions(profile_id);
+
+alter table public.push_subscriptions enable row level security;
+create policy "push_subs_select_own" on public.push_subscriptions for select using (auth.uid() = profile_id);
+create policy "push_subs_insert_own" on public.push_subscriptions for insert with check (auth.uid() = profile_id);
+create policy "push_subs_update_own" on public.push_subscriptions for update using (auth.uid() = profile_id) with check (auth.uid() = profile_id);
+create policy "push_subs_delete_own" on public.push_subscriptions for delete using (auth.uid() = profile_id);
+-- last_notified_at também é gravado pelo job agendado (service_role,
+-- ignora RLS) depois de enviar o alerta
 
 -- =====================================================================
 -- ROW LEVEL SECURITY

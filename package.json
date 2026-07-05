@@ -1,0 +1,9 @@
+{
+  "name": "meupet",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "web-push": "^3.6.7",
+    "@supabase/supabase-js": "^2.110.0"
+  }
+}
