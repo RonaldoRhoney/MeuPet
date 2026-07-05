@@ -1080,17 +1080,17 @@
       <h3 id="modalTitle">Bem-vindo de volta!</h3>
       <p class="sub" id="modalSub">Entre para acessar a carteirinha do seu pet.</p>
 
-      <!-- login social desativado até as credenciais OAuth (Google/Meta) serem
-           configuradas na Supabase — sem isso, os botões só mostram um erro
-           cru pro usuário. Reative removendo este comentário + o style="display:none". -->
-      <div id="socialLoginSection" style="display:none;">
+      <!-- Google já configurado (credenciais OAuth cadastradas na Supabase em
+           05/07/2026). Instagram/Facebook seguem escondidos até essas
+           credenciais serem configuradas também — sem isso, mostrariam erro. -->
+      <div id="socialLoginSection">
         <button class="social-btn" id="btnGoogle">
           <span class="ico">🔵</span> <span data-i18n="login_google">Continuar com Google</span>
         </button>
-        <button class="social-btn" id="btnInstagram">
+        <button class="social-btn" id="btnInstagram" style="display:none;">
           <span class="ico">🟣</span> <span data-i18n="login_instagram">Continuar com Instagram</span>
         </button>
-        <button class="social-btn" id="btnFacebook">
+        <button class="social-btn" id="btnFacebook" style="display:none;">
           <span class="ico">🔷</span> <span data-i18n="login_facebook">Continuar com Facebook</span>
         </button>
         <div class="divider" data-i18n="login_ou_email">ou use seu e-mail</div>
