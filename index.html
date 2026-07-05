@@ -763,7 +763,7 @@
     </nav>
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin" data-i18n="nav_entrar">Entrar</button>
-      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha">🐾 Criar carteirinha</button>
+      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha" style="display:none;">🐾 Criar carteirinha</button>
       <button class="burger" id="burgerBtn" aria-label="Abrir menu" data-i18n-aria="nav_abrir_menu" aria-expanded="false" aria-controls="navLinks">☰</button>
     </div>
   </div>
@@ -2342,16 +2342,17 @@
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = ''; return; }
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
     const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
     currentUserProfile = profile || currentUserProfile;
     const label = profile?.full_name || user.email;
     btn.textContent = t('nav_meu_pet');
     btn.title = 'Logado como ' + label + ' — clique pra ver seu perfil';
     btn.onclick = ()=> openProfileModal();
-    // "Criar carteirinha" some do menu quando logado — a mesma ação já existe
-    // dentro de "Meu Pet" (#profileCreatePet), manter os dois era redundante
-    document.getElementById('openSignup').style.display = 'none';
+    // "Criar carteirinha" só aparece no menu depois de logado — deslogado, o
+    // cadastro de conta já acontece pelo link "Não tem conta?" dentro do
+    // modal de "Entrar", e pelo CTA do hero (heroCta)
+    document.getElementById('openSignup').style.display = '';
 
     supa.rpc('set_my_device', { p_device: detectDeviceType() })
       .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
