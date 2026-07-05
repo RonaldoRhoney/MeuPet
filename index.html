@@ -498,6 +498,12 @@
   .sex-badge.sex-femea{color:var(--coral-dark);}
   .pet-card .media.sex-macho{box-shadow:inset 0 0 0 3px var(--teal-light);}
   .pet-card .media.sex-femea{box-shadow:inset 0 0 0 3px var(--coral);}
+  .edit-post-btn{
+    position:absolute; bottom:10px; right:10px; z-index:2;
+    width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,248,240,0.95); font-size:0.95rem;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.25);
+  }
   .carteirinha-photo.sex-macho{border-color:#175C56; box-shadow:inset 0 0 0 4px rgba(23,92,86,0.6), 0 0 0 2px #175C56;}
   .carteirinha-photo.sex-femea{border-color:var(--coral); box-shadow:inset 0 0 0 4px rgba(255,107,74,0.4), 0 0 0 2px var(--coral);}
 
@@ -1264,6 +1270,29 @@
         <button class="btn btn-primary" id="commentSubmit" data-i18n="comment_submit">Comentar</button>
       </div>
       <p class="modal-status" id="commentStatus"></p>
+    </div>
+  </div>
+</div>
+
+<!-- EDITAR/EXCLUIR A PRÓPRIA POSTAGEM (direto do card, sem passar pelo perfil) -->
+<div class="modal-overlay" id="editPostModal">
+  <div class="modal">
+    <button class="modal-close" id="closeEditPostModal">✕</button>
+    <div class="modal-body">
+      <h3>Editar postagem</h3>
+      <p class="sub">Troque a foto/vídeo, o texto, ou exclua a postagem.</p>
+
+      <label class="photo-upload" for="editPostMediaFile">
+        <span id="editPostMediaPreview">📷</span>
+        <span id="editPostMediaLabel">Trocar foto ou vídeo (opcional)</span>
+      </label>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" id="editPostMediaFile" style="display:none;">
+
+      <textarea placeholder="Legenda (opcional)" id="editPostCaption" rows="2"></textarea>
+
+      <button class="btn btn-primary" style="width:100%; padding:13px;" id="editPostSave">Salvar alterações</button>
+      <p class="modal-status" id="editPostStatus"></p>
+      <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark);" id="editPostDelete">🗑️ Excluir postagem</button>
     </div>
   </div>
 </div>
@@ -2259,6 +2288,9 @@
     statusEl.className = 'modal-status ok';
     if(data.user) updateAuthNav(data.user);
     await loadOwnPetAndRenderCard();
+    // sem isso, os cards do feed/ranque continuavam mostrando o estado de
+    // deslogado (sem saber quem é o dono do post) até trocar de aba na mão
+    if(typeof refreshFeedAndRankingNow === 'function') refreshFeedAndRankingNow();
     setTimeout(()=>{
       overlay.classList.remove('open');
       // se o clique original era "criar carteirinha" (ou cadastrar pet pra
@@ -2754,6 +2786,120 @@
     }, document.getElementById('postPhotoFile'));
   });
 
+  // ===================================================================
+  // EDITAR/EXCLUIR A PRÓPRIA POSTAGEM — direto do card do feed/ranque,
+  // sem precisar abrir o perfil. Só o dono da postagem vê o botão (a
+  // policy posts_update_own/posts_delete_own garante isso também no banco).
+  // ===================================================================
+  let editingPostId = null;
+  let editPostMediaFileSelected = null;
+  let editPostMediaType = null; // null = não trocar a mídia atual
+
+  document.getElementById('editPostMediaFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const statusEl = document.getElementById('editPostStatus');
+    if(file.size > POST_MEDIA_MAX_BYTES){
+      statusEl.textContent = 'Arquivo muito grande — o limite é 20MB.';
+      statusEl.className = 'modal-status err';
+      document.getElementById('editPostMediaFile').value = '';
+      return;
+    }
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+    if(file.type.startsWith('video/')){
+      editPostMediaType = 'video';
+      editPostMediaFileSelected = file;
+      document.getElementById('editPostMediaPreview').innerHTML = `<video src="${URL.createObjectURL(file)}" muted style="width:100%;height:100%;object-fit:cover;"></video>`;
+      document.getElementById('editPostMediaLabel').textContent = 'Vídeo selecionado ✓';
+      return;
+    }
+    editPostMediaType = 'image';
+    openCropModal(file, (croppedFile, dataUrl)=>{
+      editPostMediaFileSelected = croppedFile;
+      document.getElementById('editPostMediaPreview').innerHTML = `<img src="${dataUrl}" alt="">`;
+      document.getElementById('editPostMediaLabel').textContent = 'Foto ajustada ✓';
+    }, document.getElementById('editPostMediaFile'));
+  });
+
+  function openEditPostModal(postId, currentCaption){
+    editingPostId = postId;
+    editPostMediaFileSelected = null;
+    editPostMediaType = null;
+    document.getElementById('editPostCaption').value = currentCaption || '';
+    document.getElementById('editPostMediaFile').value = '';
+    document.getElementById('editPostMediaPreview').textContent = '📷';
+    document.getElementById('editPostMediaLabel').textContent = 'Trocar foto ou vídeo (opcional)';
+    document.getElementById('editPostStatus').textContent = '';
+    document.getElementById('editPostStatus').className = 'modal-status';
+    document.getElementById('editPostModal').classList.add('open');
+  }
+  document.getElementById('closeEditPostModal').onclick = ()=> document.getElementById('editPostModal').classList.remove('open');
+  document.getElementById('editPostModal').addEventListener('click', e=>{
+    if(e.target.id === 'editPostModal') document.getElementById('editPostModal').classList.remove('open');
+  });
+
+  function refreshFeedAndRankingNow(){
+    renderFeed(document.querySelector('#feedFollowTabs button.active')?.dataset.scope || 'todos');
+    renderRanking(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+  }
+
+  document.getElementById('editPostSave').addEventListener('click', async ()=>{
+    if(!editingPostId) return;
+    const statusEl = document.getElementById('editPostStatus');
+    const submitBtn = document.getElementById('editPostSave');
+    submitBtn.disabled = true;
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+
+    const payload = { caption: document.getElementById('editPostCaption').value.trim() || null };
+    if(editPostMediaFileSelected){
+      statusEl.textContent = 'Enviando…';
+      try{
+        payload.media_url = await uploadToPetMedia(editPostMediaFileSelected, 'posts');
+        payload.media_type = editPostMediaType;
+      }catch(err){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Não deu pra enviar: ' + err.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    }
+
+    const { error } = await supa.from('posts').update(payload).eq('id', editingPostId);
+    submitBtn.disabled = false;
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    statusEl.textContent = '✅ Postagem atualizada!';
+    statusEl.className = 'modal-status ok';
+    setTimeout(()=>{
+      document.getElementById('editPostModal').classList.remove('open');
+      refreshFeedAndRankingNow();
+    }, 700);
+  });
+
+  document.getElementById('editPostDelete').addEventListener('click', async ()=>{
+    if(!editingPostId) return;
+    if(!confirm('Excluir essa postagem? Essa ação não pode ser desfeita.')) return;
+    const statusEl = document.getElementById('editPostStatus');
+    const { error } = await supa.from('posts').delete().eq('id', editingPostId);
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    document.getElementById('editPostModal').classList.remove('open');
+    refreshFeedAndRankingNow();
+  });
+
+  document.addEventListener('click', e=>{
+    const editBtn = e.target.closest('[data-edit-post]');
+    if(editBtn) openEditPostModal(editBtn.dataset.editPost, editBtn.dataset.caption);
+  });
+
   async function openProfileModal(){
     document.getElementById('profileSub').textContent = 'Logado como ' + currentUser.email;
     document.getElementById('profileStatus').textContent = '';
@@ -3005,13 +3151,15 @@
     return { user, myPets, myOwners };
   }
 
-  function postCardHtml(p, rankLabel, myPets, myOwners){
+  function postCardHtml(p, rankLabel, myPets, myOwners, currentUserId){
+    const isOwner = currentUserId && currentUserId === p.owner_id;
     return `
       <div class="pet-card">
         <div class="media${p.sex ? ` sex-${p.sex}` : ''}">
           ${renderPostMediaHtml(p)}
           ${rankLabel ? `<span class="rank-chip">${rankLabel}</span>` : ''}
           ${p.sex ? `<span class="sex-badge sex-${p.sex}">${p.sex === 'macho' ? '🐾♂' : '🐾♀'}</span>` : ''}
+          ${isOwner ? `<button class="icon-btn edit-post-btn" data-edit-post="${esc(p.post_id)}" data-caption="${esc(p.caption || '')}" title="Editar postagem" aria-label="Editar postagem">✏️</button>` : ''}
         </div>
         <div class="info">
           <h4>${esc(p.pet_name)}</h4>
@@ -3064,8 +3212,8 @@
       }
 
       if(items && items.length){
-        const { myPets, myOwners } = await loadMyFollows(items);
-        grid.innerHTML = items.map(p => postCardHtml(p, null, myPets, myOwners)).join('');
+        const { user, myPets, myOwners } = await loadMyFollows(items);
+        grid.innerHTML = items.map(p => postCardHtml(p, null, myPets, myOwners, user?.id)).join('');
         return;
       }
       if(followScope === 'seguindo') return; // mensagem de vazio já tratada acima
@@ -3102,8 +3250,8 @@
       if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
       const { data, error } = await query;
       if(!error && data && data.length){
-        const { myPets, myOwners } = await loadMyFollows(data);
-        grid.innerHTML = data.map((p,i) => postCardHtml(p, `#${i+1}`, myPets, myOwners)).join('');
+        const { user, myPets, myOwners } = await loadMyFollows(data);
+        grid.innerHTML = data.map((p,i) => postCardHtml(p, `#${i+1}`, myPets, myOwners, user?.id)).join('');
         return;
       }
       grid.innerHTML = `<div class="feed-empty">${t('rank_sem_dados')}</div>`;

@@ -610,6 +610,12 @@ create policy "posts_insert_own" on public.posts for insert with check (
   auth.uid() = owner_id and exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
 );
 create policy "posts_delete_own" on public.posts for delete using (auth.uid() = owner_id or public.is_admin());
+-- editar caption/mídia direto do card do feed/ranque, sem passar pelo
+-- perfil — with check espelha a de insert pra impedir que o dono
+-- reatribua o próprio post pra um pet que não é dele
+create policy "posts_update_own" on public.posts for update
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id and exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid()));
 
 -- LIKES: leitura pública, qualquer autenticado curte/descurte só por si.
 -- update_own existe pra trocar o tipo de reação (curtir <-> amei) sem duplicar linha
