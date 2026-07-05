@@ -124,7 +124,7 @@
   }
   nav.links{display:flex; gap:26px; align-items:center;}
   nav.links a{
-    font-size:0.92rem; font-weight:600; color:var(--teal-light);
+    font-size:0.92rem; font-weight:600; color:var(--heading);
     position:relative; padding:6px 0;
   }
   nav.links a:hover{color:var(--coral-dark);}
@@ -181,7 +181,7 @@
   .eyebrow{
     display:inline-flex; align-items:center; gap:8px;
     font-family:'JetBrains Mono', monospace; font-size:0.74rem; letter-spacing:0.06em;
-    text-transform:uppercase; color:var(--teal-light);
+    text-transform:uppercase; color:var(--heading);
     background:rgba(143,188,148,0.25); border-radius:var(--radius-pill);
     padding:6px 14px; margin-bottom:18px;
   }
@@ -230,7 +230,7 @@
   .carteirinha{
     width:340px; border-radius:24px;
     background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
-    color:var(--cream);
+    color:#FFF8F0;
     padding:26px 24px 22px;
     box-shadow:0 30px 60px -20px rgba(15,61,62,0.55);
     position:relative;
@@ -265,7 +265,7 @@
   .carteirinha-bars span.fill{background:var(--mustard);}
   .badge-float{
     position:absolute; bottom:-18px; left:-22px;
-    background:var(--mustard); color:var(--heading);
+    background:var(--mustard); color:var(--teal);
     border-radius:14px; padding:10px 14px;
     font-weight:700; font-size:0.8rem; box-shadow:var(--shadow-soft);
     display:flex; align-items:center; gap:8px;
@@ -325,7 +325,7 @@
     color:var(--heading); font-size:0.7rem; font-weight:700; padding:6px 10px; border-radius:var(--radius-pill); white-space:nowrap;
   }
   .follow-pet-btn.following{background:var(--teal); color:white; border-color:var(--teal);}
-  .owner-link{font-weight:700; color:var(--teal-light); cursor:pointer;}
+  .owner-link{font-weight:700; color:var(--heading); cursor:pointer;}
   .owner-link.following{color:var(--coral-dark); text-decoration:underline;}
   .feed-empty{grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.9rem;}
 
@@ -361,7 +361,7 @@
   .product-card:hover{transform:translateY(-4px); box-shadow:var(--shadow-soft);}
   .product-card .spons{
     position:absolute; top:10px; right:10px; font-size:0.6rem; font-family:'JetBrains Mono',monospace;
-    background:var(--mustard); color:var(--heading); padding:2px 7px; border-radius:6px; text-transform:uppercase;
+    background:var(--mustard); color:var(--teal); padding:2px 7px; border-radius:6px; text-transform:uppercase;
   }
   .product-card .media{height:110px; background:#FBEFE3; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:10px; overflow:hidden; position:relative;}
   .product-card h5{font-size:0.88rem; margin-bottom:4px;}
@@ -370,7 +370,7 @@
   .product-card .shop a{color:inherit; font-weight:600;}
   .product-card .shop a:hover{color:var(--coral-dark); text-decoration:underline;}
   .product-card .nearby-cta{
-    display:flex; flex-direction:column; gap:3px; font-size:0.7rem; color:var(--teal-light);
+    display:flex; flex-direction:column; gap:3px; font-size:0.7rem; color:var(--heading);
     margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-weight:600;
   }
   .product-card .nearby-cta:hover .nearby-cta-title{color:var(--coral-dark);}
@@ -396,7 +396,7 @@
   .geo-row .name{font-weight:700; color:var(--heading);}
   .geo-row .meta{font-size:0.74rem; color:var(--text-muted);}
   .geo-address{font-size:0.76rem; color:var(--text-muted-2); margin:2px 0;}
-  .geo-phone{font-size:0.76rem; color:var(--teal-light); font-weight:700; display:inline-block; margin-top:3px;}
+  .geo-phone{font-size:0.76rem; color:var(--heading); font-weight:700; display:inline-block; margin-top:3px;}
   .geo-phone:hover{color:var(--coral-dark);}
   .city-select{
     display:flex; gap:10px; align-items:center; margin-top:14px; font-size:0.82rem; color:var(--text-muted-2);
@@ -455,7 +455,7 @@
   .partner-form input:focus, .partner-form select:focus, .partner-form textarea:focus{border-color:var(--teal);}
   .partner-form textarea{resize:vertical;}
   .partner-form-status{font-size:0.84rem; text-align:center; margin-top:12px; min-height:1.2em;}
-  .partner-form-status.ok{color:var(--teal-light); font-weight:700;}
+  .partner-form-status.ok{color:var(--heading); font-weight:700;}
   .partner-form-status.err{color:var(--coral-dark); font-weight:700;}
 
   .photo-upload{
@@ -494,11 +494,11 @@
     padding:4px 8px; border-radius:var(--radius-pill); box-shadow:0 2px 8px rgba(0,0,0,0.25);
     display:flex; align-items:center; gap:2px; line-height:1;
   }
-  .sex-badge.sex-macho{color:var(--teal-light);}
+  .sex-badge.sex-macho{color:#175C56;}
   .sex-badge.sex-femea{color:var(--coral-dark);}
   .pet-card .media.sex-macho{box-shadow:inset 0 0 0 3px var(--teal-light);}
   .pet-card .media.sex-femea{box-shadow:inset 0 0 0 3px var(--coral);}
-  .carteirinha-photo.sex-macho{border-color:var(--teal-light); box-shadow:inset 0 0 0 4px rgba(23,92,86,0.6), 0 0 0 2px var(--teal-light);}
+  .carteirinha-photo.sex-macho{border-color:#175C56; box-shadow:inset 0 0 0 4px rgba(23,92,86,0.6), 0 0 0 2px #175C56;}
   .carteirinha-photo.sex-femea{border-color:var(--coral); box-shadow:inset 0 0 0 4px rgba(255,107,74,0.4), 0 0 0 2px var(--coral);}
 
   .demo-modal{max-width:460px;}
@@ -525,7 +525,7 @@
   .comment-bubble b{font-size:0.82rem; color:var(--heading); display:block;}
   .comment-bubble p{font-size:0.86rem; color:var(--ink); margin:2px 0 0; word-break:break-word;}
   .comment-meta{font-size:0.72rem; color:var(--text-muted-3); margin:4px 0 0 6px; display:flex; gap:10px;}
-  .comment-meta .reply-link{cursor:pointer; font-weight:700; color:var(--teal-light);}
+  .comment-meta .reply-link{cursor:pointer; font-weight:700; color:var(--heading);}
   .reply-box{margin:8px 0 0 6px; display:flex; flex-direction:column; gap:6px; max-width:100%;}
   .reply-box textarea{
     width:100%; border-radius:10px; border:1.5px solid var(--line); padding:8px 10px;
@@ -556,7 +556,7 @@
   }
   .modal-close{
     position:absolute; top:14px; right:14px; border:none; background:rgba(255,255,255,0.6);
-    width:32px; height:32px; border-radius:50%; font-size:1rem; color:var(--heading); z-index:2;
+    width:32px; height:32px; border-radius:50%; font-size:1rem; color:var(--teal); z-index:2;
     display:grid; place-items:center; cursor:pointer;
   }
 
@@ -635,7 +635,7 @@
   .modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus{border-color:var(--teal);}
   .modal-body .terms{font-size:0.7rem; color:var(--text-muted-3); margin-top:14px; text-align:center; line-height:1.5;}
   .modal-status{font-size:0.82rem; text-align:center; margin:10px 0 0; min-height:1.2em;}
-  .modal-status.ok{color:var(--teal-light); font-weight:700;}
+  .modal-status.ok{color:var(--heading); font-weight:700;}
   .modal-status.err{color:var(--coral-dark); font-weight:700;}
   .modal-toggle{font-size:0.82rem; text-align:center; margin:12px 0 0; color:var(--text-muted);}
   .modal-toggle a{color:var(--heading); font-weight:700; cursor:pointer; text-decoration:underline;}
@@ -645,7 +645,7 @@
     background:var(--teal); color:rgba(255,248,240,0.85); padding:56px 0 28px; margin-top:40px;
   }
   .footer-top{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:32px; padding-bottom:36px; border-bottom:1px solid rgba(255,248,240,0.12);}
-  .footer-brand .logo{color:var(--cream);}
+  .footer-brand .logo{color:#FFF8F0;}
   .footer-brand p{font-size:0.85rem; color:rgba(255,248,240,0.6); margin:14px 0 18px; max-width:260px; line-height:1.5;}
   .footer-tagline{
     font-family:'JetBrains Mono', monospace; font-size:0.72rem; letter-spacing:0.03em;
@@ -921,7 +921,7 @@
     <div class="wrap">
       <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
         <span class="kicker" style="color:var(--mustard);" data-i18n="business_kicker">MeuPet Business</span>
-        <h2 style="color:var(--cream);" data-i18n="business_title">Coloque seu negócio na frente de quem tem pet</h2>
+        <h2 style="color:#FFF8F0;" data-i18n="business_title">Coloque seu negócio na frente de quem tem pet</h2>
         <p style="color:rgba(255,248,240,0.75);" data-i18n="business_desc">Petshops, clínicas, marcas e produtos — apareça no mapa, na vitrine e no feed de milhares de tutores. Preços de referência abaixo; cobrança combinada direto com nosso time (Pix ou boleto).</p>
       </div>
 
