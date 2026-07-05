@@ -143,6 +143,44 @@ create policy "pet_vaccinations_delete_own" on public.pet_vaccinations for delet
 );
 
 -- ---------------------------------------------------------------------
+-- 3c. INFORMAÇÕES PRIVADAS DO TUTOR (gênero, nascimento, bairro, dispositivo)
+--     separado de profiles (que é select-public) porque é dado sensível
+--     usado só para estatísticas agregadas no painel ADM
+-- ---------------------------------------------------------------------
+create table public.profile_private_info (
+  profile_id uuid primary key references public.profiles(id) on delete cascade,
+  gender text check (gender in ('masculino','feminino','outro','prefere_nao_informar')),
+  birth_date date,
+  neighborhood text,
+  last_device text check (last_device in ('mobile_ios','mobile_android','tablet_android','mobile_outro','desktop')),
+  updated_at timestamptz not null default now()
+);
+
+create trigger trg_ppi_updated
+  before update on public.profile_private_info
+  for each row execute procedure public.set_updated_at();
+
+alter table public.profile_private_info enable row level security;
+create policy "ppi_select_own" on public.profile_private_info for select using (auth.uid() = profile_id or public.is_admin());
+create policy "ppi_insert_own" on public.profile_private_info for insert with check (auth.uid() = profile_id);
+create policy "ppi_update_own" on public.profile_private_info for update using (auth.uid() = profile_id) with check (auth.uid() = profile_id);
+create policy "ppi_delete_own" on public.profile_private_info for delete using (auth.uid() = profile_id);
+
+-- só toca a coluna last_device (nunca mexe em gênero/nascimento/bairro já
+-- salvos) — evita que o registro automático de dispositivo a cada login
+-- sobrescreva dados que o tutor preencheu manualmente no perfil
+create or replace function public.set_my_device(p_device text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profile_private_info (profile_id, last_device)
+  values (auth.uid(), p_device)
+  on conflict (profile_id) do update set last_device = excluded.last_device, updated_at = now();
+end;
+$$;
+revoke all on function public.set_my_device(text) from public;
+grant execute on function public.set_my_device(text) to authenticated;
+
+-- ---------------------------------------------------------------------
 -- 4. POSTS (feed)
 -- ---------------------------------------------------------------------
 create table public.posts (
@@ -596,6 +634,133 @@ create table public.reports (
   status text not null default 'open' check (status in ('open','reviewing','resolved','dismissed')),
   created_at timestamptz not null default now()
 );
+
+-- ---------------------------------------------------------------------
+-- 10. FEEDBACK (mural público de opiniões/sugestões — qualquer um responde e curte)
+-- ---------------------------------------------------------------------
+create table public.feedback_posts (
+  id uuid primary key default uuid_generate_v4(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  content text not null check (char_length(content) > 0 and char_length(content) <= 2000),
+  created_at timestamptz not null default now()
+);
+create index idx_feedback_posts_created on public.feedback_posts(created_at desc);
+
+alter table public.feedback_posts enable row level security;
+create policy "feedback_posts_select_public" on public.feedback_posts for select using (true);
+create policy "feedback_posts_insert_own" on public.feedback_posts for insert with check (auth.uid() = owner_id);
+create policy "feedback_posts_update_own" on public.feedback_posts for update using (auth.uid() = owner_id or public.is_admin()) with check (auth.uid() = owner_id or public.is_admin());
+create policy "feedback_posts_delete_own" on public.feedback_posts for delete using (auth.uid() = owner_id or public.is_admin());
+
+create table public.feedback_comments (
+  id uuid primary key default uuid_generate_v4(),
+  feedback_id uuid not null references public.feedback_posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  content text not null check (char_length(content) > 0 and char_length(content) <= 2000),
+  created_at timestamptz not null default now()
+);
+create index idx_feedback_comments_feedback on public.feedback_comments(feedback_id);
+
+alter table public.feedback_comments enable row level security;
+create policy "feedback_comments_select_public" on public.feedback_comments for select using (true);
+create policy "feedback_comments_insert_own" on public.feedback_comments for insert with check (auth.uid() = user_id);
+create policy "feedback_comments_update_own" on public.feedback_comments for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "feedback_comments_delete_own" on public.feedback_comments for delete using (auth.uid() = user_id or public.is_admin());
+
+create table public.feedback_likes (
+  feedback_id uuid not null references public.feedback_posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (feedback_id, user_id)
+);
+create index idx_feedback_likes_feedback on public.feedback_likes(feedback_id);
+
+alter table public.feedback_likes enable row level security;
+create policy "feedback_likes_select_public" on public.feedback_likes for select using (true);
+create policy "feedback_likes_insert_own" on public.feedback_likes for insert with check (auth.uid() = user_id);
+create policy "feedback_likes_delete_own" on public.feedback_likes for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- 11. PAINEL ADM — funções agregadas (nunca expõem linha individual,
+--     só contagens/buckets; bloqueadas por is_admin() dentro da função)
+-- ---------------------------------------------------------------------
+create or replace function public.am_i_admin()
+returns boolean language sql security definer set search_path = public as $$
+  select public.is_admin();
+$$;
+revoke all on function public.am_i_admin() from public;
+grant execute on function public.am_i_admin() to authenticated;
+
+create or replace function public.admin_dashboard_stats()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare result jsonb;
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  select jsonb_build_object(
+    'total_users', (select count(*) from public.profiles),
+    'total_pets', (select count(*) from public.pets),
+    'total_posts', (select count(*) from public.posts),
+    'total_feedbacks', (select count(*) from public.feedback_posts),
+    'by_gender', (
+      select coalesce(jsonb_object_agg(g.label, g.cnt), '{}'::jsonb) from (
+        select coalesce(ppi.gender, 'nao_informado') as label, count(*) as cnt
+        from public.profiles p left join public.profile_private_info ppi on ppi.profile_id = p.id
+        group by 1
+      ) g
+    ),
+    'by_device', (
+      select coalesce(jsonb_object_agg(d.label, d.cnt), '{}'::jsonb) from (
+        select coalesce(ppi.last_device, 'desconhecido') as label, count(*) as cnt
+        from public.profiles p left join public.profile_private_info ppi on ppi.profile_id = p.id
+        group by 1
+      ) d
+    ),
+    'by_country', (
+      select coalesce(jsonb_object_agg(c.label, c.cnt), '{}'::jsonb) from (
+        select coalesce(p.country, 'nao_informado') as label, count(*) as cnt
+        from public.profiles p group by 1 order by count(*) desc limit 15
+      ) c
+    ),
+    'by_city', (
+      select coalesce(jsonb_object_agg(c.label, c.cnt), '{}'::jsonb) from (
+        select coalesce(p.city, 'nao_informado') as label, count(*) as cnt
+        from public.profiles p group by 1 order by count(*) desc limit 15
+      ) c
+    ),
+    'by_neighborhood', (
+      select coalesce(jsonb_object_agg(n.label, n.cnt), '{}'::jsonb) from (
+        select coalesce(ppi.neighborhood, 'nao_informado') as label, count(*) as cnt
+        from public.profiles p left join public.profile_private_info ppi on ppi.profile_id = p.id
+        group by 1 order by count(*) desc limit 15
+      ) n
+    ),
+    'by_age_bucket', (
+      select coalesce(jsonb_object_agg(a.label, a.cnt), '{}'::jsonb) from (
+        select
+          case
+            when ppi.birth_date is null then 'nao_informado'
+            when age(ppi.birth_date) < interval '18 years' then '<18'
+            when age(ppi.birth_date) < interval '25 years' then '18-24'
+            when age(ppi.birth_date) < interval '35 years' then '25-34'
+            when age(ppi.birth_date) < interval '45 years' then '35-44'
+            when age(ppi.birth_date) < interval '55 years' then '45-54'
+            else '55+'
+          end as label,
+          count(*) as cnt
+        from public.profiles p left join public.profile_private_info ppi on ppi.profile_id = p.id
+        group by 1
+      ) a
+    )
+  ) into result;
+
+  return result;
+end;
+$$;
+revoke all on function public.admin_dashboard_stats() from public;
+grant execute on function public.admin_dashboard_stats() to authenticated;
 
 -- =====================================================================
 -- ROW LEVEL SECURITY
