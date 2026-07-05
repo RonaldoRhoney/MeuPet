@@ -238,11 +238,92 @@ create table public.adoption_listings (
   lat double precision,
   lng double precision,
   status text not null default 'available' check (status in ('available','pending','adopted')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  age_years numeric,
+  weight_kg numeric,
+  sex text check (sex in ('macho','femea')),
+  size text check (size in ('pequeno','medio','grande')),
+  neutered boolean,
+  vaccinated boolean
 );
 
 create index idx_adoption_city on public.adoption_listings(city, country);
+
+-- contato do doador (telefone/whatsapp) fica numa tabela separada porque RLS
+-- é por linha, não por coluna — se ficasse na própria adoption_listings
+-- (pública pra qualquer visitante via adoption_select_public), o telefone
+-- vazaria pra qualquer robô que lesse a API direto, mesmo escondendo na UI.
+create table public.adoption_contacts (
+  listing_id uuid primary key references public.adoption_listings(id) on delete cascade,
+  phone text not null
+);
+alter table public.adoption_contacts enable row level security;
+-- sem policy de SELECT aqui de propósito — ninguém lê essa tabela direto,
+-- nem autenticado (RLS nega por padrão sem uma policy correspondente).
+-- a auditoria meupet-security apontou que "qualquer autenticado" era
+-- permissivo demais: uma única conta grátis conseguia baixar o telefone de
+-- TODOS os doadores numa query só. A leitura agora só acontece via a função
+-- reveal_adoption_contact() abaixo, que loga quem pediu o quê e aplica cota.
+create policy "adoption_contacts_insert_own" on public.adoption_contacts
+  for insert with check (
+    exists (select 1 from public.adoption_listings l where l.id = listing_id and l.created_by = auth.uid())
+  );
+create policy "adoption_contacts_update_own" on public.adoption_contacts
+  for update using (
+    exists (select 1 from public.adoption_listings l where l.id = listing_id and l.created_by = auth.uid())
+  );
 create index idx_adoption_status on public.adoption_listings(status);
+
+-- registro de quem já revelou o contato de qual anúncio — usado só pela
+-- função abaixo pra aplicar a cota de 20 contatos novos por usuário a cada 24h
+create table public.adoption_contact_reveals (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  listing_id uuid not null references public.adoption_listings(id) on delete cascade,
+  revealed_at timestamptz not null default now(),
+  unique (user_id, listing_id)
+);
+alter table public.adoption_contact_reveals enable row level security;
+
+create or replace function public.reveal_adoption_contact(p_listing_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_phone text;
+  v_count int;
+begin
+  if auth.uid() is null then
+    raise exception 'Login necessário';
+  end if;
+
+  -- rever a mesma listing de novo não consome cota
+  if not exists (
+    select 1 from public.adoption_contact_reveals
+    where user_id = auth.uid() and listing_id = p_listing_id
+  ) then
+    select count(*) into v_count
+    from public.adoption_contact_reveals
+    where user_id = auth.uid() and revealed_at > now() - interval '24 hours';
+
+    if v_count >= 20 then
+      raise exception 'Limite de contatos revelados nas últimas 24h atingido — tente novamente mais tarde.';
+    end if;
+
+    insert into public.adoption_contact_reveals (user_id, listing_id)
+    values (auth.uid(), p_listing_id)
+    on conflict (user_id, listing_id) do nothing;
+  end if;
+
+  select phone into v_phone from public.adoption_contacts where listing_id = p_listing_id;
+  return v_phone;
+end;
+$$;
+
+revoke all on function public.reveal_adoption_contact(uuid) from public;
+grant execute on function public.reveal_adoption_contact(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 7. PETSHOPS (geolocalização em tempo real)

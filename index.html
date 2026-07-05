@@ -304,7 +304,7 @@
   .adopt-card:hover{transform:translateY(-5px); box-shadow:var(--shadow-soft);}
   .adopt-card .media{
     height:150px; background:linear-gradient(135deg,#FFD9C7,#FFB627);
-    display:grid; place-items:center; font-size:2.6rem; position:relative;
+    display:flex; align-items:center; justify-content:center; font-size:2.6rem; position:relative; overflow:hidden;
   }
   .adopt-card .fav-btn{
     position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:50%;
@@ -467,7 +467,7 @@
   .carteirinha-photo.sex-femea{border-color:var(--coral); box-shadow:inset 0 0 0 4px rgba(255,107,74,0.4), 0 0 0 2px var(--coral);}
 
   .demo-modal{max-width:460px;}
-  .demo-slide-img{width:100%; height:230px; overflow:hidden; background:var(--cream);}
+  .demo-slide-img{width:100%; height:230px; flex-shrink:0; overflow:hidden; background:var(--cream);}
   .demo-slide-img img{width:100%; height:100%; object-fit:cover; object-position:top;}
   .demo-dots{display:flex; gap:6px; justify-content:center; margin:14px 0 18px;}
   .demo-dots span{width:8px; height:8px; border-radius:50%; background:var(--line);}
@@ -475,7 +475,6 @@
   .demo-nav{display:flex; gap:10px;}
   .demo-nav button{flex:1;}
 
-  .profile-modal{max-height:88vh; overflow-y:auto;}
   .profile-section{border-top:1px solid var(--line); margin-top:16px; padding-top:16px;}
   .profile-section h4{font-family:'Fraunces',serif; font-size:1rem; color:var(--teal); margin-bottom:10px;}
   .profile-pets-list{display:flex; flex-wrap:wrap; gap:8px;}
@@ -485,7 +484,6 @@
   }
   .profile-pet-item:hover{border-color:var(--teal); color:var(--teal);}
 
-  .post-modal{max-height:88vh; overflow-y:auto;}
   .comments-list{max-height:44vh; overflow-y:auto; margin:12px 0; padding-right:4px;}
   .comment-node{margin-top:10px; max-width:100%;}
   .comment-bubble{background:var(--cream); border-radius:14px; padding:9px 13px; display:inline-block; max-width:100%;}
@@ -519,6 +517,7 @@
   .modal{
     background:var(--paper); border-radius:28px; width:100%; max-width:400px;
     box-shadow:0 40px 80px -20px rgba(0,0,0,0.45); position:relative; overflow:hidden;
+    display:flex; flex-direction:column; max-height:min(680px, 92vh);
   }
   .modal-close{
     position:absolute; top:14px; right:14px; border:none; background:rgba(255,255,255,0.6);
@@ -528,7 +527,7 @@
 
   /* banner ilustrado no topo do modal */
   .modal-banner{
-    width:100%; height:164px; background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
+    width:100%; height:164px; flex-shrink:0; background:linear-gradient(160deg, var(--teal) 0%, #0A2C2D 100%);
     position:relative; overflow:hidden; display:flex; align-items:flex-end; justify-content:center;
   }
   .modal-banner .banner-bg-blob{
@@ -580,7 +579,7 @@
   }
 
   /* corpo do modal */
-  .modal-body{padding:22px 26px 26px;}
+  .modal-body{padding:22px 26px 26px; min-height:0; overflow-y:auto;}
   .modal-body h3{font-size:1.3rem; color:var(--teal); margin-bottom:4px;}
   .modal-body p.sub{font-size:0.82rem; color:#7C9492; margin-bottom:20px;}
   .social-btn{
@@ -1084,6 +1083,70 @@
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="petSubmit">Criar carteirinha</button>
       <p class="modal-status" id="petStatus"></p>
       <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark); display:none;" id="petDeleteBtn">🗑️ Excluir carteirinha</button>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTRO DE PET PARA ADOÇÃO/DOAÇÃO -->
+<div class="modal-overlay" id="adoptFormModal">
+  <div class="modal">
+    <button class="modal-close" id="closeAdoptFormModal">✕</button>
+    <div class="modal-body">
+      <h3>Cadastrar pet para adoção</h3>
+      <p class="sub">Preencha os dados do pet e um contato pra quem se interessar falar com você.</p>
+
+      <input type="text" placeholder="Nome do pet" id="adoptPetName">
+      <select id="adoptSpecies" aria-label="Espécie">
+        <option value="cao">🐶 Cachorro</option>
+        <option value="gato">🐱 Gato</option>
+        <option value="outro">🐾 Outro</option>
+      </select>
+      <input type="text" placeholder="Raça — escolha ou digite uma nova" id="adoptBreed" list="adoptBreedList" autocomplete="off">
+      <datalist id="adoptBreedList"></datalist>
+
+      <div class="partner-form-grid">
+        <input type="number" placeholder="Idade (anos)" id="adoptAge" min="0" step="0.5">
+        <input type="number" placeholder="Peso (kg)" id="adoptWeight" min="0" step="0.1">
+        <select id="adoptSex" aria-label="Sexo">
+          <option value="">Sexo (opcional)</option>
+          <option value="macho">Macho</option>
+          <option value="femea">Fêmea</option>
+        </select>
+        <select id="adoptSize" aria-label="Porte">
+          <option value="">Porte (opcional)</option>
+          <option value="pequeno">Pequeno</option>
+          <option value="medio">Médio</option>
+          <option value="grande">Grande</option>
+        </select>
+      </div>
+
+      <div class="partner-form-grid">
+        <select id="adoptNeutered" aria-label="Castrado">
+          <option value="">Castrado?</option>
+          <option value="sim">Castrado: sim</option>
+          <option value="nao">Castrado: não</option>
+        </select>
+        <select id="adoptVaccinated" aria-label="Vacinado">
+          <option value="">Vacinado?</option>
+          <option value="sim">Vacinado: sim</option>
+          <option value="nao">Vacinado: não</option>
+        </select>
+      </div>
+
+      <input type="text" placeholder="ONG/abrigo (opcional — deixe em branco se for tutor individual)" id="adoptOng">
+      <textarea placeholder="Conte sobre o temperamento, histórico, cuidados especiais..." id="adoptDescription" rows="3"></textarea>
+
+      <label class="photo-upload" for="adoptPhotoFile">
+        <span id="adoptPhotoPreview">📷</span>
+        <span id="adoptPhotoLabel">Adicionar uma foto (opcional)</span>
+      </label>
+      <input type="file" accept="image/*" id="adoptPhotoFile" style="display:none;">
+
+      <input type="tel" placeholder="WhatsApp/telefone para contato (obrigatório)" id="adoptPhone">
+      <p class="sub" style="margin:-6px 0 14px; font-size:0.72rem;">Esse contato só aparece pra quem estiver logado e clicar em "Quero adotar" — não fica público na página.</p>
+
+      <button class="btn btn-primary" style="width:100%; padding:13px;" id="adoptFormSubmit">Publicar para adoção</button>
+      <p class="modal-status" id="adoptFormStatus"></p>
     </div>
   </div>
 </div>
@@ -1889,9 +1952,11 @@
     await loadOwnPetAndRenderCard();
     setTimeout(()=>{
       overlay.classList.remove('open');
-      // se o clique original era "criar carteirinha" mas exigiu login antes,
-      // continua o fluxo em vez de deixar a pessoa ter que clicar de novo
+      // se o clique original era "criar carteirinha" (ou cadastrar pet pra
+      // adoção) mas exigiu login antes, continua o fluxo em vez de deixar
+      // a pessoa ter que clicar de novo
       if(pendingIntent === 'createPet'){ pendingIntent = null; onboardingInProgress = true; openPetModal(); }
+      else if(pendingIntent === 'createAdoption'){ pendingIntent = null; openAdoptFormModal(); }
     }, 900);
   });
   overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.classList.remove('open'); });
@@ -1944,8 +2009,8 @@
 
   // lista de raças por espécie — cresce sozinha (ver tabela breeds), sem
   // repetir nomes (índice único species+lower(name) no banco garante isso)
-  async function loadBreedList(speciesValue){
-    const list = document.getElementById('petBreedList');
+  async function loadBreedList(speciesValue, listId){
+    const list = document.getElementById(listId || 'petBreedList');
     if(!DB_READY){ list.innerHTML = ''; return; }
     const { data } = await supa.from('breeds').select('name').eq('species', speciesValue).order('name');
     list.innerHTML = (data || []).map(b => `<option value="${esc(b.name)}">`).join('');
@@ -1996,7 +2061,15 @@
       : 0;
   }
 
-  function openCropModal(file){
+  // callback + input chamados pelo fluxo que abriu o recorte — assim a mesma
+  // ferramenta serve pro pet do tutor E pro formulário de doação, sem duplicar
+  // toda a lógica de arrastar/zoom pra cada lugar que precisa de uma foto
+  let cropOnConfirm = null;
+  let cropSourceInput = null;
+
+  function openCropModal(file, onConfirm, sourceInputEl){
+    cropOnConfirm = onConfirm;
+    cropSourceInput = sourceInputEl || null;
     cropOverlay.classList.add('open');
     const url = URL.createObjectURL(file);
     const probe = new Image();
@@ -2021,7 +2094,9 @@
     if(cropImgEl.src) URL.revokeObjectURL(cropImgEl.src);
     cropImgEl.src = '';
     cropState = null;
-    document.getElementById('petPhotoFile').value = '';
+    if(cropSourceInput) cropSourceInput.value = '';
+    cropOnConfirm = null;
+    cropSourceInput = null;
   }
 
   // arrastar (mouse + touch, via Pointer Events unificados)
@@ -2067,16 +2142,22 @@
     canvas.height = CROP_OUTPUT_SIZE;
     canvas.getContext('2d').drawImage(cropImgEl, sx, sy, sSize, sSize, 0, 0, CROP_OUTPUT_SIZE, CROP_OUTPUT_SIZE);
     canvas.toBlob(blob=>{
-      petPhotoFileSelected = new File([blob], 'pet-foto.jpg', { type: 'image/jpeg' });
-      document.getElementById('petPhotoPreview').innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.9)}" alt="">`;
-      document.getElementById('petPhotoLabel').textContent = 'Foto ajustada ✓';
+      const file = new File([blob], 'pet-foto.jpg', { type: 'image/jpeg' });
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const onConfirm = cropOnConfirm;
       closeCropModal();
+      if(onConfirm) onConfirm(file, dataUrl);
     }, 'image/jpeg', 0.9);
   };
 
   document.getElementById('petPhotoFile').addEventListener('change', e=>{
     const file = e.target.files[0];
-    if(file) openCropModal(file);
+    if(!file) return;
+    openCropModal(file, (croppedFile, dataUrl)=>{
+      petPhotoFileSelected = croppedFile;
+      document.getElementById('petPhotoPreview').innerHTML = `<img src="${dataUrl}" alt="">`;
+      document.getElementById('petPhotoLabel').textContent = 'Foto ajustada ✓';
+    }, document.getElementById('petPhotoFile'));
   });
 
   let editingPetId = null;
@@ -2771,11 +2852,12 @@
     grid.innerHTML = filtered.map(a => `
       <div class="adopt-card">
         <div class="media">
-          ${a.emoji}
+          ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
           <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="Favoritar" aria-label="Favoritar ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
         </div>
         <div class="info">
           <h4>${esc(a.name)}</h4>
+          ${a.meta ? `<div class="dist" style="margin-bottom:2px;">${esc(a.meta)}</div>` : ''}
           <div class="dist">📍 ${esc(a.dist)}</div>
           <button class="btn-block" data-adopt="${esc(a.id)}">Quero adotar</button>
         </div>
@@ -2793,7 +2875,9 @@
           const dist = km != null
             ? `${km.toFixed(1)} km · ${a.ong_name || 'Tutor independente'}`
             : `${a.ong_name || 'Tutor independente'}${a.city ? ' · ' + a.city : ''}`;
-          return { id:a.id, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km };
+          const sizeLabel = { pequeno:'Pequeno porte', medio:'Médio porte', grande:'Grande porte' }[a.size] || null;
+          const meta = [a.breed, a.age_years != null ? `${a.age_years} anos` : null, sizeLabel].filter(Boolean).join(' · ');
+          return { id:a.id, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km, photo_url:a.photo_url, meta };
         });
         items.sort((x,y) => (x.km ?? Infinity) - (y.km ?? Infinity));
         items = items.slice(0, 8);
@@ -2824,9 +2908,158 @@
       renderAdoptCards(adoptItemsCache);
       return;
     }
-    if(e.target.closest('[data-adopt]')) openModal('login');
+    const adoptBtn = e.target.closest('[data-adopt]');
+    if(adoptBtn){
+      if(!currentUser){ openModal('login'); return; }
+      const id = adoptBtn.dataset.adopt;
+      if(id.startsWith('demo-')){
+        adoptBtn.textContent = 'Contato disponível quando houver pets reais aqui 🐾';
+        return;
+      }
+      adoptBtn.disabled = true;
+      adoptBtn.textContent = 'Buscando contato…';
+      // o telefone nunca é lido direto da tabela — passa por uma função no
+      // banco (security definer) que exige login e aplica um limite de
+      // contatos revelados por usuário a cada 24h, pra uma conta grátis não
+      // conseguir varrer o telefone de todos os doadores de uma vez
+      supa.rpc('reveal_adoption_contact', { p_listing_id: id }).then(({ data, error })=>{
+        if(error || !data){
+          adoptBtn.disabled = false;
+          adoptBtn.textContent = error?.message?.includes('Limite')
+            ? 'Limite de contatos revelados atingido — tente mais tarde'
+            : 'Contato indisponível no momento';
+          return;
+        }
+        const digits = data.replace(/\D/g, '');
+        const link = document.createElement('a');
+        link.className = 'btn-block';
+        link.style.cssText = 'display:block; text-align:center; text-decoration:none;';
+        link.href = `https://wa.me/${digits}`;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = `💬 Chamar ${data}`;
+        adoptBtn.replaceWith(link);
+      });
+    }
   });
-  document.getElementById('btnCadastrarAdocao').addEventListener('click', () => openModal('signup'));
+
+  // ===================================================================
+  // CADASTRO DE PET PARA ADOÇÃO/DOAÇÃO
+  // ===================================================================
+  let adoptPhotoFileSelected = null;
+
+  document.getElementById('adoptSpecies').addEventListener('change', e=>{
+    loadBreedList(e.target.value, 'adoptBreedList');
+  });
+
+  document.getElementById('adoptPhotoFile').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    openCropModal(file, (croppedFile, dataUrl)=>{
+      adoptPhotoFileSelected = croppedFile;
+      document.getElementById('adoptPhotoPreview').innerHTML = `<img src="${dataUrl}" alt="">`;
+      document.getElementById('adoptPhotoLabel').textContent = 'Foto ajustada ✓';
+    }, document.getElementById('adoptPhotoFile'));
+  });
+
+  function openAdoptFormModal(){
+    if(!currentUser){ pendingIntent = 'createAdoption'; openModal('signup'); return; }
+    document.getElementById('adoptPetName').value = '';
+    document.getElementById('adoptSpecies').value = 'cao';
+    document.getElementById('adoptBreed').value = '';
+    document.getElementById('adoptAge').value = '';
+    document.getElementById('adoptWeight').value = '';
+    document.getElementById('adoptSex').value = '';
+    document.getElementById('adoptSize').value = '';
+    document.getElementById('adoptNeutered').value = '';
+    document.getElementById('adoptVaccinated').value = '';
+    document.getElementById('adoptOng').value = '';
+    document.getElementById('adoptDescription').value = '';
+    document.getElementById('adoptPhone').value = '';
+    document.getElementById('adoptPhotoFile').value = '';
+    adoptPhotoFileSelected = null;
+    document.getElementById('adoptPhotoPreview').innerHTML = '📷';
+    document.getElementById('adoptPhotoLabel').textContent = 'Adicionar uma foto (opcional)';
+    document.getElementById('adoptFormStatus').textContent = '';
+    document.getElementById('adoptFormStatus').className = 'modal-status';
+    loadBreedList('cao', 'adoptBreedList');
+    document.getElementById('adoptFormModal').classList.add('open');
+  }
+  document.getElementById('closeAdoptFormModal').onclick = ()=> document.getElementById('adoptFormModal').classList.remove('open');
+  document.getElementById('adoptFormModal').addEventListener('click', e=>{
+    if(e.target.id === 'adoptFormModal') document.getElementById('adoptFormModal').classList.remove('open');
+  });
+
+  document.getElementById('adoptFormSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adoptFormStatus');
+    const submitBtn = document.getElementById('adoptFormSubmit');
+    const pet_name = document.getElementById('adoptPetName').value.trim();
+    const species = document.getElementById('adoptSpecies').value;
+    const breed = document.getElementById('adoptBreed').value.trim() || null;
+    const ageRaw = document.getElementById('adoptAge').value;
+    const age_years = ageRaw ? parseFloat(ageRaw) : null;
+    const weightRaw = document.getElementById('adoptWeight').value;
+    const weight_kg = weightRaw ? parseFloat(weightRaw) : null;
+    const sex = document.getElementById('adoptSex').value || null;
+    const size = document.getElementById('adoptSize').value || null;
+    const neuteredRaw = document.getElementById('adoptNeutered').value;
+    const neutered = neuteredRaw === '' ? null : neuteredRaw === 'sim';
+    const vaccinatedRaw = document.getElementById('adoptVaccinated').value;
+    const vaccinated = vaccinatedRaw === '' ? null : vaccinatedRaw === 'sim';
+    const ong_name = document.getElementById('adoptOng').value.trim() || null;
+    const description = document.getElementById('adoptDescription').value.trim() || null;
+    const phone = document.getElementById('adoptPhone').value.trim();
+
+    if(!pet_name){ statusEl.textContent = 'Dá um nome pro pet :)'; statusEl.className = 'modal-status err'; return; }
+    if(!phone){ statusEl.textContent = 'Informe um WhatsApp/telefone de contato.'; statusEl.className = 'modal-status err'; return; }
+
+    submitBtn.disabled = true;
+    statusEl.textContent = '';
+    statusEl.className = 'modal-status';
+
+    let photo_url = null;
+    if(adoptPhotoFileSelected){
+      statusEl.textContent = 'Enviando foto…';
+      try{ photo_url = await uploadToPetMedia(adoptPhotoFileSelected, 'adoption'); }
+      catch(err){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Não deu pra enviar a foto: ' + err.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    }
+
+    const { data: listing, error } = await supa.from('adoption_listings').insert({
+      created_by: currentUser.id, pet_name, species, breed, description, photo_url, ong_name,
+      city: currentGeo.city || null, country: currentGeo.country || null,
+      lat: currentGeo.lat || null, lng: currentGeo.lng || null,
+      age_years, weight_kg, sex, size, neutered, vaccinated,
+    }).select().single();
+
+    if(error){
+      submitBtn.disabled = false;
+      statusEl.textContent = error.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    const { error: contactError } = await supa.from('adoption_contacts').insert({ listing_id: listing.id, phone });
+    submitBtn.disabled = false;
+    if(contactError){
+      statusEl.textContent = 'Pet cadastrado, mas houve um erro ao salvar o contato: ' + contactError.message;
+      statusEl.className = 'modal-status err';
+      return;
+    }
+
+    statusEl.textContent = '✅ Pet publicado para adoção!';
+    statusEl.className = 'modal-status ok';
+    setTimeout(()=>{
+      document.getElementById('adoptFormModal').classList.remove('open');
+      loadAdoption();
+    }, 900);
+  });
+
+  document.getElementById('btnCadastrarAdocao').addEventListener('click', () => openAdoptFormModal());
 
   async function loadMarket(){
     const grid = document.getElementById('marketGrid');
