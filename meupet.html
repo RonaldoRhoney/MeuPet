@@ -548,6 +548,10 @@
     position:fixed; inset:0; background:rgba(15,40,40,0.6); backdrop-filter:blur(6px);
     display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
   }
+  /* recorte de foto sempre abre COMO SUB-ETAPA de outro modal (ficha do
+     pet, doação, perfil) — sem isso, ficava atrás do modal que o abriu,
+     por ter o mesmo z-index e vir antes no DOM */
+  #cropModal{z-index:200;}
   .modal-overlay.open{display:flex;}
   .modal{
     background:var(--paper); border-radius:28px; width:100%; max-width:400px;
@@ -685,6 +689,7 @@
     <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
     <nav class="links" id="navLinks">
       <a href="#feed" data-i18n="nav_feed">Feed</a>
+      <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
       <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
       <a href="#loja" data-i18n="nav_loja">Loja</a>
       <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
@@ -749,19 +754,17 @@
     </a>
   </div>
 
-  <!-- FEED / RANKING -->
+  <!-- FEED (postagens individuais, foto/vídeo, mais recentes primeiro) -->
   <section class="block" id="feed">
     <div class="wrap">
       <div class="section-head">
         <div>
-          <span class="kicker" data-i18n="feed_kicker">Feed &amp; ranqueamento</span>
-          <h2 data-i18n="feed_title">Quem está bombando agora</h2>
-          <p data-i18n="feed_desc">Ranking dinâmico por curtidas, com ligas que ramificam do bairro até o país.</p>
+          <span class="kicker" data-i18n="feed_kicker">Feed</span>
+          <h2 data-i18n="feed_title">O que os pets andam aprontando</h2>
+          <p data-i18n="feed_desc">Fotos e vídeos postados pelos tutores, mais recentes primeiro.</p>
         </div>
-        <div class="pill-tabs" id="rankTabs">
-          <button class="active" data-scope="bairro" data-i18n="scope_bairro">Bairro</button>
-          <button data-scope="cidade" data-i18n="scope_cidade">Cidade</button>
-          <button data-scope="pais" data-i18n="scope_pais">País</button>
+        <div class="pill-tabs" id="feedFollowTabs">
+          <button class="active" data-scope="todos" data-i18n="feed_scope_todos">Todos</button>
           <button data-scope="seguindo" data-i18n="scope_seguindo">Seguindo</button>
         </div>
       </div>
@@ -772,6 +775,25 @@
         <button data-species="outro" data-i18n="species_outro">🐾 Outros</button>
       </div>
       <div class="feed-grid" id="feedGrid"></div>
+    </div>
+  </section>
+
+  <!-- RANQUE (Top 5 postagens, calculado automaticamente) -->
+  <section class="block" id="ranque" style="background:var(--surface);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker" data-i18n="rank_kicker">Ranque</span>
+          <h2 data-i18n="rank_title">Top 5 postagens</h2>
+          <p data-i18n="rank_desc">Calculado automaticamente por curtidas, amei, compartilhamentos e seguidores — ligas do bairro até o país.</p>
+        </div>
+        <div class="pill-tabs" id="rankTabs">
+          <button class="active" data-scope="bairro" data-i18n="scope_bairro">Bairro</button>
+          <button data-scope="cidade" data-i18n="scope_cidade">Cidade</button>
+          <button data-scope="pais" data-i18n="scope_pais">País</button>
+        </div>
+      </div>
+      <div class="feed-grid" id="rankGrid"></div>
     </div>
   </section>
 
@@ -1003,6 +1025,7 @@
       <div class="footer-col">
         <h5 data-i18n="footer_produto">Produto</h5>
         <a href="#feed" data-i18n="nav_feed">Feed</a>
+        <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
         <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
         <a href="#loja" data-i18n="nav_loja">Loja</a>
         <a href="#planos" data-i18n="nav_planos">Planos</a>
@@ -1369,9 +1392,17 @@
     ad_headline_petshops:{pt:'Plano de saúde pet a partir de R$ 29/mês',en:'Pet health plans from R$29/month'},
     ad_cta_simular:{pt:'Simular →',en:'Get a quote →'},
 
-    feed_kicker:{pt:'Feed & ranqueamento',en:'Feed & ranking'}, feed_title:{pt:'Quem está bombando agora',en:"Who's trending now"},
-    feed_desc:{pt:'Ranking dinâmico por curtidas, com ligas que ramificam do bairro até o país.',
-      en:'Dynamic ranking by likes, with leagues branching from your neighborhood all the way to the whole country.'},
+    feed_kicker:{pt:'Feed',en:'Feed'}, feed_title:{pt:'O que os pets andam aprontando',en:'What the pets have been up to'},
+    feed_desc:{pt:'Fotos e vídeos postados pelos tutores, mais recentes primeiro.',en:'Photos and videos posted by pet parents, newest first.'},
+    feed_scope_todos:{pt:'Todos',en:'All'},
+    nav_ranque:{pt:'Ranque',en:'Ranking'},
+    rank_kicker:{pt:'Ranque',en:'Ranking'}, rank_title:{pt:'Top 5 postagens',en:'Top 5 posts'},
+    rank_desc:{pt:'Calculado automaticamente por curtidas, amei, compartilhamentos e seguidores — ligas do bairro até o país.',
+      en:'Calculated automatically from likes, loves, shares and followers — leagues from your neighborhood to the whole country.'},
+    feed_login_seguir:{pt:'Entre na sua conta pra ver quem você segue.',en:'Log in to see who you follow.'},
+    feed_seguindo_vazio:{pt:'Você ainda não segue nenhum pet ou tutor — que tal começar agora?',en:"You don't follow any pets or pet parents yet — why not start now?"},
+    feed_sem_posts:{pt:'Nenhuma postagem por aqui ainda — seja o primeiro a postar!',en:'No posts here yet — be the first to post!'},
+    rank_sem_dados:{pt:'Ainda não há postagens suficientes pra montar um ranque aqui.',en:"There aren't enough posts yet to build a ranking here."},
     scope_bairro:{pt:'Bairro',en:'Neighborhood'}, scope_cidade:{pt:'Cidade',en:'City'}, scope_pais:{pt:'País',en:'Country'},
     scope_seguindo:{pt:'Seguindo',en:'Following'},
     species_geral:{pt:'Geral',en:'Overall'}, species_cao:{pt:'🐶 Cães',en:'🐶 Dogs'}, species_gato:{pt:'🐱 Gatos',en:'🐱 Cats'},
@@ -1525,8 +1556,10 @@
   // re-renderiza os cards que já estavam na tela (o texto traduzido dentro
   // do template só é aplicado quando a função roda de novo)
   function refreshDynamicTranslations(){
-    const scope = document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro';
-    if(typeof renderFeed === 'function') renderFeed(scope);
+    const feedScope = document.querySelector('#feedFollowTabs button.active')?.dataset.scope || 'todos';
+    const rankScope = document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro';
+    if(typeof renderFeed === 'function') renderFeed(feedScope);
+    if(typeof renderRanking === 'function') renderRanking(rankScope);
     if(typeof loadAdoption === 'function') loadAdoption();
     if(typeof loadMarket === 'function') loadMarket();
   }
@@ -1617,8 +1650,16 @@
           text: 'Conheci o MeuPet — a carteirinha digital do seu pet! Feed, ranking, adoção e petshops perto de você 🐾',
           url: appUrl()
         }, shareTrigger);
-      } else if(shareTrigger.dataset.share === 'pet'){
+      } else if(shareTrigger.dataset.share === 'pet' || shareTrigger.dataset.share === 'post'){
         const name = shareTrigger.dataset.petName || 'Meu pet';
+        const postId = shareTrigger.dataset.post;
+        if(postId && DB_READY){
+          // registra o compartilhamento pro ranque (1 por pessoa por post,
+          // duplicata é esperada/ignorada — não bloqueia o compartilhar em si)
+          supa.auth.getUser().then(({ data:{ user } })=>{
+            if(user) supa.from('post_shares').insert({ post_id: postId, user_id: user.id }).then(()=>{});
+          });
+        }
         shareContent({
           title: 'MeuPet',
           text: `Olha o(a) ${name} bombando no MeuPet! 🐾 Vem curtir e criar a carteirinha do seu pet também:`,
@@ -2843,7 +2884,8 @@
     document.getElementById('postPhotoFile').value = '';
     document.getElementById('postPhotoPreview').textContent = '📷';
     document.getElementById('postPhotoLabel').textContent = 'Foto ou vídeo do post';
-    renderFeed(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+    renderFeed(document.querySelector('#feedFollowTabs button.active')?.dataset.scope || 'todos');
+    renderRanking(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
   });
 
   document.getElementById('passwordSubmit').addEventListener('click', async ()=>{
@@ -2905,7 +2947,7 @@
     });
   };
 
-  // feed data
+  // feed data (demonstração, sem Supabase configurado)
   const feedData = {
     bairro: [
       {emoji:'🐶', species:'cao', name:'Toby', loc:'Marco, Belém', likes:'1.2k', rank:'#1'},
@@ -2926,26 +2968,67 @@
   let currentSpecies = 'geral';
   const speciesLabelMap = { cao:'Cachorro', gato:'Gato', outro:'Outro' };
 
-  // mostra a foto/vídeo do ÚLTIMO POST do pet (se já postou algo no feed);
-  // sem post ainda, cai pra foto de perfil da carteirinha; sem foto nenhuma, emoji
-  function renderCardMediaHtml(p){
-    if(p.latest_post_media_url){
-      return p.latest_post_media_type === 'video'
-        ? `<video src="${safeUrl(p.latest_post_media_url)}" controls muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`
-        : `<img src="${safeUrl(p.latest_post_media_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
+  // mostra a foto/vídeo do POST (linha de post_rankings); sem mídia no post,
+  // cai pra foto de perfil da carteirinha; sem foto nenhuma, emoji de pata
+  function renderPostMediaHtml(p){
+    if(p.media_url){
+      return p.media_type === 'video'
+        ? `<video src="${safeUrl(p.media_url)}" controls muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`
+        : `<img src="${safeUrl(p.media_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
     }
-    if(p.photo_url) return `<img src="${safeUrl(p.photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
+    if(p.pet_photo_url) return `<img src="${safeUrl(p.pet_photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
     return '🐾';
   }
 
-  async function renderFeed(scope){
+  // pré-carrega o que o tutor logado já segue, pra marcar os botões certos
+  async function loadMyFollows(items){
+    const { data:{ user } } = await supa.auth.getUser();
+    let myPets = new Set(), myOwners = new Set();
+    if(user && items.length){
+      const petIds = items.map(p => p.pet_id), ownerIds = items.map(p => p.owner_id);
+      const [{ data:pf }, { data:prf }] = await Promise.all([
+        supa.from('pet_follows').select('pet_id').eq('follower_id', user.id).in('pet_id', petIds),
+        supa.from('profile_follows').select('followed_id').eq('follower_id', user.id).in('followed_id', ownerIds),
+      ]);
+      myPets = new Set((pf || []).map(r => r.pet_id));
+      myOwners = new Set((prf || []).map(r => r.followed_id));
+    }
+    return { user, myPets, myOwners };
+  }
+
+  function postCardHtml(p, rankLabel, myPets, myOwners){
+    return `
+      <div class="pet-card">
+        <div class="media${p.sex ? ` sex-${p.sex}` : ''}">
+          ${renderPostMediaHtml(p)}
+          ${rankLabel ? `<span class="rank-chip">${rankLabel}</span>` : ''}
+          ${p.sex ? `<span class="sex-badge sex-${p.sex}">${p.sex === 'macho' ? '🐾♂' : '🐾♀'}</span>` : ''}
+        </div>
+        <div class="info">
+          <h4>${esc(p.pet_name)}</h4>
+          ${p.caption ? `<div class="loc" style="font-style:italic;">${esc(p.caption)}</div>` : ''}
+          <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''} · ${t('card_por')} <a class="owner-link ${myOwners.has(p.owner_id) ? 'following' : ''}" data-owner-id="${esc(p.owner_id)}">${esc(p.owner_name || 'tutor')}</a></div>
+          <div class="actions">
+            <button class="reaction-btn" data-reaction="curtir" data-post="${esc(p.post_id)}" title="${t('card_curtir_title')}">👍</button>
+            <button class="reaction-btn" data-reaction="amei" data-post="${esc(p.post_id)}" title="${t('card_amei_title')}">❤️</button>
+            <span class="reaction-count">${esc(p.likes_count)}</span>
+            <button class="follow-pet-btn ${myPets.has(p.pet_id) ? 'following' : ''}" data-pet-id="${esc(p.pet_id)}">${myPets.has(p.pet_id) ? t('card_seguindo') : t('card_seguir')}</button>
+            <button class="icon-btn comment-btn" data-post="${esc(p.post_id)}" data-pet-name="${esc(p.pet_name)}" title="${t('card_comentarios_title')}">💬</button>
+            <button class="icon-btn" data-share="post" data-post="${esc(p.post_id)}" data-pet-name="${esc(p.pet_name)}" title="${t('card_compartilhar_title')}" aria-label="${t('card_compartilhar_title')} ${esc(p.pet_name)}">🐾</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // FEED: stream de postagens (foto/vídeo), mais recentes primeiro —
+  // followScope 'todos' | 'seguindo'
+  async function renderFeed(followScope){
     const grid = document.getElementById('feedGrid');
     if(DB_READY){
       let items = null;
-
-      if(scope === 'seguindo'){
+      if(followScope === 'seguindo'){
         const { data:{ user } } = await supa.auth.getUser();
-        if(!user){ grid.innerHTML = '<div class="feed-empty">Entre na sua conta pra ver quem você segue.</div>'; return; }
+        if(!user){ grid.innerHTML = `<div class="feed-empty">${t('feed_login_seguir')}</div>`; return; }
         const [{ data:pf }, { data:prf }] = await Promise.all([
           supa.from('pet_follows').select('pet_id').eq('follower_id', user.id),
           supa.from('profile_follows').select('followed_id').eq('follower_id', user.id),
@@ -2953,73 +3036,41 @@
         const petIds = (pf || []).map(r => r.pet_id);
         const ownerIds = (prf || []).map(r => r.followed_id);
         if(!petIds.length && !ownerIds.length){
-          grid.innerHTML = '<div class="feed-empty">Você ainda não segue nenhum pet ou tutor — que tal começar agora?</div>';
+          grid.innerHTML = `<div class="feed-empty">${t('feed_seguindo_vazio')}</div>`;
           return;
         }
-        let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(24);
+        let query = supa.from('post_rankings').select('*').order('created_at', { ascending:false }).limit(30);
         const orParts = [];
-        if(petIds.length) orParts.push(`id.in.(${petIds.join(',')})`);
+        if(petIds.length) orParts.push(`pet_id.in.(${petIds.join(',')})`);
         if(ownerIds.length) orParts.push(`owner_id.in.(${ownerIds.join(',')})`);
         query = query.or(orParts.join(','));
         if(currentSpecies !== 'geral') query = query.eq('species', speciesLabelMap[currentSpecies]);
         const { data, error } = await query;
         if(!error) items = data;
       } else {
-        let query = supa.from('pet_rankings').select('*').order('rank_score', { ascending:false }).limit(6);
-        if(scope === 'cidade' && currentGeo.city) query = query.eq('city', currentGeo.city);
-        if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
+        let query = supa.from('post_rankings').select('*').order('created_at', { ascending:false }).limit(30);
         if(currentSpecies !== 'geral') query = query.eq('species', speciesLabelMap[currentSpecies]);
         const { data, error } = await query;
         if(!error) items = data;
       }
 
       if(items && items.length){
-        // pré-carrega, numa tacada só, o que o tutor logado já segue (pra marcar os bot��es certos)
-        const { data:{ user } } = await supa.auth.getUser();
-        let myPets = new Set(), myOwners = new Set();
-        if(user){
-          const ids = items.map(p => p.id), owners = items.map(p => p.owner_id);
-          const [{ data:pf }, { data:prf }] = await Promise.all([
-            supa.from('pet_follows').select('pet_id').eq('follower_id', user.id).in('pet_id', ids),
-            supa.from('profile_follows').select('followed_id').eq('follower_id', user.id).in('followed_id', owners),
-          ]);
-          myPets = new Set((pf || []).map(r => r.pet_id));
-          myOwners = new Set((prf || []).map(r => r.followed_id));
-        }
-
-        grid.innerHTML = items.map((p,i) => `
-          <div class="pet-card">
-            <div class="media${p.sex ? ` sex-${p.sex}` : ''}">
-              ${renderCardMediaHtml(p)}
-              <span class="rank-chip">#${i+1} · ${t('card_liga')}</span>
-              ${p.sex ? `<span class="sex-badge sex-${p.sex}">${p.sex === 'macho' ? '🐾♂' : '🐾♀'}</span>` : ''}
-            </div>
-            <div class="info">
-              <h4>${esc(p.name)}</h4>
-              <div class="loc">${esc(p.city || '')}${p.country ? ', ' + esc(p.country) : ''} · ${t('card_por')} <a class="owner-link ${myOwners.has(p.owner_id) ? 'following' : ''}" data-owner-id="${esc(p.owner_id)}">${esc(p.owner_name || 'tutor')}</a></div>
-              <div class="actions">
-                <button class="reaction-btn" data-reaction="curtir" data-post="${esc(p.latest_post_id || '')}" title="${t('card_curtir_title')}">👍</button>
-                <button class="reaction-btn" data-reaction="amei" data-post="${esc(p.latest_post_id || '')}" title="${t('card_amei_title')}">❤️</button>
-                <span class="reaction-count">${esc(p.rank_score)}</span>
-                <button class="follow-pet-btn ${myPets.has(p.id) ? 'following' : ''}" data-pet-id="${esc(p.id)}">${myPets.has(p.id) ? t('card_seguindo') : t('card_seguir')}</button>
-                <button class="icon-btn comment-btn" data-post="${esc(p.latest_post_id || '')}" data-pet-name="${esc(p.name)}" title="${t('card_comentarios_title')}">💬</button>
-                <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="${t('card_compartilhar_title')}" aria-label="${t('card_compartilhar_title')} ${esc(p.name)}">🐾</button>
-              </div>
-            </div>
-          </div>`).join('');
+        const { myPets, myOwners } = await loadMyFollows(items);
+        grid.innerHTML = items.map(p => postCardHtml(p, null, myPets, myOwners)).join('');
         return;
       }
-      if(scope === 'seguindo') return; // mensagem de vazio já tratada acima
+      if(followScope === 'seguindo') return; // mensagem de vazio já tratada acima
+      grid.innerHTML = `<div class="feed-empty">${t('feed_sem_posts')}</div>`;
+      return;
     }
-    const demoScope = feedData[scope] ? scope : 'bairro';
-    const demoSpeciesFilter = currentSpecies === 'geral' ? feedData[demoScope] : feedData[demoScope].filter(p => p.species === currentSpecies);
+    const demoSpeciesFilter = currentSpecies === 'geral' ? feedData.bairro : feedData.bairro.filter(p => p.species === currentSpecies);
     if(!demoSpeciesFilter.length){
       grid.innerHTML = `<div class="feed-empty">${t('feed_empty_especie')}</div>`;
       return;
     }
     grid.innerHTML = demoSpeciesFilter.map(p => `
       <div class="pet-card">
-        <div class="media">${p.emoji}<span class="rank-chip">${p.rank} · ${t('card_liga')}</span></div>
+        <div class="media">${p.emoji}</div>
         <div class="info">
           <h4>${p.name}</h4>
           <div class="loc">${p.loc}</div>
@@ -3032,12 +3083,54 @@
         </div>
       </div>`).join('');
   }
-  renderFeed('bairro');
+
+  // RANQUE: Top 5 postagens por escopo geográfico, pontuação automática
+  async function renderRanking(scope){
+    const grid = document.getElementById('rankGrid');
+    if(DB_READY){
+      let query = supa.from('post_rankings').select('*').order('post_score', { ascending:false }).limit(5);
+      if(scope === 'cidade' && currentGeo.city) query = query.eq('city', currentGeo.city);
+      if(scope === 'pais' && currentGeo.country) query = query.eq('country', currentGeo.country);
+      const { data, error } = await query;
+      if(!error && data && data.length){
+        const { myPets, myOwners } = await loadMyFollows(data);
+        grid.innerHTML = data.map((p,i) => postCardHtml(p, `#${i+1}`, myPets, myOwners)).join('');
+        return;
+      }
+      grid.innerHTML = `<div class="feed-empty">${t('rank_sem_dados')}</div>`;
+      return;
+    }
+    const demoScope = feedData[scope] ? scope : 'bairro';
+    grid.innerHTML = feedData[demoScope].map(p => `
+      <div class="pet-card">
+        <div class="media">${p.emoji}<span class="rank-chip">${p.rank}</span></div>
+        <div class="info">
+          <h4>${p.name}</h4>
+          <div class="loc">${p.loc}</div>
+          <div class="actions">
+            <button class="reaction-btn" data-reaction="curtir" title="${t('card_curtir_title')}">👍</button>
+            <button class="reaction-btn" data-reaction="amei" title="${t('card_amei_title')}">❤️</button>
+            <span class="reaction-count">${p.likes}</span>
+            <button class="icon-btn" data-share="pet" data-pet-name="${esc(p.name)}" title="${t('card_compartilhar_title')}" aria-label="${t('card_compartilhar_title')} ${esc(p.name)}">🐾</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  renderFeed('todos');
+  renderRanking('bairro');
+  document.querySelectorAll('#feedFollowTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#feedFollowTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFeed(btn.dataset.scope);
+    };
+  });
   document.querySelectorAll('#rankTabs button').forEach(btn=>{
     btn.onclick = ()=>{
       document.querySelectorAll('#rankTabs button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      renderFeed(btn.dataset.scope);
+      renderRanking(btn.dataset.scope);
     };
   });
   document.querySelectorAll('#speciesTabs button').forEach(btn=>{
@@ -3045,18 +3138,19 @@
       document.querySelectorAll('#speciesTabs button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       currentSpecies = btn.dataset.species;
-      renderFeed(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+      renderFeed(document.querySelector('#feedFollowTabs button.active')?.dataset.scope || 'todos');
     };
   });
 
-  // realtime: atualiza ranking sempre que alguém reage (qualquer cidade/país)
+  // realtime: atualiza feed e ranque sempre que alguém reage/compartilha/segue
   if(DB_READY){
-    supa.channel('public:likes')
-      .on('postgres_changes', { event:'*', schema:'public', table:'likes' }, () => {
-        const activeScope = document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro';
-        renderFeed(activeScope);
-      })
-      .subscribe();
+    const refreshFeedAndRanking = ()=>{
+      renderFeed(document.querySelector('#feedFollowTabs button.active')?.dataset.scope || 'todos');
+      renderRanking(document.querySelector('#rankTabs button.active')?.dataset.scope || 'bairro');
+    };
+    supa.channel('public:likes').on('postgres_changes', { event:'*', schema:'public', table:'likes' }, refreshFeedAndRanking).subscribe();
+    supa.channel('public:post_shares').on('postgres_changes', { event:'*', schema:'public', table:'post_shares' }, refreshFeedAndRanking).subscribe();
+    supa.channel('public:pet_follows').on('postgres_changes', { event:'*', schema:'public', table:'pet_follows' }, refreshFeedAndRanking).subscribe();
   }
 
   // reações (curtir/amei) — upsert: 1 reação por pessoa por post, troca o tipo se clicar na outra

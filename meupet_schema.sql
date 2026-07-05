@@ -238,6 +238,54 @@ create table public.profile_follows (
 );
 
 -- ---------------------------------------------------------------------
+-- 5d. COMPARTILHAMENTOS DE POST — antes o botão de compartilhar só abria
+-- o menu (WhatsApp/Instagram/etc), sem nenhum registro no banco. Agora
+-- conta pro ranqueamento de postagens, então precisa existir de verdade.
+-- 1 registro por pessoa por post (primary key composta) — do contrário
+-- uma única conta clicando "compartilhar" em loop infla o ranque, mesmo
+-- problema que a auditoria encontrou nos comentários.
+-- ---------------------------------------------------------------------
+create table public.post_shares (
+  post_id uuid not null references public.posts(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+alter table public.post_shares enable row level security;
+create policy "post_shares_select_public" on public.post_shares for select using (true);
+create policy "post_shares_insert_own" on public.post_shares for insert with check (auth.uid() = user_id);
+
+-- o app assina mudanças em tempo real nessas 3 tabelas (likes, pet_follows,
+-- post_shares) pra atualizar Feed/Ranque sem precisar recarregar a página.
+-- achado durante essa sessão: a publication supabase_realtime estava sem
+-- NENHUMA tabela registrada (gap pré-existente, não só de post_shares) —
+-- sem isso, o app.channel(...).on('postgres_changes', ...) nunca dispara.
+alter publication supabase_realtime add table public.likes, public.pet_follows, public.post_shares;
+
+-- ranqueamento POR POSTAGEM (Feed e Ranque deixam de ser a mesma coisa):
+-- pontuação = curtidas + amei (ambos já são linhas de "likes", sem
+-- distinção de peso) + compartilhamentos únicos + seguidores do pet.
+-- rank_city/rank_country alimentam a seção "Ranque" (Top 5 por recorte
+-- geográfico); o Feed em si passa a ser cronológico, por postagem.
+create or replace view public.post_rankings as
+  with scored as (
+    select po.id as post_id, po.pet_id, po.media_url, po.media_type, po.caption, po.created_at,
+           p.name as pet_name, p.photo_url as pet_photo_url, p.species, p.sex, p.city, p.country,
+           p.owner_id, pr.full_name as owner_name,
+           (select count(*) from public.likes l where l.post_id = po.id) as likes_count,
+           (select count(*) from public.post_shares s where s.post_id = po.id) as shares_count,
+           (select count(*) from public.pet_follows pf where pf.pet_id = po.pet_id) as followers_count
+    from public.posts po
+    join public.pets p on p.id = po.pet_id
+    join public.profiles pr on pr.id = p.owner_id
+  )
+  select *,
+         (likes_count + shares_count + followers_count) as post_score,
+         rank() over (partition by city order by (likes_count + shares_count + followers_count) desc) as rank_city,
+         rank() over (partition by country order by (likes_count + shares_count + followers_count) desc) as rank_country
+  from scored;
+
+-- ---------------------------------------------------------------------
 -- 6. ADOPTION_LISTINGS
 -- ---------------------------------------------------------------------
 create table public.adoption_listings (
