@@ -482,7 +482,6 @@
   .g3{background:linear-gradient(135deg,#B8861F,#FFB627);}
 
   /* ---------- PLANS ---------- */
-  .plans-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px; max-width:640px; margin:0 auto;}
   .plan-card{background:var(--surface); border:1.5px solid var(--line); border-radius:22px; padding:30px 26px;}
   .plan-card.feat{border-color:var(--coral); position:relative; box-shadow:var(--shadow-soft);}
   .plan-card.feat::before{
@@ -735,7 +734,7 @@
     .carteirinha-stage{margin-top:20px;}
     .feed-grid{grid-template-columns:repeat(2,1fr);}
     .adopt-grid, .market-grid{grid-template-columns:repeat(2,1fr);}
-    .games-grid, .plans-grid, .partner-plans-grid{grid-template-columns:1fr;}
+    .games-grid, .partner-plans-grid{grid-template-columns:1fr;}
     .geo-panel{grid-template-columns:1fr;}
     .footer-top{grid-template-columns:1fr 1fr;}
   }
@@ -758,7 +757,6 @@
       <a href="#petshops" data-i18n="nav_petshops">🏪 Petshops</a>
       <a href="#cuidados" data-i18n="nav_cuidados">💉 Cuidados</a>
       <a href="#games" data-i18n="nav_games">🎮 Games</a>
-      <a href="#planos" data-i18n="nav_planos">✨ Planos</a>
       <a href="#parceiros" data-i18n="nav_parceiros">📢 Anuncie no MeuPet</a>
       <a href="#feedback" data-i18n="nav_feedback">💬 Feedback</a>
       <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">📊 Admin</a>
@@ -927,7 +925,7 @@
   </section>
 
   <div class="wrap">
-    <a class="ad-slot" id="adSlotPetshops" href="#planos" target="_self">
+    <a class="ad-slot" id="adSlotPetshops" href="#cuidados" target="_self">
       <span><span class="ad-label" data-i18n="ad_label">Publicidade</span> <span class="ad-headline" data-i18n="ad_headline_petshops">Plano de saúde pet a partir de R$ 29/mês</span></span>
       <span class="mono ad-cta" data-i18n="ad_cta_simular">Simular →</span>
     </a>
@@ -979,43 +977,6 @@
   </section>
 
   <!-- PLANOS -->
-  <section class="block" id="planos" style="background:var(--surface);">
-    <div class="wrap">
-      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
-        <span class="kicker" data-i18n="planos_kicker">Planos</span>
-        <h2 data-i18n="planos_title">Grátis pra começar, Premium pra crescer</h2>
-        <p data-i18n="planos_desc">Sem anúncios, mais alcance no ranking e carteirinha personalizada no Premium.</p>
-      </div>
-      <div class="plans-grid">
-        <div class="plan-card">
-          <span class="kicker">Free</span>
-          <div class="price">R$ 0</div>
-          <ul>
-            <li>Carteirinha digital básica</li>
-            <li>Feed e curtidas ilimitadas</li>
-            <li>Busca de petshops por geolocalização</li>
-            <li>Anúncios no feed</li>
-          </ul>
-          <button class="btn-block" style="background:#1B2B2A;" data-i18n="planos_comecar_gratis">Começar grátis</button>
-        </div>
-        <div class="plan-card feat">
-          <span class="kicker">Premium</span>
-          <div class="price">R$ 14<span>/mês</span></div>
-          <ul>
-            <li>Tudo do Free, sem anúncios</li>
-            <li>Boost de visibilidade no ranking</li>
-            <li>Carteirinha personalizada e selos exclusivos</li>
-            <li>Acesso antecipado a novos games</li>
-          </ul>
-          <button class="btn-block" style="background:var(--coral);" data-i18n="planos_assinar_premium">Assinar Premium</button>
-        </div>
-      </div>
-      <p style="text-align:center; margin-top:28px; font-size:0.88rem; color:var(--text-muted);">
-        <span data-i18n="planos_business_cta_pre">É petshop, marca ou negócio pet?</span> <a href="#parceiros" style="color:var(--coral-dark); font-weight:700;" data-i18n="planos_business_cta_link">Conheça o MeuPet Business →</a>
-      </p>
-    </div>
-  </section>
-
   <!-- MEUPET BUSINESS — parceiros e patrocinadores -->
   <section class="block" id="parceiros" style="background:var(--teal);">
     <div class="wrap">
@@ -1149,7 +1110,7 @@
         <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
         <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
         <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
-        <a href="#planos" data-i18n="nav_planos">Planos</a>
+        <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
         <a href="#parceiros">MeuPet Business</a>
       </div>
       <div class="footer-col">
@@ -1528,7 +1489,7 @@
   let currentLang = localStorage.getItem('meupet_lang') || 'pt';
   const I18N = {
     nav_feed:{pt:'📰 Feed',en:'📰 Feed'}, nav_adocao:{pt:'🐾 Adoção',en:'🐾 Adoption'},
-    nav_petshops:{pt:'🏪 Petshops',en:'🏪 Pet Shops'}, nav_games:{pt:'🎮 Games',en:'🎮 Games'}, nav_planos:{pt:'✨ Planos',en:'✨ Plans'},
+    nav_petshops:{pt:'🏪 Petshops',en:'🏪 Pet Shops'}, nav_games:{pt:'🎮 Games',en:'🎮 Games'},
     nav_parceiros:{pt:'📢 Anuncie no MeuPet',en:'📢 Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
     nav_meu_pet:{pt:'🐾 Meu Pet',en:'🐾 My Pet'},
     nav_criar_carteirinha:{pt:'🐾 Criar carteirinha',en:'🐾 Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
@@ -1585,11 +1546,6 @@
       en:'Curated real pet games, well-rated on CrazyGames — you leave the app just to play, then come back to the feed.'},
     games_jogar_agora:{pt:'Jogar agora ↗',en:'Play now ↗'},
 
-    planos_kicker:{pt:'Planos',en:'Plans'}, planos_title:{pt:'Grátis pra começar, Premium pra crescer',en:'Free to start, Premium to grow'},
-    planos_desc:{pt:'Sem anúncios, mais alcance no ranking e carteirinha personalizada no Premium.',en:'No ads, more ranking reach and a custom pet ID with Premium.'},
-    planos_comecar_gratis:{pt:'Começar grátis',en:'Start for free'}, planos_assinar_premium:{pt:'Assinar Premium',en:'Subscribe to Premium'},
-    planos_business_cta_pre:{pt:'É petshop, marca ou negócio pet?',en:'Are you a pet shop, brand or pet business?'},
-    planos_business_cta_link:{pt:'Conheça o MeuPet Business →',en:'Check out MeuPet Business →'},
 
     business_kicker:{pt:'MeuPet Business',en:'MeuPet Business'}, business_title:{pt:'Coloque seu negócio na frente de quem tem pet',en:'Put your business in front of pet parents'},
     business_desc:{pt:'Petshops, clínicas, marcas e produtos — apareça no mapa, na vitrine e no feed de milhares de tutores. Preços de referência abaixo; cobrança combinada direto com nosso time (Pix ou boleto).',
