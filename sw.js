@@ -1,8 +1,8 @@
 // MeuPet — Service Worker v1.0
 // Estratégia: Cache First para assets, Network First para dados da API
 
-const CACHE_NAME    = 'meupet-v1';
-const RUNTIME_CACHE = 'meupet-runtime-v1';
+const CACHE_NAME    = 'meupet-v2';
+const RUNTIME_CACHE = 'meupet-runtime-v2';
 
 const PRECACHE_URLS = [
   '/',

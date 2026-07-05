@@ -2468,58 +2468,69 @@
     statusEl.textContent = '';
     statusEl.className = 'modal-status';
 
-    let { data, error } = modalMode === 'signup'
-      ? await supa.auth.signUp({ email, password })
-      : await supa.auth.signInWithPassword({ email, password });
+    // tudo dentro de um try/catch: uma falha de rede (queda de conexão, DNS,
+    // timeout) faz o supa.auth.* REJEITAR a promise em vez de devolver
+    // { error }, e sem isso o catch não existia — o botão ficava desabilitado
+    // pra sempre, sem nenhuma mensagem, parecendo que "nada acontece" ao clicar
+    try{
+      let { data, error } = modalMode === 'signup'
+        ? await supa.auth.signUp({ email, password })
+        : await supa.auth.signInWithPassword({ email, password });
 
-    // "Criar conta" com um e-mail que já existe: a Supabase não avisa isso
-    // explicitamente por segurança (evita revelar quais e-mails têm conta) —
-    // ela devolve um "sucesso" fake com identities:[] vazio. Detectamos esse
-    // caso e tentamos logar direto com a senha que a pessoa acabou de digitar,
-    // em vez de deixar um "confira seu e-mail" confuso pra quem só errou o botão.
-    if(modalMode === 'signup' && !error && data.user && data.user.identities && data.user.identities.length === 0){
-      statusEl.textContent = 'Essa conta já existe — tentando entrar…';
-      statusEl.className = 'modal-status';
-      ({ data, error } = await supa.auth.signInWithPassword({ email, password }));
-      if(error){
+      // "Criar conta" com um e-mail que já existe: a Supabase não avisa isso
+      // explicitamente por segurança (evita revelar quais e-mails têm conta) —
+      // ela devolve um "sucesso" fake com identities:[] vazio. Detectamos esse
+      // caso e tentamos logar direto com a senha que a pessoa acabou de digitar,
+      // em vez de deixar um "confira seu e-mail" confuso pra quem só errou o botão.
+      if(modalMode === 'signup' && !error && data.user && data.user.identities && data.user.identities.length === 0){
+        statusEl.textContent = 'Essa conta já existe — tentando entrar…';
+        statusEl.className = 'modal-status';
+        ({ data, error } = await supa.auth.signInWithPassword({ email, password }));
+        if(error){
+          submitBtn.disabled = false;
+          statusEl.textContent = 'Essa conta já existe. ' + (error.message === 'Invalid login credentials' ? 'Senha incorreta — tente "Entrar" com a senha certa.' : error.message);
+          statusEl.className = 'modal-status err';
+          return;
+        }
+      } else if(error){
         submitBtn.disabled = false;
-        statusEl.textContent = 'Essa conta já existe. ' + (error.message === 'Invalid login credentials' ? 'Senha incorreta — tente "Entrar" com a senha certa.' : error.message);
+        statusEl.textContent = error.message;
         statusEl.className = 'modal-status err';
         return;
       }
-    } else if(error){
+
       submitBtn.disabled = false;
-      statusEl.textContent = error.message;
-      statusEl.className = 'modal-status err';
-      return;
-    }
 
-    submitBtn.disabled = false;
+      if(modalMode === 'signup' && !data.session){
+        statusEl.textContent = '✅ Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
+        statusEl.className = 'modal-status ok';
+        return;
+      }
 
-    if(modalMode === 'signup' && !data.session){
-      statusEl.textContent = '✅ Conta criada! Confira seu e-mail pra confirmar antes de entrar.';
+      statusEl.textContent = '✅ Tudo certo! Entrando…';
       statusEl.className = 'modal-status ok';
-      return;
+      if(data.user) updateAuthNav(data.user);
+      await loadOwnPetAndRenderCard();
+      // sem isso, os cards do feed/ranque continuavam mostrando o estado de
+      // deslogado (sem saber quem é o dono do post) até trocar de aba na mão
+      if(typeof refreshFeedAndRankingNow === 'function') refreshFeedAndRankingNow();
+      if(typeof loadCuidados === 'function') loadCuidados();
+      if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
+      if(typeof loadFeedback === 'function') loadFeedback();
+      setTimeout(()=>{
+        overlay.classList.remove('open');
+        // se o clique original era "criar carteirinha" (ou cadastrar pet pra
+        // adoção) mas exigiu login antes, continua o fluxo em vez de deixar
+        // a pessoa ter que clicar de novo
+        if(pendingIntent === 'createPet'){ pendingIntent = null; onboardingInProgress = true; openPetModal(); }
+        else if(pendingIntent === 'createAdoption'){ pendingIntent = null; openAdoptFormModal(); }
+      }, 900);
+    }catch(err){
+      submitBtn.disabled = false;
+      statusEl.textContent = 'Não deu pra conectar agora. Verifique sua internet e tente de novo.';
+      statusEl.className = 'modal-status err';
+      console.warn('MeuPet: falha inesperada no login/cadastro', err);
     }
-
-    statusEl.textContent = '✅ Tudo certo! Entrando…';
-    statusEl.className = 'modal-status ok';
-    if(data.user) updateAuthNav(data.user);
-    await loadOwnPetAndRenderCard();
-    // sem isso, os cards do feed/ranque continuavam mostrando o estado de
-    // deslogado (sem saber quem é o dono do post) até trocar de aba na mão
-    if(typeof refreshFeedAndRankingNow === 'function') refreshFeedAndRankingNow();
-    if(typeof loadCuidados === 'function') loadCuidados();
-    if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
-    if(typeof loadFeedback === 'function') loadFeedback();
-    setTimeout(()=>{
-      overlay.classList.remove('open');
-      // se o clique original era "criar carteirinha" (ou cadastrar pet pra
-      // adoção) mas exigiu login antes, continua o fluxo em vez de deixar
-      // a pessoa ter que clicar de novo
-      if(pendingIntent === 'createPet'){ pendingIntent = null; onboardingInProgress = true; openPetModal(); }
-      else if(pendingIntent === 'createAdoption'){ pendingIntent = null; openAdoptFormModal(); }
-    }, 900);
   });
   overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.classList.remove('open'); });
 
