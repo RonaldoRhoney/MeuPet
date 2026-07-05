@@ -2342,13 +2342,16 @@
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; return; }
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = ''; return; }
     const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
     currentUserProfile = profile || currentUserProfile;
     const label = profile?.full_name || user.email;
     btn.textContent = t('nav_meu_pet');
     btn.title = 'Logado como ' + label + ' — clique pra ver seu perfil';
     btn.onclick = ()=> openProfileModal();
+    // "Criar carteirinha" some do menu quando logado — a mesma ação já existe
+    // dentro de "Meu Pet" (#profileCreatePet), manter os dois era redundante
+    document.getElementById('openSignup').style.display = 'none';
 
     supa.rpc('set_my_device', { p_device: detectDeviceType() })
       .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
