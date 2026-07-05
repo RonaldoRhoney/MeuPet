@@ -87,7 +87,6 @@ create table public.pets (
   color text check (char_length(color) <= 40),
   bio text,
   photo_url text,
-  vaccine_status jsonb default '[]'::jsonb,
   city text,
   country text,
   rank_score integer not null default 0, -- recalculado via trigger de likes
@@ -106,6 +105,42 @@ create unique index idx_breeds_unique on public.breeds (species, lower(name));
 
 create index idx_pets_owner on public.pets(owner_id);
 create index idx_pets_city on public.pets(city, country);
+
+-- ---------------------------------------------------------------------
+-- 3b. VACINAÇÃO (alerta na carteirinha + seção "Cuidados")
+-- registro de saúde é dado sensível: diferente do resto do app (que é
+-- majoritariamente público), aqui SÓ o próprio tutor lê/escreve —
+-- substituiu a coluna pets.vaccine_status (jsonb, nunca chegou a ser
+-- usada) por uma tabela relacional de verdade, mais fácil de consultar
+-- pra "quais pets têm vacina vencendo" sem precisar parsear jsonb
+-- ---------------------------------------------------------------------
+create table public.pet_vaccinations (
+  id uuid primary key default uuid_generate_v4(),
+  pet_id uuid not null references public.pets(id) on delete cascade,
+  vaccine_name text not null,
+  date_given date,
+  next_due_date date,
+  notes text,
+  created_at timestamptz not null default now()
+);
+create index idx_pet_vaccinations_pet on public.pet_vaccinations(pet_id);
+create index idx_pet_vaccinations_due on public.pet_vaccinations(next_due_date);
+
+alter table public.pet_vaccinations enable row level security;
+create policy "pet_vaccinations_select_own" on public.pet_vaccinations for select using (
+  exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+);
+create policy "pet_vaccinations_insert_own" on public.pet_vaccinations for insert with check (
+  exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+);
+create policy "pet_vaccinations_update_own" on public.pet_vaccinations for update using (
+  exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+) with check (
+  exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+);
+create policy "pet_vaccinations_delete_own" on public.pet_vaccinations for delete using (
+  exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+);
 
 -- ---------------------------------------------------------------------
 -- 4. POSTS (feed)

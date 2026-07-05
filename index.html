@@ -355,6 +355,26 @@
   .btn-block{width:100%; background:var(--teal); color:white; border-radius:12px; padding:10px; font-weight:700; font-size:0.82rem; border:none;}
   .btn-block:hover{background:var(--teal-light);}
 
+  /* ---------- CUIDADOS (dicas + vacinação) ---------- */
+  .care-empty{text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.9rem;}
+  .care-tip-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:20px;}
+  @media (max-width:700px){ .care-tip-grid{grid-template-columns:1fr;} }
+  .care-tip-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:16px;}
+  .care-tip-card h4{font-family:'Fraunces',serif; color:var(--heading); font-size:1rem; margin-bottom:8px; display:flex; align-items:center; gap:8px;}
+  .care-tip-card p{font-size:0.86rem; color:var(--ink); line-height:1.5; margin:0 0 8px;}
+  .vaccine-panel{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:10px;}
+  .vaccine-panel h3{font-family:'Fraunces',serif; color:var(--heading); font-size:1.1rem; margin-bottom:4px;}
+  .vaccine-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .vaccine-row:last-child{border-bottom:none;}
+  .vaccine-name{font-weight:700; color:var(--ink);}
+  .vaccine-due{font-size:0.78rem; color:var(--text-muted);}
+  .vaccine-due.due-soon{color:var(--mustard); font-weight:700;}
+  .vaccine-due.overdue{color:var(--coral-dark); font-weight:700;}
+  .vaccine-del{border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-size:0.9rem;}
+  .vaccine-form{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .vaccine-form input{padding:10px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font-family:inherit; font-size:0.85rem;}
+  .vaccine-form input::placeholder{color:var(--text-muted);}
+
   /* ---------- MARKETPLACE ---------- */
   .market-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
   .product-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; position:relative; transition:transform .2s ease, box-shadow .2s ease;}
@@ -699,6 +719,7 @@
       <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
       <a href="#loja" data-i18n="nav_loja">Loja</a>
       <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
+      <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
       <a href="#games" data-i18n="nav_games">Games</a>
       <a href="#planos" data-i18n="nav_planos">Planos</a>
       <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
@@ -873,6 +894,21 @@
           <span class="geo-source mono" id="geoSource">fonte: gps · precisão alta</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- CUIDADOS (dicas por espécie/idade/peso + vacinação) -->
+  <section class="block" id="cuidados" style="background:var(--surface);">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="kicker" data-i18n="care_kicker">Cuidados</span>
+          <h2 data-i18n="care_title">Dicas e vacinação pro seu pet</h2>
+          <p data-i18n="care_desc">Recomendações automáticas de acordo com espécie, idade e peso — e um lembrete pra não perder nenhuma vacina.</p>
+        </div>
+      </div>
+      <div class="pill-tabs" id="carePetTabs" style="display:none;"></div>
+      <div id="careContent"></div>
     </div>
   </section>
 
@@ -1533,6 +1569,68 @@
     theme_claro:{pt:'Claro',en:'Light'}, theme_escuro:{pt:'Escuro',en:'Dark'}, theme_sistema:{pt:'Igual ao sistema',en:'Same as system'},
     profile_criar_pet:{pt:'🐾 Criar carteirinha de um pet',en:'🐾 Create a pet ID'}, profile_sair:{pt:'Sair da conta',en:'Log out'},
 
+    nav_cuidados:{pt:'Cuidados',en:'Care'},
+    care_kicker:{pt:'Cuidados',en:'Care'}, care_title:{pt:'Dicas e vacinação pro seu pet',en:"Tips and vaccinations for your pet"},
+    care_desc:{pt:'Recomendações automáticas de acordo com espécie, idade e peso — e um lembrete pra não perder nenhuma vacina.',
+      en:"Automatic recommendations based on species, age and weight — plus a reminder so you never miss a vaccine."},
+    care_login_needed:{pt:'Entre na sua conta pra ver dicas e vacinação dos seus pets.',en:'Log in to see tips and vaccinations for your pets.'},
+    care_no_pets:{pt:'Crie a carteirinha de um pet pra começar a receber dicas personalizadas.',en:"Create a pet ID to start getting personalized tips."},
+    care_cat_racao:{pt:'🍖 Ração',en:'🍖 Food'}, care_cat_brinquedos:{pt:'🧸 Brinquedos',en:'🧸 Toys'},
+    care_cat_roupas:{pt:'🧥 Roupas',en:'🧥 Clothing'}, care_cat_cuidados:{pt:'🩺 Cuidados gerais',en:'🩺 General care'},
+
+    vaccine_title:{pt:'💉 Vacinação',en:'💉 Vaccinations'},
+    vaccine_none:{pt:'Nenhuma vacina cadastrada ainda.',en:'No vaccines registered yet.'},
+    vaccine_overdue:{pt:'vencida',en:'overdue'}, vaccine_due_soon:{pt:'vence em breve',en:'due soon'}, vaccine_ok:{pt:'em dia',en:'up to date'},
+    vaccine_ph_name:{pt:'Nome da vacina (ex: V10, Antirrábica)',en:'Vaccine name (e.g. Rabies, DHPP)'},
+    vaccine_ph_given:{pt:'Data aplicada',en:'Date given'}, vaccine_ph_due:{pt:'Próxima dose',en:'Next dose due'},
+    vaccine_add:{pt:'+ Adicionar vacina',en:'+ Add vaccine'},
+    vaccine_badge_alert:{pt:'💉 Vacina pendente',en:'💉 Vaccine due'},
+
+    tip_racao_cao_filhote:{pt:'Filhotes precisam de ração específica para filhotes, com mais proteína e cálcio para o crescimento — geralmente em 3 a 4 porções por dia.',
+      en:'Puppies need puppy-specific food, higher in protein and calcium for growth — usually 3 to 4 small meals a day.'},
+    tip_racao_cao_adulto:{pt:'Ração para cães adultos, com 2 refeições por dia costuma ser o ideal — ajuste a quantidade conforme o peso e o nível de atividade.',
+      en:"Adult dog food, with 2 meals a day is usually ideal — adjust the amount based on weight and activity level."},
+    tip_racao_cao_idoso:{pt:'Cães idosos se beneficiam de ração sênior, mais fácil de digerir e com menos calorias — vale conversar com o veterinário sobre a transição.',
+      en:"Senior dogs benefit from senior food, easier to digest and lower in calories — worth discussing the transition with a vet."},
+    tip_brinquedo_cao_filhote:{pt:'Brinquedos de morder ajudam na troca de dentes e evitam que o filhote morda móveis e sapatos.',
+      en:"Chew toys help with teething and keep puppies from chewing on furniture and shoes."},
+    tip_brinquedo_cao_geral:{pt:'Brinquedos que estimulam o faro (com compartimento pra petisco) ajudam a manter seu cão mentalmente ativo.',
+      en:"Scent-based toys (with a treat compartment) help keep your dog mentally engaged."},
+    tip_roupa_cao_pequeno:{pt:'Cães pequenos ou de pelo curto sentem mais frio — uma roupinha ajuda em dias frios ou chuvosos.',
+      en:"Small or short-haired dogs feel the cold more — a sweater helps on cold or rainy days."},
+    tip_roupa_cao_grande:{pt:'Cães de porte grande geralmente não precisam de roupa, exceto em climas muito frios.',
+      en:"Large dogs usually don't need clothing, except in very cold weather."},
+    tip_cuidado_cao_geral:{pt:'Escovar os dentes algumas vezes por semana e manter as unhas aparadas ajuda a evitar problemas de saúde a longo prazo.',
+      en:"Brushing teeth a few times a week and keeping nails trimmed helps prevent long-term health problems."},
+    tip_cuidado_cao_idoso:{pt:'Cães idosos se beneficiam de check-ups veterinários mais frequentes (a cada 6 meses) para detectar problemas cedo.',
+      en:"Senior dogs benefit from more frequent vet check-ups (every 6 months) to catch problems early."},
+
+    tip_racao_gato_filhote:{pt:'Filhotes de gato precisam de ração específica, rica em proteína, geralmente em porções menores e mais frequentes.',
+      en:'Kittens need kitten-specific food, rich in protein, usually in smaller and more frequent portions.'},
+    tip_racao_gato_adulto:{pt:'Gatos adultos costumam se dar bem com 2 refeições por dia — cuidado com excesso, gatos tendem a ganhar peso facilmente.',
+      en:"Adult cats usually do well with 2 meals a day — watch portions, cats gain weight easily."},
+    tip_racao_gato_idoso:{pt:'Gatos idosos podem precisar de ração com menos calorias e mais fácil de mastigar.',
+      en:"Senior cats may need lower-calorie food that's easier to chew."},
+    tip_brinquedo_gato_geral:{pt:'Brinquedos que imitam presas (varinhas com penas, bolinhas) ajudam a satisfazer o instinto de caça do seu gato.',
+      en:"Toys that mimic prey (feather wands, small balls) help satisfy your cat's hunting instinct."},
+    tip_brinquedo_gato_filhote:{pt:'Filhotes de gato adoram brinquedos que se movem — ajuda no desenvolvimento dos reflexos.',
+      en:"Kittens love toys that move — it helps develop their reflexes."},
+    tip_roupa_gato_geral:{pt:'A maioria dos gatos não gosta de roupas e pode ficar estressada — geralmente não é necessário, a não ser em casos indicados pelo veterinário.',
+      en:"Most cats dislike clothing and can get stressed by it — usually not needed, except in cases indicated by a vet."},
+    tip_cuidado_gato_pelo:{pt:'Escovar o pelo regularmente ajuda a evitar bolas de pelo, principalmente em raças de pelo longo.',
+      en:"Regular brushing helps prevent hairballs, especially in long-haired breeds."},
+    tip_cuidado_gato_areia:{pt:'Caixa de areia limpa e trocada com frequência é essencial para a saúde e o bem-estar do seu gato.',
+      en:"A clean, frequently changed litter box is essential for your cat's health and well-being."},
+
+    tip_racao_outro:{pt:'Cada espécie tem necessidades nutricionais bem diferentes — o ideal é seguir a orientação de um veterinário especializado nesse tipo de animal.',
+      en:"Each species has very different nutritional needs — best to follow guidance from a vet specialized in that kind of animal."},
+    tip_brinquedo_outro:{pt:'Pesquise brinquedos e enriquecimento ambiental específicos pra espécie do seu pet — o que funciona pra cães e gatos nem sempre serve pra outros animais.',
+      en:"Look for toys and enrichment specific to your pet's species — what works for dogs and cats doesn't always apply to other animals."},
+    tip_roupa_outro:{pt:'Geralmente não é necessário, mas depende muito da espécie — consulte um especialista se tiver dúvidas.',
+      en:"Usually not needed, but it depends a lot on the species — consult a specialist if unsure."},
+    tip_cuidado_outro:{pt:'Consulte um veterinário especializado em animais exóticos/silvestres para orientações específicas de cuidados com esse pet.',
+      en:"Consult a vet specialized in exotic/wild animals for specific care guidance for this pet."},
+
     modal_signup_title:{pt:'Crie a carteirinha do seu pet',en:"Create your pet's ID"}, modal_login_title:{pt:'Bem-vindo de volta',en:'Welcome back'},
     modal_signup_sub:{pt:'Cadastre-se em segundos e ganhe sua carteirinha digital.',en:'Sign up in seconds and get your digital pet ID.'},
     modal_login_sub:{pt:'Entre para acessar a carteirinha do seu pet.',en:"Log in to access your pet's ID."},
@@ -2176,7 +2274,9 @@
     document.getElementById('cartMeta').textContent = metaParts.length ? metaParts.join(' · ') : 'Carteirinha digital';
     document.getElementById('cartId').textContent = '#' + pet.id.slice(0, 5).toUpperCase();
     document.getElementById('cartLiga').textContent = 'Novo por aqui';
-    document.getElementById('cartBadge').textContent = '🎉 Carteirinha criada!';
+    const badgeEl = document.getElementById('cartBadge');
+    badgeEl.textContent = '🎉 Carteirinha criada!';
+    badgeEl.dataset.defaultText = badgeEl.textContent; // pra refreshVaccineBadge saber pra onde voltar quando o alerta some
   }
 
   function resetCarteirinhaToDemo(){
@@ -2192,6 +2292,7 @@
   function renderCarteirinhaAt(i){
     renderCarteirinha(currentUserPets[i]);
     updateCartNav();
+    if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
   }
 
   function updateCartNav(){
@@ -2224,8 +2325,13 @@
   });
 
   if(DB_READY){
-    supa.auth.getUser().then(({ data }) => {
-      if(data?.user){ updateAuthNav(data.user); loadOwnPetAndRenderCard(); }
+    supa.auth.getUser().then(async ({ data }) => {
+      if(data?.user){
+        updateAuthNav(data.user);
+        await loadOwnPetAndRenderCard();
+        if(typeof loadCuidados === 'function') loadCuidados();
+        if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
+      }
     });
   }
 
@@ -2291,6 +2397,8 @@
     // sem isso, os cards do feed/ranque continuavam mostrando o estado de
     // deslogado (sem saber quem é o dono do post) até trocar de aba na mão
     if(typeof refreshFeedAndRankingNow === 'function') refreshFeedAndRankingNow();
+    if(typeof loadCuidados === 'function') loadCuidados();
+    if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
     setTimeout(()=>{
       overlay.classList.remove('open');
       // se o clique original era "criar carteirinha" (ou cadastrar pet pra
@@ -2605,6 +2713,8 @@
       cartIndex = 0;
     }
     renderCarteirinhaAt(cartIndex);
+    if(typeof loadCuidados === 'function') loadCuidados();
+    if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
     statusEl.textContent = editingPetId ? '✅ Alterações salvas!' : '✅ Carteirinha criada!';
     statusEl.className = 'modal-status ok';
     setTimeout(()=>{
@@ -2633,6 +2743,7 @@
     if(currentUserPets.length) renderCarteirinhaAt(0);
     else { resetCarteirinhaToDemo(); updateCartNav(); }
     petOverlay.classList.remove('open');
+    if(typeof loadCuidados === 'function') loadCuidados();
   });
 
   // =====================================================================
@@ -3404,6 +3515,168 @@
   }
   const speciesEmoji = { cao:'🐶', gato:'🐱', outro:'🐾' };
 
+  // =====================================================================
+  // CUIDADOS — motor de dicas por regras (espécie/idade/peso), sem
+  // depender de nenhuma API de IA paga, e alerta de vacinação. "agentes"
+  // aqui = recomendação automática a partir do perfil do pet, não texto
+  // gerado por LLM (decisão tomada com o usuário: zero custo contínuo).
+  // =====================================================================
+  function getCareTips(pet){
+    const bucket = speciesBucket(pet.species);
+    const age = pet.age_years, weight = pet.weight_kg;
+    const tips = [];
+    if(bucket === 'cao'){
+      tips.push({ category:'racao', key: age != null && age < 1 ? 'tip_racao_cao_filhote' : (age != null && age > 7 ? 'tip_racao_cao_idoso' : 'tip_racao_cao_adulto') });
+      if(age != null && age < 1) tips.push({ category:'brinquedos', key:'tip_brinquedo_cao_filhote' });
+      tips.push({ category:'brinquedos', key:'tip_brinquedo_cao_geral' });
+      tips.push({ category:'roupas', key: weight != null && weight < 8 ? 'tip_roupa_cao_pequeno' : 'tip_roupa_cao_grande' });
+      tips.push({ category:'cuidados', key:'tip_cuidado_cao_geral' });
+      if(age != null && age > 7) tips.push({ category:'cuidados', key:'tip_cuidado_cao_idoso' });
+    } else if(bucket === 'gato'){
+      tips.push({ category:'racao', key: age != null && age < 1 ? 'tip_racao_gato_filhote' : (age != null && age > 7 ? 'tip_racao_gato_idoso' : 'tip_racao_gato_adulto') });
+      tips.push({ category:'brinquedos', key:'tip_brinquedo_gato_geral' });
+      if(age != null && age < 1) tips.push({ category:'brinquedos', key:'tip_brinquedo_gato_filhote' });
+      tips.push({ category:'roupas', key:'tip_roupa_gato_geral' });
+      tips.push({ category:'cuidados', key:'tip_cuidado_gato_pelo' });
+      tips.push({ category:'cuidados', key:'tip_cuidado_gato_areia' });
+    } else {
+      tips.push({ category:'racao', key:'tip_racao_outro' });
+      tips.push({ category:'brinquedos', key:'tip_brinquedo_outro' });
+      tips.push({ category:'roupas', key:'tip_roupa_outro' });
+      tips.push({ category:'cuidados', key:'tip_cuidado_outro' });
+    }
+    return tips;
+  }
+
+  function vaccineStatus(v){
+    if(!v.next_due_date) return 'ok';
+    const due = new Date(v.next_due_date + 'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diffDays = Math.round((due - today) / 86400000);
+    if(diffDays < 0) return 'overdue';
+    if(diffDays <= 30) return 'due-soon';
+    return 'ok';
+  }
+
+  let carePets = [];
+  let careSelectedPetId = null;
+
+  async function loadCuidados(){
+    const tabsEl = document.getElementById('carePetTabs');
+    const contentEl = document.getElementById('careContent');
+    if(!DB_READY || !currentUser){
+      tabsEl.style.display = 'none';
+      contentEl.innerHTML = `<div class="care-empty">${t('care_login_needed')}</div>`;
+      return;
+    }
+    if(!currentUserPets.length) await loadOwnPetAndRenderCard();
+    carePets = currentUserPets;
+    if(!carePets.length){
+      tabsEl.style.display = 'none';
+      contentEl.innerHTML = `<div class="care-empty">${t('care_no_pets')}</div>`;
+      return;
+    }
+    if(!careSelectedPetId || !carePets.some(p => p.id === careSelectedPetId)) careSelectedPetId = carePets[0].id;
+
+    if(carePets.length > 1){
+      tabsEl.style.display = 'flex';
+      tabsEl.innerHTML = carePets.map(p => `<button class="${p.id === careSelectedPetId ? 'active' : ''}" data-care-pet="${esc(p.id)}">${speciesEmoji[speciesBucket(p.species)]} ${esc(p.name)}</button>`).join('');
+    } else {
+      tabsEl.style.display = 'none';
+    }
+
+    await renderCareContent();
+  }
+
+  async function renderCareContent(){
+    const contentEl = document.getElementById('careContent');
+    const pet = carePets.find(p => p.id === careSelectedPetId);
+    if(!pet) return;
+
+    const { data: vaccines } = await supa.from('pet_vaccinations').select('*').eq('pet_id', pet.id).order('next_due_date', { ascending:true, nullsFirst:false });
+    const list = vaccines || [];
+
+    const vaccineRowsHtml = list.length ? list.map(v => {
+      const status = vaccineStatus(v);
+      const statusLabel = status === 'overdue' ? t('vaccine_overdue') : (status === 'due-soon' ? t('vaccine_due_soon') : t('vaccine_ok'));
+      return `
+        <div class="vaccine-row">
+          <div>
+            <div class="vaccine-name">${esc(v.vaccine_name)}</div>
+            ${v.next_due_date ? `<div class="vaccine-due ${status}">${statusLabel} · ${new Date(v.next_due_date+'T00:00:00').toLocaleDateString('pt-BR')}</div>` : ''}
+          </div>
+          <button class="vaccine-del" data-del-vaccine="${esc(v.id)}" title="Excluir" aria-label="Excluir vacina">🗑️</button>
+        </div>`;
+    }).join('') : `<p class="sub" style="margin:0;">${t('vaccine_none')}</p>`;
+
+    const tips = getCareTips(pet);
+    const byCategory = { racao:[], brinquedos:[], roupas:[], cuidados:[] };
+    tips.forEach(tp => byCategory[tp.category]?.push(tp.key));
+    const catTitleKey = { racao:'care_cat_racao', brinquedos:'care_cat_brinquedos', roupas:'care_cat_roupas', cuidados:'care_cat_cuidados' };
+
+    contentEl.innerHTML = `
+      <div class="vaccine-panel">
+        <h3>${t('vaccine_title')}</h3>
+        <div id="vaccineList">${vaccineRowsHtml}</div>
+        <div class="vaccine-form">
+          <input type="text" placeholder="${t('vaccine_ph_name')}" id="vaccineName">
+          <input type="date" id="vaccineGiven" title="${t('vaccine_ph_given')}">
+          <input type="date" id="vaccineDue" title="${t('vaccine_ph_due')}">
+          <button class="btn btn-primary" id="vaccineAdd" style="grid-column:1/-1;">${t('vaccine_add')}</button>
+        </div>
+        <p class="modal-status" id="vaccineStatus"></p>
+      </div>
+      <div class="care-tip-grid">
+        ${Object.keys(byCategory).map(cat => `
+          <div class="care-tip-card">
+            <h4>${t(catTitleKey[cat])}</h4>
+            ${byCategory[cat].map(k => `<p>${t(k)}</p>`).join('')}
+          </div>`).join('')}
+      </div>
+    `;
+
+    document.getElementById('vaccineAdd').onclick = async ()=>{
+      const statusEl = document.getElementById('vaccineStatus');
+      const name = document.getElementById('vaccineName').value.trim();
+      if(!name){ statusEl.textContent = 'Dá um nome pra vacina :)'; statusEl.className = 'modal-status err'; return; }
+      const given = document.getElementById('vaccineGiven').value || null;
+      const due = document.getElementById('vaccineDue').value || null;
+      const { error } = await supa.from('pet_vaccinations').insert({ pet_id: pet.id, vaccine_name: name, date_given: given, next_due_date: due });
+      if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+      renderCareContent();
+      refreshVaccineBadge();
+    };
+    contentEl.querySelectorAll('[data-del-vaccine]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        await supa.from('pet_vaccinations').delete().eq('id', btn.dataset.delVaccine);
+        renderCareContent();
+        refreshVaccineBadge();
+      };
+    });
+  }
+
+  document.addEventListener('click', e=>{
+    const tabBtn = e.target.closest('#carePetTabs [data-care-pet]');
+    if(tabBtn){
+      careSelectedPetId = tabBtn.dataset.carePet;
+      document.querySelectorAll('#carePetTabs button').forEach(b=>b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      renderCareContent();
+    }
+  });
+
+  // selo de alerta na carteirinha quando alguma vacina do pet em exibição
+  // está vencida ou vence nos próximos 30 dias
+  async function refreshVaccineBadge(){
+    if(!DB_READY || !currentUser || !currentUserPets.length) return;
+    const pet = currentUserPets[cartIndex];
+    if(!pet) return;
+    const { data } = await supa.from('pet_vaccinations').select('next_due_date').eq('pet_id', pet.id);
+    const hasAlert = (data || []).some(v => vaccineStatus(v) !== 'ok');
+    const badgeEl = document.getElementById('cartBadge');
+    badgeEl.textContent = hasAlert ? t('vaccine_badge_alert') : (badgeEl.dataset.defaultText || badgeEl.textContent);
+  }
+
   const adoptFavorites = new Set();
   let adoptFilter = 'todos';
   let adoptItemsCache = [];
@@ -3456,6 +3729,8 @@
     renderAdoptCards(items);
   }
   loadAdoption();
+  loadCuidados();
+  refreshVaccineBadge();
 
   document.getElementById('adoptFilters').addEventListener('click', e=>{
     const btn = e.target.closest('button[data-species]');
