@@ -111,7 +111,7 @@
   }
   .nav{
     display:flex; align-items:center; justify-content:space-between;
-    padding:14px 24px; max-width:1180px; margin:0 auto;
+    padding:14px 24px; max-width:1340px; margin:0 auto;
   }
   .logo{
     display:flex; align-items:center; gap:10px;
@@ -123,7 +123,7 @@
     display:grid; place-items:center; color:white; font-size:1.1rem;
     box-shadow:var(--shadow-soft);
   }
-  nav.links{display:flex; gap:22px; align-items:center;}
+  nav.links{display:flex; gap:18px; align-items:center;}
   nav.links a{
     font-size:0.88rem; font-weight:600; color:var(--heading);
     position:relative; padding:6px 1px 8px; white-space:nowrap;
@@ -151,7 +151,7 @@
   .btn-ghost:hover{border-color:var(--teal);}
   .burger{display:none; background:none; border:none; font-size:1.6rem; color:var(--heading);}
 
-  @media (max-width:880px){
+  @media (max-width:1300px){
     nav.links{
       display:none; position:absolute; top:64px; left:0; right:0;
       flex-direction:column; gap:4px; background:var(--paper);
@@ -751,19 +751,19 @@
   <div class="nav">
     <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
     <nav class="links" id="navLinks">
-      <a href="#feed" data-i18n="nav_feed">📰 Feed</a>
-      <a href="#ranque" data-i18n="nav_ranque">🏆 Ranque</a>
-      <a href="#adocao" data-i18n="nav_adocao">🐾 Adoção</a>
-      <a href="#petshops" data-i18n="nav_petshops">🏪 Petshops</a>
-      <a href="#cuidados" data-i18n="nav_cuidados">💉 Cuidados</a>
-      <a href="#games" data-i18n="nav_games">🎮 Games</a>
-      <a href="#parceiros" data-i18n="nav_parceiros">📢 Anuncie no MeuPet</a>
-      <a href="#feedback" data-i18n="nav_feedback">💬 Feedback</a>
-      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">📊 Admin</a>
+      <a href="#feed" data-i18n="nav_feed">Feed</a>
+      <a href="#ranque" data-i18n="nav_ranque">Ranque</a>
+      <a href="#adocao" data-i18n="nav_adocao">Adoção</a>
+      <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
+      <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
+      <a href="#games" data-i18n="nav_games">Games</a>
+      <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
+      <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
+      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
     </nav>
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin" data-i18n="nav_entrar">Entrar</button>
-      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha" style="display:none;">🐾 Criar carteirinha</button>
+      <button class="btn btn-primary" id="openSignup" data-i18n="nav_criar_carteirinha" style="display:none;">Criar carteirinha</button>
       <button class="burger" id="burgerBtn" aria-label="Abrir menu" data-i18n-aria="nav_abrir_menu" aria-expanded="false" aria-controls="navLinks">☰</button>
     </div>
   </div>
@@ -1488,11 +1488,11 @@
   // =====================================================================
   let currentLang = localStorage.getItem('meupet_lang') || 'pt';
   const I18N = {
-    nav_feed:{pt:'📰 Feed',en:'📰 Feed'}, nav_adocao:{pt:'🐾 Adoção',en:'🐾 Adoption'},
-    nav_petshops:{pt:'🏪 Petshops',en:'🏪 Pet Shops'}, nav_games:{pt:'🎮 Games',en:'🎮 Games'},
-    nav_parceiros:{pt:'📢 Anuncie no MeuPet',en:'📢 Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
-    nav_meu_pet:{pt:'🐾 Meu Pet',en:'🐾 My Pet'},
-    nav_criar_carteirinha:{pt:'🐾 Criar carteirinha',en:'🐾 Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
+    nav_feed:{pt:'Feed',en:'Feed'}, nav_adocao:{pt:'Adoção',en:'Adoption'},
+    nav_petshops:{pt:'Petshops',en:'Pet Shops'}, nav_games:{pt:'Games',en:'Games'},
+    nav_parceiros:{pt:'Anuncie no MeuPet',en:'Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
+    nav_meu_pet:{pt:'Meu Pet',en:'My Pet'},
+    nav_criar_carteirinha:{pt:'Criar carteirinha',en:'Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
 
     hero_eyebrow:{pt:'Atualizado agora',en:'Updated now'},
     hero_h1:{pt:'A carteirinha digital<br>do seu <em>melhor amigo.</em>',en:'The digital ID card<br>for your <em>best friend.</em>'},
@@ -1514,7 +1514,7 @@
     feed_kicker:{pt:'Feed',en:'Feed'}, feed_title:{pt:'O que os pets andam aprontando',en:'What the pets have been up to'},
     feed_desc:{pt:'Fotos e vídeos postados pelos tutores, mais recentes primeiro.',en:'Photos and videos posted by pet parents, newest first.'},
     feed_scope_todos:{pt:'Todos',en:'All'},
-    nav_ranque:{pt:'🏆 Ranque',en:'🏆 Ranking'},
+    nav_ranque:{pt:'Ranque',en:'Ranking'},
     rank_kicker:{pt:'Ranque',en:'Ranking'}, rank_title:{pt:'Top 5 postagens',en:'Top 5 posts'},
     rank_desc:{pt:'Calculado automaticamente por curtidas, amei, compartilhamentos e seguidores — ligas do bairro até o país.',
       en:'Calculated automatically from likes, loves, shares and followers — leagues from your neighborhood to the whole country.'},
@@ -1614,7 +1614,7 @@
     theme_claro:{pt:'Claro',en:'Light'}, theme_escuro:{pt:'Escuro',en:'Dark'}, theme_sistema:{pt:'Igual ao sistema',en:'Same as system'},
     profile_criar_pet:{pt:'🐾 Criar carteirinha de um pet',en:'🐾 Create a pet ID'}, profile_sair:{pt:'Sair da conta',en:'Log out'},
 
-    nav_cuidados:{pt:'💉 Cuidados',en:'💉 Care'},
+    nav_cuidados:{pt:'Cuidados',en:'Care'},
     care_kicker:{pt:'Cuidados',en:'Care'}, care_title:{pt:'Dicas e vacinação pro seu pet',en:"Tips and vaccinations for your pet"},
     care_desc:{pt:'Recomendações automáticas de acordo com espécie, idade e peso — e um lembrete pra não perder nenhuma vacina.',
       en:"Automatic recommendations based on species, age and weight — plus a reminder so you never miss a vaccine."},
@@ -1705,7 +1705,7 @@
     geo_detectando_curto:{pt:'detectando localização…',en:'detecting location…'}, geo_selecione_cidade:{pt:'Selecione sua cidade',en:'Select your city'},
     feed_empty_especie:{pt:'Nenhum pet dessa espécie nesse recorte ainda.',en:'No pets of this species in this scope yet.'},
 
-    nav_feedback:{pt:'💬 Feedback',en:'💬 Feedback'}, nav_admin:{pt:'📊 Admin',en:'📊 Admin'},
+    nav_feedback:{pt:'Feedback',en:'Feedback'}, nav_admin:{pt:'Admin',en:'Admin'},
     feedback_kicker:{pt:'Feedback',en:'Feedback'},
     feedback_title:{pt:'O que você achou do MeuPet?',en:'What did you think of MeuPet?'},
     feedback_desc:{pt:'Deixe sua opinião ou sugestão. Qualquer pessoa pode responder e curtir.',en:'Leave your opinion or suggestion. Anyone can reply and like it.'},
