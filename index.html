@@ -184,22 +184,26 @@
     background:radial-gradient(circle at 30% 30%, rgba(255,182,39,0.35), transparent 70%);
     pointer-events:none;
   }
-  /* bichinhos flutuando ao fundo do Hero — só decorativo, aria-hidden,
-     pointer-events:none (nunca atrapalha clique), abaixo do .hero-grid
-     (z-index:2) e some sozinho com prefers-reduced-motion (regra global
-     no topo do arquivo já trava animation-duration em 0.01ms) */
-  .hero-bg-pets{position:absolute; inset:0; z-index:1; overflow:hidden; pointer-events:none;}
-  .hero-bg-pet{
-    position:absolute; opacity:0.16; font-size:2rem;
-    animation-name:heroPetFloat; animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+  /* bichinhos flutuando ao fundo da página inteira — só decorativo,
+     aria-hidden, pointer-events:none (nunca atrapalha clique), fixo na
+     tela (acompanha a rolagem), acima do conteúdo estático das seções
+     mas abaixo do header (z-index:60) e dos modais (100+); some sozinho
+     com prefers-reduced-motion (regra global já trava animation-duration
+     em 0.01ms) */
+  .bg-pets{position:fixed; inset:0; z-index:1; overflow:hidden; pointer-events:none;}
+  .bg-pet{
+    position:absolute; opacity:0.14; font-size:2rem;
+    animation-name:bgPetFloat; animation-timing-function:ease-in-out; animation-iteration-count:infinite;
   }
-  .hero-bg-pet.p1{top:8%;  font-size:1.8rem; animation-duration:32s; animation-delay:-4s;}
-  .hero-bg-pet.p2{top:22%; font-size:2.4rem; animation-duration:38s; animation-delay:-18s;}
-  .hero-bg-pet.p3{top:55%; font-size:2rem;   animation-duration:28s; animation-delay:-9s;}
-  .hero-bg-pet.p4{top:68%; font-size:1.6rem; animation-duration:44s; animation-delay:-26s;}
-  .hero-bg-pet.p5{top:38%; font-size:2.2rem; animation-duration:36s; animation-delay:-2s;}
-  .hero-bg-pet.p6{top:80%; font-size:1.7rem; animation-duration:30s; animation-delay:-14s;}
-  @keyframes heroPetFloat{
+  .bg-pet.p1{top:6%;  font-size:1.8rem; animation-duration:32s; animation-delay:-4s;}
+  .bg-pet.p2{top:18%; font-size:2.4rem; animation-duration:38s; animation-delay:-18s;}
+  .bg-pet.p3{top:32%; font-size:2rem;   animation-duration:28s; animation-delay:-9s;}
+  .bg-pet.p4{top:46%; font-size:1.6rem; animation-duration:44s; animation-delay:-26s;}
+  .bg-pet.p5{top:58%; font-size:2.2rem; animation-duration:36s; animation-delay:-2s;}
+  .bg-pet.p6{top:70%; font-size:1.7rem; animation-duration:30s; animation-delay:-14s;}
+  .bg-pet.p7{top:82%; font-size:2.1rem; animation-duration:40s; animation-delay:-30s;}
+  .bg-pet.p8{top:92%; font-size:1.5rem; animation-duration:34s; animation-delay:-11s;}
+  @keyframes bgPetFloat{
     0%{transform:translate(-10vw, 0) rotate(-6deg);}
     50%{transform:translate(55vw, -22px) rotate(5deg);}
     100%{transform:translate(120vw, 0) rotate(-6deg);}
@@ -788,6 +792,17 @@
 </head>
 <body>
 
+<div class="bg-pets" aria-hidden="true">
+  <span class="bg-pet p1">🐾</span>
+  <span class="bg-pet p2">🐶</span>
+  <span class="bg-pet p3">🐱</span>
+  <span class="bg-pet p4">🐾</span>
+  <span class="bg-pet p5">🐰</span>
+  <span class="bg-pet p6">🐾</span>
+  <span class="bg-pet p7">🐦</span>
+  <span class="bg-pet p8">🐾</span>
+</div>
+
 <header class="site">
   <div class="nav">
     <a href="#top" class="logo"><span class="paw">🐾</span>MeuPet</a>
@@ -812,14 +827,6 @@
 
 <main id="top">
   <section class="hero">
-    <div class="hero-bg-pets" aria-hidden="true">
-      <span class="hero-bg-pet p1">🐾</span>
-      <span class="hero-bg-pet p2">🐶</span>
-      <span class="hero-bg-pet p3">🐱</span>
-      <span class="hero-bg-pet p4">🐾</span>
-      <span class="hero-bg-pet p5">🐰</span>
-      <span class="hero-bg-pet p6">🐾</span>
-    </div>
     <div class="wrap hero-grid">
       <div>
         <span class="eyebrow"><span class="dot-live"></span> <span data-i18n="hero_eyebrow">Atualizado agora</span> · <span id="liveClock" class="mono"></span></span>
