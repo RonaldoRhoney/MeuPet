@@ -212,6 +212,11 @@
     display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
     position:relative; z-index:2;
   }
+  .hero-kicker{
+    display:block; font-family:'JetBrains Mono', monospace; font-size:0.78rem;
+    font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--coral-dark); margin-bottom:10px;
+  }
   .eyebrow{
     display:inline-flex; align-items:center; gap:8px;
     font-family:'JetBrains Mono', monospace; font-size:0.74rem; letter-spacing:0.06em;
@@ -829,9 +834,10 @@
   <section class="hero">
     <div class="wrap hero-grid">
       <div>
+        <span class="hero-kicker" data-i18n="hero_kicker">🐾 A rede social do seu pet</span>
         <span class="eyebrow"><span class="dot-live"></span> <span data-i18n="hero_eyebrow">Atualizado agora</span> · <span id="liveClock" class="mono"></span></span>
         <h1 data-i18n-html="hero_h1">A carteirinha digital<br>do seu <em>melhor amigo.</em></h1>
-        <p class="lead" data-i18n="hero_lead">Feed, ranking por ligas, adoção responsável, vitrine de produtos e petshops perto de você — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.</p>
+        <p class="lead" data-i18n="hero_lead">O MeuPet é a rede social pet completa: carteirinha digital, feed com ranking por ligas, adoção responsável, dicas de cuidados e vacinação, petshops perto de você, vitrine de produtos e um mural de feedback pra trocar ideia com outros tutores — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.</p>
         <div class="hero-cta">
           <button class="btn btn-primary" id="heroCta" data-i18n="hero_cta_criar">Criar carteirinha grátis</button>
           <button class="btn btn-ghost" id="btnDemo" data-i18n="hero_cta_demo">Ver como funciona</button>
@@ -1565,10 +1571,11 @@
     nav_meu_pet:{pt:'Meu Pet',en:'My Pet'},
     nav_criar_carteirinha:{pt:'Criar carteirinha',en:'Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
 
+    hero_kicker:{pt:'🐾 A rede social do seu pet',en:'🐾 The social network for your pet'},
     hero_eyebrow:{pt:'Atualizado agora',en:'Updated now'},
     hero_h1:{pt:'A carteirinha digital<br>do seu <em>melhor amigo.</em>',en:'The digital ID card<br>for your <em>best friend.</em>'},
-    hero_lead:{pt:'Feed, ranking por ligas, adoção responsável, vitrine de produtos e petshops perto de você — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.',
-      en:'Feed, league rankings, responsible adoption, a product showcase and nearby pet shops — all in one account, alongside the rest of your RhoneyInc apps.'},
+    hero_lead:{pt:'O MeuPet é a rede social pet completa: carteirinha digital, feed com ranking por ligas, adoção responsável, dicas de cuidados e vacinação, petshops perto de você, vitrine de produtos e um mural de feedback pra trocar ideia com outros tutores — tudo numa conta só, junto com o resto dos seus apps RhoneyInc.',
+      en:'MeuPet is the complete pet social network: digital pet ID, feed with league rankings, responsible adoption, care and vaccination tips, nearby pet shops, a product showcase and a feedback board to chat with other owners — all in one account, alongside the rest of your RhoneyInc apps.'},
     hero_cta_criar:{pt:'Criar carteirinha grátis',en:'Create free pet ID'}, hero_cta_demo:{pt:'Ver como funciona',en:'See how it works'},
     hero_share_title:{pt:'Compartilhar o MeuPet',en:'Share MeuPet'},
     hero_stat_pets:{pt:'pets cadastrados',en:'registered pets'}, hero_stat_likes:{pt:'curtidas essa semana',en:'likes this week'},
