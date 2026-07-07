@@ -1508,6 +1508,11 @@
         <p class="sub" style="margin:0 0 10px;" data-i18n="push_desc">Receba um aviso de tempos em tempos quando houver petshops perto de você — mesmo com o app fechado.</p>
         <button class="btn btn-ghost" style="width:100%; padding:12px;" id="pushToggle" data-i18n="push_ativar">🔔 Ativar alertas de petshops</button>
         <p class="modal-status" id="pushStatus"></p>
+
+        <h4 style="margin-top:18px; color:var(--coral-dark);" data-i18n="settings_zona_risco">⚠️ Zona de risco</h4>
+        <p class="sub" style="margin:0 0 10px;" data-i18n="delete_account_desc">Apaga sua conta e todos os dados associados (pets, posts, comentários, curtidas, feedback, anúncios de adoção) para sempre. Não tem como desfazer.</p>
+        <button class="btn-block" style="width:100%; background:var(--coral-dark);" id="deleteAccountBtn" data-i18n="delete_account_btn">🗑️ Excluir minha conta</button>
+        <p class="modal-status" id="deleteAccountStatus"></p>
       </div>
 
       <button class="btn-block" style="width:100%; margin-top:10px; background:#1B2B2A;" id="profileSignOut" data-i18n="profile_sair">Sair da conta</button>
@@ -1680,6 +1685,12 @@
     settings_idioma:{pt:'🌐 Idioma',en:'🌐 Language'}, settings_aparencia:{pt:'🎨 Aparência',en:'🎨 Appearance'},
     theme_claro:{pt:'Claro',en:'Light'}, theme_escuro:{pt:'Escuro',en:'Dark'}, theme_sistema:{pt:'Igual ao sistema',en:'Same as system'},
     settings_alertas:{pt:'🔔 Alertas',en:'🔔 Alerts'},
+    settings_zona_risco:{pt:'⚠️ Zona de risco',en:'⚠️ Danger zone'},
+    delete_account_desc:{pt:'Apaga sua conta e todos os dados associados (pets, posts, comentários, curtidas, feedback, anúncios de adoção) para sempre. Não tem como desfazer.',en:'Permanently deletes your account and all associated data (pets, posts, comments, likes, feedback, adoption listings). This cannot be undone.'},
+    delete_account_btn:{pt:'🗑️ Excluir minha conta',en:'🗑️ Delete my account'},
+    delete_account_confirm:{pt:'Isso vai apagar sua conta e TODOS os seus dados (pets, posts, comentários, curtidas, feedback) para sempre. Essa ação não pode ser desfeita. Tem certeza que quer continuar?',en:'This will permanently delete your account and ALL your data (pets, posts, comments, likes, feedback). This cannot be undone. Are you sure you want to continue?'},
+    delete_account_excluindo:{pt:'Excluindo sua conta…',en:'Deleting your account…'},
+    delete_account_erro:{pt:'Não deu pra excluir a conta agora. Verifique sua internet e tente de novo.',en:"Couldn't delete your account right now. Check your connection and try again."},
     push_desc:{pt:'Receba um aviso de tempos em tempos quando houver petshops perto de você — mesmo com o app fechado.',en:'Get an occasional alert when there are pet shops near you — even with the app closed.'},
     push_ativar:{pt:'🔔 Ativar alertas de petshops',en:'🔔 Enable pet shop alerts'},
     push_desativar:{pt:'🔕 Desativar alertas de petshops',en:'🔕 Disable pet shop alerts'},
@@ -3430,6 +3441,39 @@
     profileOverlay.classList.remove('open');
     openPetModal();
   };
+
+  // exclusão de conta — exigência do Google Play (Data Safety): precisa
+  // existir um jeito de apagar os dados, inclusive por um recurso web.
+  // A exclusão de verdade (auth.admin.deleteUser) roda no servidor
+  // (api/delete-account.js, service_role) — o cliente só manda o próprio
+  // token, nunca poderia apagar outra conta.
+  document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>{
+    if(!currentUser) return;
+    if(!confirm(t('delete_account_confirm'))) return;
+    const btn = document.getElementById('deleteAccountBtn');
+    const statusEl = document.getElementById('deleteAccountStatus');
+    btn.disabled = true;
+    statusEl.textContent = t('delete_account_excluindo');
+    statusEl.className = 'modal-status';
+    try{
+      const { data: { session } } = await supa.auth.getSession();
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if(!res.ok){
+        const body = await res.json().catch(()=>({}));
+        throw new Error(body.error || 'falha na exclusão');
+      }
+      await supa.auth.signOut();
+      location.href = '/';
+    }catch(err){
+      btn.disabled = false;
+      statusEl.textContent = t('delete_account_erro');
+      statusEl.className = 'modal-status err';
+      console.warn('MeuPet: falha ao excluir conta', err);
+    }
+  });
   document.getElementById('profileSignOut').onclick = async ()=>{
     await supa.auth.signOut();
     location.reload();
