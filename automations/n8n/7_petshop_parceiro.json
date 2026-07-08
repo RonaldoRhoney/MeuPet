@@ -1,0 +1,82 @@
+{
+  "name": "MeuPet - 7 - Petshop parceiro",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meupet-petshop-parceiro",
+        "options": {}
+      },
+      "id": "webhook7",
+      "name": "Webhook - update petshops",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.headers['x-meupet-secret']}}", "value2": "SEU_WEBHOOK_SECRET_AQUI" }
+          ]
+        }
+      },
+      "id": "if7secret",
+      "name": "Confirma secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{$json.body.old_record.is_partner}}", "value2": false },
+            { "value1": "={{$json.body.record.is_partner}}", "value2": true }
+          ]
+        }
+      },
+      "id": "if7",
+      "name": "Virou parceiro agora?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [660, 220]
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=🏪 *Novo Petshop Parceiro!*\n🏬 Nome: {{$json.body.record.name}}\n📍 Cidade: {{$json.body.record.city}}\n⭐ Plano: {{$json.body.record.partner_plan || 'não informado'}}\n📅 Desde: {{$json.body.record.created_at}}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "telegram7",
+      "name": "Telegram - avisa admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [660, 220],
+      "credentials": {
+        "telegramApi": { "id": "PREENCHER_APOS_IMPORTAR", "name": "Telegram MeuPet Bot" }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "content": "## Por que o IF?\nO webhook do Supabase dispara em QUALQUER UPDATE na tabela petshops, não só quando is_partner muda pra true. Esse node compara old_record (valor antes) com record (valor depois) pra só avisar na transição false->true, evitando notificação duplicada a cada edição de petshop.",
+        "height": 200,
+        "width": 300
+      },
+      "id": "note7",
+      "name": "Nota - condição",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [440, 480]
+    }
+  ],
+  "connections": {
+    "Webhook - update petshops": { "main": [[{ "node": "Confirma secret", "type": "main", "index": 0 }]] },
+    "Confirma secret": { "main": [[{ "node": "Virou parceiro agora?", "type": "main", "index": 0 }]] },
+    "Virou parceiro agora?": { "main": [[{ "node": "Telegram - avisa admin", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

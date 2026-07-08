@@ -1,0 +1,67 @@
+{
+  "name": "MeuPet - 6 - Relatório diário",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 8 * * *" }
+          ]
+        }
+      },
+      "id": "cron6",
+      "name": "Todo dia às 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://dllchewamguyzudlkpxu.supabase.co/rest/v1/rpc/daily_report_stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "http6",
+      "name": "Busca estatísticas do dia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=📊 *MeuPet — Resumo de hoje*\n━━━━━━━━━━━━━━━\n👤 Novos tutores: {{$json.novos_usuarios}}\n❤️ Curtidas hoje: {{$json.curtidas}}\n🐾 Pets para adoção: {{$json.adocoes}}\n🚨 Reports abertos: {{$json.reports}}\n💎 Assinaturas ativas: {{$json.assinaturas}}\n━━━━━━━━━━━━━━━\n🌐 meupet-zeta.vercel.app",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "telegram6",
+      "name": "Telegram - resumo diário",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [660, 300],
+      "credentials": {
+        "telegramApi": { "id": "PREENCHER_APOS_IMPORTAR", "name": "Telegram MeuPet Bot" }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    }
+  ],
+  "connections": {
+    "Todo dia às 8h": { "main": [[{ "node": "Busca estatísticas do dia", "type": "main", "index": 0 }]] },
+    "Busca estatísticas do dia": { "main": [[{ "node": "Telegram - resumo diário", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

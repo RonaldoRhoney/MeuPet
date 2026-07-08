@@ -1,0 +1,75 @@
+{
+  "name": "MeuPet - 1 - Bug report para Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meupet-bug-report",
+        "options": {}
+      },
+      "id": "webhook1",
+      "name": "Webhook - novo report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.headers['x-meupet-secret']}}", "value2": "SEU_WEBHOOK_SECRET_AQUI" }
+          ]
+        }
+      },
+      "id": "if1secret",
+      "name": "Confirma secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=🚨 *Novo Report MeuPet*\n📋 Tipo: {{$json.body.record.target_type}}\n💬 Motivo: {{$json.body.record.reason}}\n🕐 Horário: {{$json.body.record.created_at}}\n👤 Reporter: {{$json.body.record.reporter_id || 'Anônimo'}}\nStatus: 🔴 Aberto",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram1",
+      "name": "Telegram - avisa admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [620, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "PREENCHER_APOS_IMPORTAR",
+          "name": "Telegram MeuPet Bot"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "content": "## Por que esse IF?\nSem isso, qualquer um que descobrisse a URL do webhook poderia forjar um POST e disparar a automação (não é chamada autenticada — Database Webhooks do Supabase não assinam a requisição). O node compara um header customizado (`x-meupet-secret`) com um valor secreto que só você e o Supabase Webhook conhecem. Configure o mesmo valor em: Supabase → Database → Webhooks → HTTP Headers → `x-meupet-secret: <valor>`.",
+        "height": 220,
+        "width": 300
+      },
+      "id": "note1",
+      "name": "Nota - segredo compartilhado",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [400, 480]
+    }
+  ],
+  "connections": {
+    "Webhook - novo report": {
+      "main": [[{ "node": "Confirma secret", "type": "main", "index": 0 }]]
+    },
+    "Confirma secret": {
+      "main": [[{ "node": "Telegram - avisa admin", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

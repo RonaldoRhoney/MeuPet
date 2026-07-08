@@ -95,8 +95,28 @@ create table public.pets (
   city text,
   country text,
   rank_score integer not null default 0, -- recalculado via trigger de likes
+  -- "badge in (null,...)" NÃO valida nada: x = null é NULL (não FALSE), e
+  -- CHECK só rejeita quando a expressão é FALSE — todo valor passaria.
+  -- Precisa ser "is null or badge in (...)" pra rejeitar valor de verdade.
+  badge text check (badge is null or badge in ('estrela_nascente','popular','viral','lenda')),
   created_at timestamptz not null default now()
 );
+
+-- badge só pode ser escrito pela automação (n8n via service_role) — a
+-- policy pets_update_own deixa o dono editar o próprio pet livremente,
+-- então sem isso ele poderia se auto-promover a 'lenda' direto pelo app
+create or replace function public.protect_pet_badge()
+returns trigger language plpgsql as $$
+begin
+  if new.badge is distinct from old.badge and current_user <> 'service_role' then
+    new.badge := old.badge;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_protect_pet_badge before update on public.pets
+  for each row execute procedure public.protect_pet_badge();
 
 -- lista de raças por espécie, cresce sozinha conforme os tutores cadastram
 -- (sem repetir nome — dedup por espécie + nome em minúsculas)
@@ -1020,3 +1040,25 @@ end;
 $$;
 revoke all on function public.admin_user_list() from public;
 grant execute on function public.admin_user_list() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- ADMIN — relatório diário agregado, uso exclusivo de automação server-side
+--   (n8n, chamado com a service_role key). Sem gate de is_admin() porque
+--   quem chama é sempre service_role — não passa por sessão de usuário,
+--   então auth.uid() seria sempre nulo aqui. A proteção é o grant: só
+--   service_role pode executar, anon/authenticated são bloqueados.
+-- ---------------------------------------------------------------------
+create or replace function public.daily_report_stats()
+returns jsonb language sql security definer set search_path = public as $$
+  select jsonb_build_object(
+    'novos_usuarios', (select count(*) from public.profiles where created_at >= now() - interval '24 hours'),
+    'curtidas', (select count(*) from public.likes where created_at >= now() - interval '24 hours'),
+    'adocoes', (select count(*) from public.adoption_listings where status = 'available'),
+    'reports', (select count(*) from public.reports where status = 'open'),
+    'assinaturas', (select count(*) from public.subscriptions where status = 'active')
+  );
+$$;
+revoke all on function public.daily_report_stats() from public;
+revoke all on function public.daily_report_stats() from anon;
+revoke all on function public.daily_report_stats() from authenticated;
+grant execute on function public.daily_report_stats() to service_role;

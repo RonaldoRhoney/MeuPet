@@ -1,0 +1,119 @@
+{
+  "name": "MeuPet - 5 - Assinatura Premium",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meupet-nova-assinatura",
+        "options": {}
+      },
+      "id": "webhook5",
+      "name": "Webhook - nova subscription",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.headers['x-meupet-secret']}}", "value2": "SEU_WEBHOOK_SECRET_AQUI" }
+          ]
+        }
+      },
+      "id": "if5secret",
+      "name": "Confirma secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [290, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://dllchewamguyzudlkpxu.supabase.co/rest/v1/profiles?id=eq.{{$json.body.record.user_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"plan\": $json.body.record.plan_id } }}",
+        "options": {}
+      },
+      "id": "http5a",
+      "name": "Atualiza plano no profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 220],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "url": "=https://dllchewamguyzudlkpxu.supabase.co/rest/v1/plans?id=eq.{{$node[\"Webhook - nova subscription\"].json.body.record.plan_id}}&select=price_cents,name",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http5b",
+      "name": "Busca preço do plano",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 400],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=💎 *Nova assinatura MeuPet!*\n👤 User: {{$node[\"Webhook - nova subscription\"].json.body.record.user_id}}\n📦 Plano: {{$node[\"Webhook - nova subscription\"].json.body.record.plan_id}}\n💰 Receita: R$ {{($json[0].price_cents / 100).toFixed(2)}}\n📅 Início: {{$node[\"Webhook - nova subscription\"].json.body.record.started_at}}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "telegram5",
+      "name": "Telegram - avisa admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [660, 400],
+      "credentials": {
+        "telegramApi": { "id": "PREENCHER_APOS_IMPORTAR", "name": "Telegram MeuPet Bot" }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "content": "## Dormente até existir pagamento real\nEssa automação só dispara quando alguma linha for inserida em `subscriptions`. Hoje (jul/2026) o MeuPet não tem gateway de pagamento (Stripe/Mercado Pago/PagSeguro) integrado, então nada insere aqui ainda — isso é esperado, não é bug. Ativa sozinha quando o checkout de pagamento for implementado.",
+        "height": 220,
+        "width": 300
+      },
+      "id": "note5",
+      "name": "Nota - dormente",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [180, 480]
+    }
+  ],
+  "connections": {
+    "Webhook - nova subscription": { "main": [[{ "node": "Confirma secret", "type": "main", "index": 0 }]] },
+    "Confirma secret": {
+      "main": [
+        [
+          { "node": "Atualiza plano no profile", "type": "main", "index": 0 },
+          { "node": "Busca preço do plano", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Busca preço do plano": { "main": [[{ "node": "Telegram - avisa admin", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

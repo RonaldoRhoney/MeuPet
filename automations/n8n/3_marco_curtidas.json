@@ -1,0 +1,154 @@
+{
+  "name": "MeuPet - 3 - Marco de curtidas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meupet-like-milestone",
+        "options": {}
+      },
+      "id": "webhook3",
+      "name": "Webhook - novo like",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.headers['x-meupet-secret']}}", "value2": "SEU_WEBHOOK_SECRET_AQUI" }
+          ]
+        }
+      },
+      "id": "if3secret",
+      "name": "Confirma secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [290, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://dllchewamguyzudlkpxu.supabase.co/rest/v1/posts?id=eq.{{$json.body.record.post_id}}&select=pet_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http3a",
+      "name": "Busca pet_id do post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 300],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "url": "=https://dllchewamguyzudlkpxu.supabase.co/rest/v1/pets?id=eq.{{$json[0].pet_id}}&select=*,profiles!pets_owner_id_fkey(full_name)",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http3b",
+      "name": "Busca dados do pet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [620, 300],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "jsCode": "const pet = items[0].json[0];\nconst marcos = { 10:'estrela_nascente', 50:'popular', 100:'popular', 500:'viral', 1000:'lenda' };\nconst score = pet.rank_score;\nconst atingiuMarco = [10,50,100,500,1000].includes(score);\nlet badge = null;\nif (score >= 1000) badge = 'lenda';\nelse if (score >= 500) badge = 'viral';\nelse if (score >= 50) badge = 'popular';\nelse if (score >= 10) badge = 'estrela_nascente';\nreturn [{ json: { ...pet, atingiu_marco: atingiuMarco, badge_calculado: badge } }];"
+      },
+      "id": "code3",
+      "name": "Verifica marco",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{$json.atingiu_marco}}", "value2": true }
+          ]
+        }
+      },
+      "id": "if3",
+      "name": "Atingiu marco?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1060, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=🏆 *Marco de curtidas atingido!*\n🐾 Pet: {{$json.name}} ({{$json.species}})\n👑 Curtidas: {{$json.rank_score}}\n📍 Cidade: {{$json.city || 'não informado'}}\n👤 Dono: {{$json.profiles.full_name}}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "telegram3",
+      "name": "Telegram - avisa admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1280, 220],
+      "credentials": {
+        "telegramApi": { "id": "PREENCHER_APOS_IMPORTAR", "name": "Telegram MeuPet Bot" }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://dllchewamguyzudlkpxu.supabase.co/rest/v1/pets?id=eq.{{$json.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Authorization", "value": "Bearer SUA_SERVICE_ROLE_KEY_AQUI" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"badge\": $json.badge_calculado } }}",
+        "options": {}
+      },
+      "id": "http3c",
+      "name": "Atualiza badge do pet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1280, 380],
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    }
+  ],
+  "connections": {
+    "Webhook - novo like": { "main": [[{ "node": "Confirma secret", "type": "main", "index": 0 }]] },
+    "Confirma secret": { "main": [[{ "node": "Busca pet_id do post", "type": "main", "index": 0 }]] },
+    "Busca pet_id do post": { "main": [[{ "node": "Busca dados do pet", "type": "main", "index": 0 }]] },
+    "Busca dados do pet": { "main": [[{ "node": "Verifica marco", "type": "main", "index": 0 }]] },
+    "Verifica marco": { "main": [[{ "node": "Atingiu marco?", "type": "main", "index": 0 }]] },
+    "Atingiu marco?": {
+      "main": [
+        [
+          { "node": "Telegram - avisa admin", "type": "main", "index": 0 },
+          { "node": "Atualiza badge do pet", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "MeuPet - 4 - Nova adoção",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meupet-nova-adocao",
+        "options": {}
+      },
+      "id": "webhook4",
+      "name": "Webhook - nova adoção",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json.headers['x-meupet-secret']}}", "value2": "SEU_WEBHOOK_SECRET_AQUI" }
+          ]
+        }
+      },
+      "id": "if4secret",
+      "name": "Confirma secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [390, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "SEU_TELEGRAM_CHAT_ID_AQUI",
+        "text": "=💛 *Nova listagem de adoção!*\n🐾 Pet: {{$json.body.record.pet_name}} ({{$json.body.record.species}})\n🏠 ONG/Tutor: {{$json.body.record.ong_name || 'não informado'}}\n📍 Cidade: {{$json.body.record.city || 'não informado'}}\n📋 Status: Disponível\n🔗 Ver no painel: https://supabase.com/dashboard/project/dllchewamguyzudlkpxu/editor",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "telegram4",
+      "name": "Telegram - avisa admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [520, 300],
+      "credentials": {
+        "telegramApi": { "id": "PREENCHER_APOS_IMPORTAR", "name": "Telegram MeuPet Bot" }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 300000
+    }
+  ],
+  "connections": {
+    "Webhook - nova adoção": { "main": [[{ "node": "Confirma secret", "type": "main", "index": 0 }]] },
+    "Confirma secret": { "main": [[{ "node": "Telegram - avisa admin", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
