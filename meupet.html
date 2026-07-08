@@ -1150,6 +1150,25 @@
           <div class="admin-chart-card"><h4 data-i18n="admin_chart_city">Cidades</h4><canvas id="chartCity"></canvas></div>
           <div class="admin-chart-card"><h4 data-i18n="admin_chart_neighborhood">Bairros</h4><canvas id="chartNeighborhood"></canvas></div>
         </div>
+        <div style="margin-top:32px;">
+          <h4 data-i18n="admin_users_title" style="font-family:'Fraunces',serif; color:var(--heading); margin-bottom:6px;">Quem está usando</h4>
+          <p data-i18n="admin_users_desc" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Lista de tutores cadastrados, ordenada pelo acesso mais recente.</p>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+              <thead>
+                <tr style="text-align:left; border-bottom:2px solid var(--line);">
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_name">Nome</th>
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_email">E-mail</th>
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_local">Cidade</th>
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_plan">Plano</th>
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_created">Cadastro</th>
+                  <th style="padding:8px 10px;" data-i18n="admin_users_col_last">Último acesso</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1828,6 +1847,15 @@
     admin_chart_country:{pt:'Países',en:'Countries'},
     admin_chart_city:{pt:'Cidades',en:'Cities'},
     admin_chart_neighborhood:{pt:'Bairros',en:'Neighborhoods'},
+    admin_users_title:{pt:'Quem está usando',en:'Who is using it'},
+    admin_users_desc:{pt:'Lista de tutores cadastrados, ordenada pelo acesso mais recente.',en:'List of registered tutors, sorted by most recent access.'},
+    admin_users_col_name:{pt:'Nome',en:'Name'},
+    admin_users_col_email:{pt:'E-mail',en:'Email'},
+    admin_users_col_local:{pt:'Cidade',en:'City'},
+    admin_users_col_plan:{pt:'Plano',en:'Plan'},
+    admin_users_col_created:{pt:'Cadastro',en:'Signed up'},
+    admin_users_col_last:{pt:'Último acesso',en:'Last access'},
+    admin_users_never:{pt:'nunca',en:'never'},
     admin_nao_informado:{pt:'Não informado',en:'Not informed'},
 
     profile_gender_label:{pt:'Gênero (opcional)',en:'Gender (optional)'},
@@ -4237,6 +4265,29 @@
     renderAdminChart('chartCity', 'bar', city.labels, city.values, ADMIN_PALETTE);
     const neighborhood = labelMap(data.by_neighborhood);
     renderAdminChart('chartNeighborhood', 'bar', neighborhood.labels, neighborhood.values, ADMIN_PALETTE);
+    loadAdminUsers();
+  }
+
+  function fmtAdminDate(iso){
+    if(!iso) return t('admin_users_never');
+    const d = new Date(iso);
+    return d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  async function loadAdminUsers(){
+    const tbody = document.getElementById('adminUsersBody');
+    if(!tbody) return;
+    const { data, error } = await supa.rpc('admin_user_list');
+    if(error || !data){ console.warn('MeuPet: não deu pra carregar lista de usuários ADM', error?.message); return; }
+    tbody.innerHTML = data.map(u => `
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:8px 10px;">${esc(u.full_name || '—')}</td>
+        <td style="padding:8px 10px;">${esc(u.email || '—')}</td>
+        <td style="padding:8px 10px;">${esc([u.city, u.country].filter(Boolean).join(', ') || '—')}</td>
+        <td style="padding:8px 10px;">${esc(u.plan || 'free')}</td>
+        <td style="padding:8px 10px;">${fmtAdminDate(u.created_at)}</td>
+        <td style="padding:8px 10px;">${fmtAdminDate(u.last_sign_in_at)}</td>
+      </tr>`).join('');
   }
 
   const adoptFavorites = new Set();

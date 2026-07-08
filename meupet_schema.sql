@@ -977,3 +977,40 @@ insert into public.plans (id, name, price_cents, features) values
   ('premium', 'Premium', 1400, '["Sem anúncios","Boost no ranking","Carteirinha personalizada","Acesso antecipado a games"]'),
   ('petshop_partner', 'Petshop Parceiro', 4900, '["Pin destacado no mapa","Vitrine própria","Relatório de alcance","Selo de verificado"]')
 on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------
+-- ADMIN — lista nominal de usuários (quem está usando o app)
+--   security definer roda como o dono da função (postgres), que enxerga
+--   auth.users mesmo com RLS ativo nela — só entra e-mail/último acesso
+--   aqui dentro, nunca numa tabela/view pública. Bloqueado por is_admin().
+-- ---------------------------------------------------------------------
+create or replace function public.admin_user_list()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare result jsonb;
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+
+  select coalesce(jsonb_agg(s.u order by s.last_sign_in_at desc nulls last), '[]'::jsonb) into result
+  from (
+    select jsonb_build_object(
+      'id', p.id,
+      'full_name', p.full_name,
+      'email', au.email,
+      'city', p.city,
+      'country', p.country,
+      'plan', p.plan,
+      'created_at', p.created_at,
+      'last_sign_in_at', au.last_sign_in_at
+    ) as u,
+    au.last_sign_in_at
+    from public.profiles p
+    join auth.users au on au.id = p.id
+  ) s;
+
+  return result;
+end;
+$$;
+revoke all on function public.admin_user_list() from public;
+grant execute on function public.admin_user_list() to authenticated;
