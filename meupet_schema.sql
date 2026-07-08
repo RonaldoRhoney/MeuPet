@@ -352,7 +352,8 @@ create or replace view public.post_rankings as
            p.owner_id, pr.full_name as owner_name,
            (select count(*) from public.likes l where l.post_id = po.id) as likes_count,
            (select count(*) from public.post_shares s where s.post_id = po.id) as shares_count,
-           (select count(*) from public.pet_follows pf where pf.pet_id = po.pet_id) as followers_count
+           (select count(*) from public.pet_follows pf where pf.pet_id = po.pet_id) as followers_count,
+           (select count(*) from public.comments c where c.post_id = po.id) as comments_count
     from public.posts po
     join public.pets p on p.id = po.pet_id
     join public.profiles pr on pr.id = p.owner_id
@@ -632,10 +633,15 @@ create index idx_partner_leads_status on public.partner_leads(status);
 -- ---------------------------------------------------------------------
 create table public.reports (
   id uuid primary key default uuid_generate_v4(),
-  reporter_id uuid not null references public.profiles(id) on delete cascade,
-  target_type text not null check (target_type in ('post','pet','adoption_listing','petshop','profile')),
+  -- nullable: feedback/bug report enviado deslogado não tem reporter
+  reporter_id uuid references public.profiles(id) on delete cascade,
+  -- 'app' cobre feedback/bug geral do app (não é sobre um post/pet específico)
+  target_type text not null check (target_type in ('post','pet','adoption_listing','petshop','profile','app')),
   target_id uuid not null,
-  reason text not null,
+  -- cap de tamanho: reports aceita insert anônimo (sem login), então precisa
+  -- de um limite pra não virar vetor de flood/storage abuse (mesmo padrão
+  -- de feedback_posts.content)
+  reason text not null check (char_length(reason) <= 3000),
   status text not null default 'open' check (status in ('open','reviewing','resolved','dismissed')),
   created_at timestamptz not null default now()
 );
@@ -928,7 +934,7 @@ create policy "partner_leads_select_own_or_admin" on public.partner_leads for se
 create policy "partner_leads_update_admin" on public.partner_leads for update using (public.is_admin());
 
 -- REPORTS: qualquer autenticado reporta, só admin lê/atualiza ("agente de segurança/moderação")
-create policy "reports_insert_auth" on public.reports for insert with check (auth.uid() = reporter_id);
+create policy "reports_insert_auth" on public.reports for insert with check (auth.uid() = reporter_id or reporter_id is null);
 create policy "reports_select_admin" on public.reports for select using (public.is_admin());
 create policy "reports_update_admin" on public.reports for update using (public.is_admin());
 

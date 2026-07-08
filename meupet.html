@@ -1399,6 +1399,37 @@
 </div>
 
 <!-- DEMONSTRAÇÃO RÁPIDA (Ver como funciona) -->
+<!-- FEEDBACK / RELATO DE BUG (auto-detector + botão flutuante) -->
+<button id="bugFeedbackFab" title="Enviar feedback" aria-label="Enviar feedback" style="position:fixed; right:20px; bottom:20px; z-index:150; width:48px; height:48px; border-radius:50%; background:var(--teal); color:#FFF8F0; border:none; font-size:1.3rem; box-shadow:0 10px 24px -8px rgba(15,61,62,0.55); cursor:pointer; display:grid; place-items:center;">💬</button>
+
+<div class="modal-overlay" id="bugFeedbackModal">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" id="closeBugFeedbackModal">✕</button>
+    <div class="modal-body" style="padding:28px 24px;">
+      <div style="text-align:center; font-size:2.2rem; margin-bottom:6px;">🐾</div>
+      <h3 style="text-align:center;">Ops! Algo não saiu como esperado 🐾</h3>
+      <p class="sub" style="text-align:center; margin-bottom:18px;">Conta pra gente o que aconteceu. Sua opinião ajuda o MeuPet a melhorar!</p>
+      <form id="bugFeedbackForm">
+        <label for="bfDescricao" style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">O que você estava fazendo quando isso aconteceu?</label>
+        <textarea id="bfDescricao" rows="3" maxlength="1500" required style="width:100%; margin-bottom:14px;"></textarea>
+        <select id="bfCategoria" style="width:100%; margin-bottom:14px;">
+          <option value="Tela em branco ou travamento">Tela em branco ou travamento</option>
+          <option value="Botão que não funcionou">Botão que não funcionou</option>
+          <option value="Informação errada">Informação errada</option>
+          <option value="App lento">App lento</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <label for="bfEmail" style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Quer receber a resposta? (opcional)</label>
+        <input type="email" id="bfEmail" placeholder="seu@email.com" style="width:100%; margin-bottom:16px;">
+        <input type="hidden" id="bfErroTecnico" value="">
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:13px;" id="bfSubmit">Enviar feedback</button>
+        <button type="button" class="btn btn-ghost" style="width:100%; padding:12px; margin-top:8px;" id="bfIgnorar">Ignorar por agora</button>
+      </form>
+      <p class="modal-status" id="bfStatus" style="text-align:center;"></p>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="demoModal">
   <div class="modal demo-modal">
     <button class="modal-close" id="closeDemoModal">✕</button>
@@ -3689,7 +3720,7 @@
             <button class="reaction-btn" data-reaction="amei" data-post="${esc(p.post_id)}" title="${t('card_amei_title')}">❤️</button>
             <span class="reaction-count">${esc(p.likes_count)}</span>
             <button class="follow-pet-btn ${myPets.has(p.pet_id) ? 'following' : ''}" data-pet-id="${esc(p.pet_id)}">${myPets.has(p.pet_id) ? t('card_seguindo') : t('card_seguir')}</button>
-            <button class="icon-btn comment-btn" data-post="${esc(p.post_id)}" data-pet-name="${esc(p.pet_name)}" title="${t('card_comentarios_title')}">💬</button>
+            <button class="icon-btn comment-btn" data-post="${esc(p.post_id)}" data-pet-name="${esc(p.pet_name)}" title="${t('card_comentarios_title')}">💬${p.comments_count ? ` <span class="reaction-count">${esc(p.comments_count)}</span>` : ''}</button>
             <button class="icon-btn" data-share="post" data-post="${esc(p.post_id)}" data-pet-name="${esc(p.pet_name)}" title="${t('card_compartilhar_title')}" aria-label="${t('card_compartilhar_title')} ${esc(p.pet_name)}">${SHARE_ICON}</button>
           </div>
         </div>
@@ -4172,6 +4203,84 @@
     contentEl.value = '';
     statusEl.textContent = '';
     loadFeedback();
+  });
+
+  // =====================================================================
+  // FEEDBACK / RELATO DE BUG — modal manual + detector automático de erros
+  // =====================================================================
+  const bugFeedbackOverlay = document.getElementById('bugFeedbackModal');
+  let bugFeedbackAutoShown = false;
+
+  function openBugFeedbackModal(erroTecnico){
+    document.getElementById('bfErroTecnico').value = erroTecnico || '';
+    document.getElementById('bfStatus').textContent = '';
+    document.getElementById('bfStatus').className = 'modal-status';
+    bugFeedbackOverlay.classList.add('open');
+  }
+  function closeBugFeedbackModal(){
+    bugFeedbackOverlay.classList.remove('open');
+  }
+  document.getElementById('bugFeedbackFab').addEventListener('click', ()=> openBugFeedbackModal(''));
+  document.getElementById('closeBugFeedbackModal').addEventListener('click', closeBugFeedbackModal);
+  document.getElementById('bfIgnorar').addEventListener('click', closeBugFeedbackModal);
+
+  document.getElementById('bugFeedbackForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const statusEl = document.getElementById('bfStatus');
+    const submitBtn = document.getElementById('bfSubmit');
+    const descricao = document.getElementById('bfDescricao').value.trim();
+    if(!descricao) return;
+    const categoria = document.getElementById('bfCategoria').value;
+    const email = document.getElementById('bfEmail').value.trim();
+    const erroTecnico = document.getElementById('bfErroTecnico').value.slice(0, 300);
+    const reason = `${categoria} | ${descricao} | email:${email || '—'} | erro_tecnico:${erroTecnico || '—'}`;
+
+    submitBtn.disabled = true;
+    let ok = false;
+    if(DB_READY){
+      const { data:{ user } } = await supa.auth.getUser();
+      const { error } = await supa.from('reports').insert({
+        reporter_id: user ? user.id : null,
+        target_type: 'app',
+        target_id: '00000000-0000-0000-0000-000000000000',
+        reason,
+        status: 'open',
+      });
+      ok = !error;
+      if(error) console.warn('MeuPet: não deu pra enviar feedback', error.message);
+    }
+    if(!ok){
+      try {
+        const queue = JSON.parse(localStorage.getItem('meupet_feedback_queue') || '[]');
+        queue.push({ reason, created_at: new Date().toISOString() });
+        localStorage.setItem('meupet_feedback_queue', JSON.stringify(queue));
+        ok = true;
+      } catch(_e) { /* localStorage indisponível */ }
+    }
+    submitBtn.disabled = false;
+    if(!ok){ statusEl.textContent = 'Não deu pra enviar agora, tenta de novo.'; statusEl.className = 'modal-status err'; return; }
+
+    document.getElementById('bugFeedbackForm').style.display = 'none';
+    statusEl.textContent = 'Obrigado! Vamos investigar 🐾';
+    statusEl.className = 'modal-status ok';
+    setTimeout(()=>{
+      closeBugFeedbackModal();
+      document.getElementById('bugFeedbackForm').style.display = '';
+      document.getElementById('bfDescricao').value = '';
+      document.getElementById('bfEmail').value = '';
+    }, 2500);
+  });
+
+  function reportAutoError(message, sourceInfo){
+    if(bugFeedbackAutoShown) return;
+    bugFeedbackAutoShown = true;
+    setTimeout(()=> openBugFeedbackModal(`${message} @ ${sourceInfo}`), 1500);
+  }
+  window.onerror = function(message, source, lineno, colno){
+    reportAutoError(message, `${source}:${lineno}:${colno}`);
+  };
+  window.addEventListener('unhandledrejection', e=>{
+    reportAutoError(e.reason?.message || String(e.reason), 'unhandledrejection');
   });
 
   document.getElementById('feedbackList').addEventListener('click', async e=>{
