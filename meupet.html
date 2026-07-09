@@ -1679,7 +1679,7 @@
       en:'GPS location (with IP or manual fallback) and real search via OpenStreetMap — click "directions" to trace the route.'},
     geo_detectando:{pt:'📍 Detectando localização ·',en:'📍 Detecting location ·'}, geo_outra_cidade:{pt:'Outra cidade…',en:'Another city…'},
     petshops_search_placeholder:{pt:'Buscar petshop, clínica, banho e tosa…',en:'Search pet shop, clinic, grooming…'},
-    petshops_search_vazio:{pt:'Nada encontrado por aqui pra essa busca.',en:'Nothing found nearby for this search.'},
+    petshops_search_vazio:{pt:'Nenhum petshop ou clínica encontrado por aqui.',en:'No pet shop or clinic found nearby.'},
 
     games_kicker:{pt:'Hub de games',en:'Games hub'}, games_title:{pt:'Pets também jogam',en:'Pets play too'},
     games_desc:{pt:'Curadoria de jogos reais de pet, bem avaliados no CrazyGames — você sai do app só para jogar, e volta pro feed depois.',
@@ -2319,18 +2319,47 @@
   // petshops e veterinários REAIS via Overpass API (OpenStreetMap) — gratuita,
   // sem chave, não envia nenhum dado do usuário além das coordenadas já usadas
   // para a busca de localização (mesmo padrão de privacidade do resto do app)
+  // espelhos públicos da Overpass API, em ordem de tentativa — instâncias
+  // comunitárias sozinhas são instáveis (rate limit/timeout variam sem
+  // aviso), então tenta uma, e se falhar/travar (6s) tenta a próxima antes
+  // de desistir e cair no fallback estático
+  const OVERPASS_MIRRORS = [
+    'https://lz4.overpass-api.de/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+    'https://overpass-api.de/api/interpreter',
+  ];
+
+  async function fetchOverpassWithTimeout(url, query, timeoutMs){
+    const controller = new AbortController();
+    const timer = setTimeout(()=> controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, { method:'POST', body: query, signal: controller.signal });
+      if(!res.ok) throw new Error('Overpass indisponível: ' + res.status);
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function fetchOSMPetshops(lat, lng, radiusKm){
     const radiusM = Math.round(radiusKm * 1000);
     const query = `[out:json][timeout:10];(
       node["shop"="pet"](around:${radiusM},${lat},${lng});
       node["amenity"="veterinary"](around:${radiusM},${lat},${lng});
     );out 20;`;
-    // overpass-api.de (endpoint padrão) não envia cabeçalho CORS e bloqueia
-    // TODA chamada feita direto do navegador — lz4.overpass-api.de é a
-    // mesma infraestrutura oficial, só uma instância com CORS liberado
-    const res = await fetch('https://lz4.overpass-api.de/api/interpreter', { method:'POST', body: query });
-    if(!res.ok) throw new Error('Overpass indisponível: ' + res.status);
-    const data = await res.json();
+
+    let data = null, lastErr = null;
+    for(const mirror of OVERPASS_MIRRORS){
+      try{
+        data = await fetchOverpassWithTimeout(mirror, query, 6000);
+        break;
+      }catch(err){
+        lastErr = err;
+        console.warn(`MeuPet: espelho Overpass ${mirror} falhou, tentando o próximo.`, err.message);
+      }
+    }
+    if(!data) throw lastErr || new Error('Todos os espelhos Overpass falharam');
+
     return (data.elements || [])
       .filter(el => el.lat != null && el.lon != null)
       .map(el => {
@@ -2393,7 +2422,20 @@
     }).join('');
   }
 
+  let loadingGeoList = false;
   async function loadGeoList(){
+    // evita empilhar buscas concorrentes (ex: clique repetido no "Tentar de
+    // novo") — cada chamada pode disparar até 3 fetches sequenciais de 6s
+    if(loadingGeoList) return;
+    loadingGeoList = true;
+    try{
+      await loadGeoListInner();
+    } finally {
+      loadingGeoList = false;
+    }
+  }
+
+  async function loadGeoListInner(){
     let items = null;
 
     // 1) dados reais dos petshops parceiros cadastrados no MeuPet
@@ -2412,6 +2454,7 @@
     }
 
     // 2) sem parceiros por perto: busca petshops/veterinários reais via OpenStreetMap
+    let osmFalhou = false;
     if(!items && currentGeo.lat && currentGeo.lng){
       try{
         const osm = await fetchOSMPetshops(currentGeo.lat, currentGeo.lng, 8);
@@ -2424,15 +2467,31 @@
               name:p.name, address:p.address, phone:p.phone, website:p.website,
               meta:`${p.kind} · ${p.dist.toFixed(1)} km`, lat:p.lat, lng:p.lng, rating:null, dist:p.dist, kind:p.kind
             }));
+        } else {
+          items = []; // busca funcionou, só não achou nada de verdade por perto
         }
       }catch(err){
-        console.warn('MeuPet: Overpass/OSM indisponível, usando dados de demonstração.', err);
+        console.warn('MeuPet: todos os espelhos Overpass falharam.', err);
+        osmFalhou = true;
       }
     }
 
-    // 3) último recurso: dados de demonstração (sem coordenadas)
+    // 3a) já temos localização real, mas a busca em si falhou (não é falta de
+    // resultado) — nunca mostra petshops inventados como se fossem reais;
+    // mostra estado de erro honesto com botão de tentar de novo
+    if(!items && osmFalhou && currentGeo.lat){
+      document.getElementById('geoList').innerHTML = `<div class="feed-empty">😕 Não conseguimos buscar petshops agora.<br><button class="btn btn-ghost" id="geoRetryBtn" style="margin-top:10px;">Tentar de novo</button></div>`;
+      document.getElementById('geoRetryBtn').addEventListener('click', loadGeoList);
+      nearbyPetshopsCache = [];
+      renderMapMarkers([]);
+      loadMarket();
+      return;
+    }
+
+    // 3b) sem localização nenhuma (GPS negado e IP também falhou): mostra
+    // exemplos ilustrativos claramente rotulados como demonstração
     if(!items){
-      items = geoData.map(g => ({ name:g.name, meta:g.meta, address:null, phone:null, lat:null, lng:null, rating:null, dist:null, kind:'Petshop' }));
+      items = geoData.map(g => ({ name:g.name, meta:`${g.meta} · demonstração`, address:null, phone:null, lat:null, lng:null, rating:null, dist:null, kind:'Petshop' }));
     }
 
     nearbyPetshopsCache = items;
