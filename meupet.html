@@ -979,9 +979,9 @@
             <div class="city-select">
               <span id="geoLabel" data-i18n="geo_detectando">📍 Detectando localização ·</span>
               <select id="citySelect">
-                <option>Belém, PA</option>
-                <option>São Paulo, SP</option>
-                <option>Lisboa, Portugal</option>
+                <option data-lat="-1.4558" data-lng="-48.4902">Belém, PA</option>
+                <option data-lat="-23.5505" data-lng="-46.6333">São Paulo, SP</option>
+                <option data-lat="38.7223" data-lng="-9.1393">Lisboa, Portugal</option>
                 <option data-i18n="geo_outra_cidade">Outra cidade…</option>
               </select>
             </div>
@@ -2184,10 +2184,21 @@
     return { city: data.city || data.locality || 'Sua região', country: data.countryName || '' };
   }
 
+  // dois provedores de geolocalização por IP, em sequência — ipapi.co tem
+  // limite de 1000 req/dia no plano grátis; se estourar ou cair, ipwho.is
+  // cobre o mesmo caso sem exigir chave nem cartão
   async function geolocateByIP(){
-    const res = await fetch('https://ipapi.co/json/');
-    const data = await res.json();
-    return { lat:data.latitude, lng:data.longitude, city:data.city, country:data.country_name, source:'ip' };
+    try{
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      if(data.latitude == null) throw new Error('sem coordenadas');
+      return { lat:data.latitude, lng:data.longitude, city:data.city, country:data.country_name, source:'ip' };
+    }catch(_){
+      const res = await fetch('https://ipwho.is/');
+      const data = await res.json();
+      if(!data.success || data.latitude == null) throw new Error('ipwho.is falhou');
+      return { lat:data.latitude, lng:data.longitude, city:data.city, country:data.country, source:'ip' };
+    }
   }
 
   async function detectLocation(){
@@ -2224,7 +2235,11 @@
     } else {
       sel.querySelector('option[value="detected"]').textContent = label;
     }
+    // sem GPS/IP, ainda assim inicializa o mapa numa localização de
+    // referência real — a busca (loadGeoList) também usa esse mesmo padrão,
+    // nunca deixa o mapa/lista vazios por falta de geolocalização
     if(currentGeo.lat && currentGeo.lng) initMap(currentGeo.lat, currentGeo.lng);
+    else initMap(DEFAULT_SEARCH_LOCATION.lat, DEFAULT_SEARCH_LOCATION.lng);
     loadGeoList(); // internamente também atualiza a Loja (CTA de loja mais próxima)
     loadAdoption(); // reordena a Adoção pela distância real assim que a localização chega
   }
@@ -2316,64 +2331,38 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  // petshops e veterinários REAIS via Overpass API (OpenStreetMap) — gratuita,
-  // sem chave, não envia nenhum dado do usuário além das coordenadas já usadas
-  // para a busca de localização (mesmo padrão de privacidade do resto do app)
-  // espelhos públicos da Overpass API, em ordem de tentativa — instâncias
-  // comunitárias sozinhas são instáveis (rate limit/timeout variam sem
-  // aviso), então tenta uma, e se falhar/travar (6s) tenta a próxima antes
-  // de desistir e cair no fallback estático
-  const OVERPASS_MIRRORS = [
-    'https://lz4.overpass-api.de/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter',
-    'https://overpass-api.de/api/interpreter',
-  ];
-
-  async function fetchOverpassWithTimeout(url, query, timeoutMs){
+  // petshops e veterinários REAIS via Overpass API (OpenStreetMap) — a busca
+  // em si roda no servidor (api/nearby-petshops.js), não aqui no navegador.
+  // Chamar a Overpass direto do browser esbarra em CORS de forma persistente
+  // nos espelhos públicos gratuitos (confirmado, não é intermitência) —
+  // servidor-a-servidor não tem essa restrição, então o proxy resolve na
+  // raiz. Timeout de 10s cobre o pior caso (proxy já tenta 4 espelhos).
+  async function fetchOSMPetshops(lat, lng, radiusKm){
     const controller = new AbortController();
-    const timer = setTimeout(()=> controller.abort(), timeoutMs);
+    // 9s: alinhado ao orçamento do proxy (3 mirrors x 3s = 9s no pior caso)
+    const timer = setTimeout(()=> controller.abort(), 9000);
+    let res;
     try{
-      const res = await fetch(url, { method:'POST', body: query, signal: controller.signal });
-      if(!res.ok) throw new Error('Overpass indisponível: ' + res.status);
-      return await res.json();
+      // arredonda pra ~110m antes de enviar — evita logar/guardar a
+      // coordenada exata do usuário sem necessidade (o servidor também
+      // arredonda, isso aqui é defesa em profundidade extra)
+      const latR = Math.round(lat * 1000) / 1000;
+      const lngR = Math.round(lng * 1000) / 1000;
+      res = await fetch(`/api/nearby-petshops?lat=${latR}&lng=${lngR}&radiusKm=${radiusKm}`, { signal: controller.signal });
     } finally {
       clearTimeout(timer);
     }
-  }
-
-  async function fetchOSMPetshops(lat, lng, radiusKm){
-    const radiusM = Math.round(radiusKm * 1000);
-    const query = `[out:json][timeout:10];(
-      node["shop"="pet"](around:${radiusM},${lat},${lng});
-      node["amenity"="veterinary"](around:${radiusM},${lat},${lng});
-    );out 20;`;
-
-    let data = null, lastErr = null;
-    for(const mirror of OVERPASS_MIRRORS){
-      try{
-        data = await fetchOverpassWithTimeout(mirror, query, 6000);
-        break;
-      }catch(err){
-        lastErr = err;
-        console.warn(`MeuPet: espelho Overpass ${mirror} falhou, tentando o próximo.`, err.message);
-      }
+    if(!res.ok){
+      const body = await res.json().catch(()=>({}));
+      throw new Error(body.error || ('nearby-petshops indisponível: ' + res.status));
     }
-    if(!data) throw lastErr || new Error('Todos os espelhos Overpass falharam');
-
+    const data = await res.json();
     return (data.elements || [])
-      .filter(el => el.lat != null && el.lon != null)
-      .map(el => {
-        const t = el.tags || {};
-        const addrParts = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(', ');
-        return {
-          name: t.name || (t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop'),
-          kind: t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop',
-          address: addrParts || t['addr:full'] || null,
-          phone: t.phone || t['contact:phone'] || null,
-          website: t.website || t['contact:website'] || null,
-          lat: el.lat, lng: el.lon,
-        };
-      });
+      .filter(el => el.lat != null && el.lng != null)
+      .map(el => ({
+        name: el.name, kind: el.kind, address: el.address,
+        phone: el.phone, website: el.website, lat: el.lat, lng: el.lng,
+      }));
   }
 
   // cache da última busca de petshops perto do usuário — reaproveitada pela
@@ -2435,18 +2424,26 @@
     }
   }
 
+  // regra do produto: o app SEMPRE busca nomes reais, nunca inventa petshop —
+  // se não há GPS nem IP disponível, usa uma cidade de referência real (São
+  // Paulo) só pra ter uma coordenada de partida, e busca de verdade nela
+  const DEFAULT_SEARCH_LOCATION = { lat: -23.5505, lng: -46.6333, label: 'São Paulo' };
+
   async function loadGeoListInner(){
     let items = null;
+    const usingDefaultLocation = currentGeo.lat == null || currentGeo.lng == null;
+    const searchLat = usingDefaultLocation ? DEFAULT_SEARCH_LOCATION.lat : currentGeo.lat;
+    const searchLng = usingDefaultLocation ? DEFAULT_SEARCH_LOCATION.lng : currentGeo.lng;
 
     // 1) dados reais dos petshops parceiros cadastrados no MeuPet
-    if(DB_READY && currentGeo.lat){
-      const { data, error } = await supa.rpc('petshops_near', { p_lat: currentGeo.lat, p_lng: currentGeo.lng, p_radius_km: 15 });
+    if(DB_READY){
+      const { data, error } = await supa.rpc('petshops_near', { p_lat: searchLat, p_lng: searchLng, p_radius_km: 15 });
       if(!error && data && data.length){
         items = data.map(p => ({
           name:p.name, address: p.address || null, phone: p.phone || null,
           meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}⭐ ${p.rating ?? '-'}`,
           lat:p.lat, lng:p.lng, isPartner: !!p.is_partner, kind:'Petshop',
-          rating: p.rating ?? null, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng)
+          rating: p.rating ?? null, dist: haversineKm(searchLat, searchLng, p.lat, p.lng)
         }));
         // petshops parceiros (plano pago) aparecem primeiro — o "pin de destaque" prometido no plano
         items.sort((a,b) => (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0) || a.dist - b.dist);
@@ -2455,17 +2452,18 @@
 
     // 2) sem parceiros por perto: busca petshops/veterinários reais via OpenStreetMap
     let osmFalhou = false;
-    if(!items && currentGeo.lat && currentGeo.lng){
+    if(!items){
       try{
-        const osm = await fetchOSMPetshops(currentGeo.lat, currentGeo.lng, 8);
+        const osm = await fetchOSMPetshops(searchLat, searchLng, 8);
         if(osm.length){
           items = osm
-            .map(p => ({ ...p, dist: haversineKm(currentGeo.lat, currentGeo.lng, p.lat, p.lng) }))
+            .map(p => ({ ...p, dist: haversineKm(searchLat, searchLng, p.lat, p.lng) }))
             .sort((a,b) => a.dist - b.dist)
             .slice(0, 8)
             .map(p => ({
               name:p.name, address:p.address, phone:p.phone, website:p.website,
-              meta:`${p.kind} · ${p.dist.toFixed(1)} km`, lat:p.lat, lng:p.lng, rating:null, dist:p.dist, kind:p.kind
+              meta:`${p.kind} · ${p.dist.toFixed(1)} km${usingDefaultLocation ? ' · ' + DEFAULT_SEARCH_LOCATION.label : ''}`,
+              lat:p.lat, lng:p.lng, rating:null, dist:p.dist, kind:p.kind
             }));
         } else {
           items = []; // busca funcionou, só não achou nada de verdade por perto
@@ -2476,10 +2474,10 @@
       }
     }
 
-    // 3a) já temos localização real, mas a busca em si falhou (não é falta de
-    // resultado) — nunca mostra petshops inventados como se fossem reais;
-    // mostra estado de erro honesto com botão de tentar de novo
-    if(!items && osmFalhou && currentGeo.lat){
+    // busca em si falhou (não é falta de resultado) — nunca mostra petshops
+    // inventados como se fossem reais; mostra estado de erro honesto com
+    // botão de tentar de novo
+    if(!items && osmFalhou){
       document.getElementById('geoList').innerHTML = `<div class="feed-empty">😕 Não conseguimos buscar petshops agora.<br><button class="btn btn-ghost" id="geoRetryBtn" style="margin-top:10px;">Tentar de novo</button></div>`;
       document.getElementById('geoRetryBtn').addEventListener('click', loadGeoList);
       nearbyPetshopsCache = [];
@@ -2488,10 +2486,8 @@
       return;
     }
 
-    // 3b) sem localização nenhuma (GPS negado e IP também falhou): mostra
-    // exemplos ilustrativos claramente rotulados como demonstração
-    if(!items){
-      items = geoData.map(g => ({ name:g.name, meta:`${g.meta} · demonstração`, address:null, phone:null, lat:null, lng:null, rating:null, dist:null, kind:'Petshop' }));
+    if(usingDefaultLocation && document.getElementById('geoLabel')){
+      document.getElementById('geoLabel').textContent = `📍 Sem sua localização — mostrando ${DEFAULT_SEARCH_LOCATION.label} ·`;
     }
 
     nearbyPetshopsCache = items;
@@ -2588,8 +2584,12 @@
 
   document.getElementById('citySelect').addEventListener('change', e=>{
     if(e.target.value !== 'detected'){
-      currentGeo = { lat:null, lng:null, city:e.target.value, country:'', source:'manual' };
+      const opt = e.target.selectedOptions[0];
+      const lat = opt.dataset.lat ? parseFloat(opt.dataset.lat) : null;
+      const lng = opt.dataset.lng ? parseFloat(opt.dataset.lng) : null;
+      currentGeo = { lat, lng, city:e.target.value, country:'', source:'manual' };
       document.getElementById('geoSource').textContent = t('geo_fonte_manual');
+      if(lat != null && lng != null) initMap(lat, lng);
       loadGeoList();
     }
   });
@@ -4125,11 +4125,6 @@
     {emoji:'🧸', name:'Brinquedo mordedor', price:'R$ 29,90', shop:'Zoo Brasil', spons:false},
     {emoji:'🛁', name:'Shampoo neutro 500ml', price:'R$ 24,50', shop:'PetCenter', spons:false},
     {emoji:'🦺', name:'Coleira ajustável', price:'R$ 39,90', shop:'Mundo Animal', spons:true},
-  ];
-  const geoData = [
-    {name:'PetCenter Marco', meta:'Aberto agora · 0,8 km · ⭐ 4.8'},
-    {name:'Zoo Brasil Umarizal', meta:'Aberto agora · 1,4 km · ⭐ 4.6'},
-    {name:'Mundo Animal Nazaré', meta:'Fecha às 19h · 2,1 km · ⭐ 4.5'},
   ];
   // classifica o campo livre "species" do banco (ou o dado de demo) em um dos
   // 3 filtros da vitrine de adoção — texto livre no schema, então é heurística
