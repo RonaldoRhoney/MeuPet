@@ -391,6 +391,24 @@
   .adopt-card h4{font-family:'Fraunces',serif; font-size:1rem; margin-bottom:2px;}
   .adopt-card .dist{font-size:0.74rem; color:var(--text-muted); margin:2px 0 12px; display:flex; align-items:center; gap:5px;}
   .adopt-empty{grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.9rem;}
+  .adopt-banner{
+    background:linear-gradient(120deg, rgba(255,107,74,0.12), rgba(255,107,74,0.04));
+    border:1px solid rgba(255,107,74,0.25); border-radius:24px;
+    padding:26px 28px; margin-bottom:28px;
+    display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
+  }
+  .adopt-waiting{
+    display:inline-flex; align-items:center; gap:8px; margin-top:12px;
+    font-size:0.88rem; font-weight:700; color:var(--coral-dark);
+  }
+  .adopt-waiting b{font-family:'Fraunces', serif; font-size:1.15rem;}
+  .btn-adopt-cta{
+    display:inline-flex; align-items:center; gap:8px; padding:14px 24px !important;
+    font-size:0.95rem !important; box-shadow:0 12px 26px -8px rgba(255,107,74,0.55);
+  }
+  @media (max-width:700px){
+    .adopt-banner{padding:20px;}
+  }
   .btn-block{width:100%; background:var(--teal); color:white; border-radius:12px; padding:10px; font-weight:700; font-size:0.82rem; border:none;}
   .btn-block:hover{background:var(--teal-light);}
 
@@ -929,13 +947,17 @@
   <!-- ADOÇÃO -->
   <section class="block" id="adocao" style="background:var(--surface);">
     <div class="wrap">
-      <div class="section-head">
+      <div class="adopt-banner">
         <div>
           <span class="kicker" data-i18n="adopt_kicker">Adote um pet</span>
           <h2 data-i18n="adopt_title">Lares esperando por eles</h2>
           <p data-i18n="adopt_desc">Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.</p>
+          <div class="adopt-waiting" id="adoptWaitingLine" style="display:none;">
+            <span class="dot-live"></span>
+            <span id="adoptWaitingText"></span>
+          </div>
         </div>
-        <button class="btn btn-ghost" id="btnCadastrarAdocao" data-i18n="adopt_cadastrar_btn">Cadastrar pet para adoção</button>
+        <button class="btn btn-primary btn-adopt-cta" id="btnCadastrarAdocao">🐾 <span data-i18n="adopt_cadastrar_btn">Cadastrar pet para adoção</span></button>
       </div>
       <div class="adopt-filters pill-tabs" id="adoptFilters">
         <button class="active" data-species="todos" data-i18n="species_todos">Todos</button>
@@ -1668,6 +1690,8 @@
     adopt_kicker:{pt:'Adote um pet',en:'Adopt a pet'}, adopt_title:{pt:'Lares esperando por eles',en:'Homes waiting for them'},
     adopt_desc:{pt:'Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.',
       en:'Animals from partner shelters and pet parents in your area, sorted by distance to you.'},
+    adopt_waiting_singular:{pt:'pet esperando um lar agora',en:'pet waiting for a home right now'},
+    adopt_waiting_plural:{pt:'pets esperando um lar agora',en:'pets waiting for a home right now'},
     adopt_cadastrar_btn:{pt:'Cadastrar pet para adoção',en:'List a pet for adoption'},
 
     loja_desc:{pt:'Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.',
@@ -4599,7 +4623,18 @@
       </div>`).join('');
   }
 
+  async function loadAdoptWaitingCount(){
+    const line = document.getElementById('adoptWaitingLine');
+    if(!DB_READY || !line) return;
+    const { count, error } = await supa.from('adoption_listings').select('id', { count:'exact', head:true }).eq('status','available');
+    if(error || !count){ line.style.display = 'none'; return; }
+    const label = count === 1 ? t('adopt_waiting_singular') : t('adopt_waiting_plural');
+    document.getElementById('adoptWaitingText').innerHTML = `<b>${count}</b> ${esc(label)}`;
+    line.style.display = 'flex';
+  }
+
   async function loadAdoption(){
+    loadAdoptWaitingCount();
     let items = null;
     if(DB_READY){
       const { data, error } = await supa.from('adoption_listings').select('*').eq('status','available').limit(30);
