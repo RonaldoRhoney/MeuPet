@@ -868,9 +868,9 @@
           <button class="btn-share-app" data-share="app" title="Compartilhar o MeuPet" aria-label="Compartilhar o MeuPet" data-i18n-title="hero_share_title" data-i18n-aria="hero_share_title"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg></button>
         </div>
         <div class="hero-stats">
-          <div class="stat"><b id="statPets">128.4k</b><span data-i18n="hero_stat_pets">pets cadastrados</span></div>
-          <div class="stat"><b id="statLikes">2.1M</b><span data-i18n="hero_stat_likes">curtidas essa semana</span></div>
-          <div class="stat"><b>+940</b><span data-i18n="hero_stat_petshops">petshops parceiros</span></div>
+          <div class="stat"><b id="statPets">–</b><span data-i18n="hero_stat_pets">pets cadastrados</span></div>
+          <div class="stat"><b id="statLikes">–</b><span data-i18n="hero_stat_likes">curtidas essa semana</span></div>
+          <div class="stat"><b id="statPetshops">–</b><span data-i18n="hero_stat_petshops">petshops parceiros</span></div>
         </div>
       </div>
       <div class="carteirinha-stage">
@@ -2630,14 +2630,26 @@
   }
   tick(); setInterval(tick, 1000);
 
-  // small "real time" counters
-  let likes = 2100000, pets = 128400;
-  setInterval(()=>{
-    likes += Math.floor(Math.random()*40);
-    pets += Math.random() < 0.3 ? 1 : 0;
-    document.getElementById('statLikes').textContent = (likes/1e6).toFixed(1) + 'M';
-    document.getElementById('statPets').textContent = (pets/1000).toFixed(1) + 'k';
-  }, 3500);
+  // estatísticas do hero — números reais do Supabase, nunca inventados
+  function formatCompactNumber(n){
+    if(n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+    if(n >= 1e3) return (n/1e3).toFixed(1) + 'k';
+    return String(n);
+  }
+
+  async function loadHeroStats(){
+    if(!DB_READY) return;
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+    const [petsRes, likesRes, petshopsRes] = await Promise.all([
+      supa.from('pets').select('id', { count:'exact', head:true }),
+      supa.from('likes').select('id', { count:'exact', head:true }).gte('created_at', weekAgo),
+      supa.from('petshops').select('id', { count:'exact', head:true }).eq('is_partner', true),
+    ]);
+    if(!petsRes.error && petsRes.count != null) document.getElementById('statPets').textContent = formatCompactNumber(petsRes.count);
+    if(!likesRes.error && likesRes.count != null) document.getElementById('statLikes').textContent = formatCompactNumber(likesRes.count);
+    if(!petshopsRes.error && petshopsRes.count != null) document.getElementById('statPetshops').textContent = formatCompactNumber(petshopsRes.count);
+  }
+  loadHeroStats();
 
   // login modal
   const overlay = document.getElementById('loginModal');
