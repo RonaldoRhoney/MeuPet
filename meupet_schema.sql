@@ -427,6 +427,13 @@ alter table public.adoption_contacts enable row level security;
 -- permissivo demais: uma única conta grátis conseguia baixar o telefone de
 -- TODOS os doadores numa query só. A leitura agora só acontece via a função
 -- reveal_adoption_contact() abaixo, que loga quem pediu o quê e aplica cota.
+-- select restrito ao próprio dono (pra ele ver/editar o telefone que ele
+-- mesmo cadastrou) — continua sem policy pra qualquer OUTRO autenticado,
+-- então não reabre o vazamento em massa que a auditoria corrigiu
+create policy "adoption_contacts_select_own" on public.adoption_contacts
+  for select using (
+    exists (select 1 from public.adoption_listings l where l.id = listing_id and l.created_by = auth.uid())
+  );
 create policy "adoption_contacts_insert_own" on public.adoption_contacts
   for insert with check (
     exists (select 1 from public.adoption_listings l where l.id = listing_id and l.created_by = auth.uid())
@@ -905,6 +912,7 @@ create policy "profile_follows_delete_own" on public.profile_follows for delete 
 create policy "adoption_select_public" on public.adoption_listings for select using (true);
 create policy "adoption_insert_auth" on public.adoption_listings for insert with check (auth.uid() = created_by);
 create policy "adoption_update_own" on public.adoption_listings for update using (auth.uid() = created_by or public.is_admin());
+create policy "adoption_delete_own" on public.adoption_listings for delete using (auth.uid() = created_by or public.is_admin());
 
 -- PETSHOPS: leitura pública, escrita do owner do petshop ou admin
 create policy "petshops_select_public" on public.petshops for select using (true);

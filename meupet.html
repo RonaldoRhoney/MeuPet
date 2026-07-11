@@ -962,6 +962,10 @@
         </div>
         <button class="btn btn-primary btn-adopt-cta" id="btnCadastrarAdocao">🐾 <span data-i18n="adopt_cadastrar_btn">Cadastrar pet para adoção</span></button>
       </div>
+      <div class="pill-tabs" id="adoptViewTabs" style="margin-bottom:14px;">
+        <button class="active" data-view="disponivel" data-i18n="adopt_view_disponivel">🏠 Disponíveis</button>
+        <button data-view="adotado" data-i18n="adopt_view_adotado">💚 Em um novo lar</button>
+      </div>
       <div class="adopt-filters pill-tabs" id="adoptFilters">
         <button class="active" data-species="todos" data-i18n="species_todos">Todos</button>
         <button data-species="cao" data-i18n="species_cao">🐶 Cães</button>
@@ -1407,6 +1411,8 @@
       <p class="sub" style="margin:-6px 0 14px; font-size:0.72rem;" data-i18n="adoptform_contact_note">Esse contato só aparece pra quem estiver logado e clicar em "Quero adotar" — não fica público na página.</p>
 
       <button class="btn btn-primary" style="width:100%; padding:13px;" id="adoptFormSubmit" data-i18n="adoptform_submit">Publicar para adoção</button>
+      <button class="btn btn-ghost" style="width:100%; padding:12px; margin-top:10px; display:none;" id="adoptFormMarkAdopted" data-i18n="adoptform_marcar_adotado">🏠 Marcar como adotado</button>
+      <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark); display:none;" id="adoptFormDelete" data-i18n="adoptform_excluir">🗑️ Excluir anúncio</button>
       <p class="modal-status" id="adoptFormStatus"></p>
     </div>
   </div>
@@ -1695,6 +1701,14 @@
       en:'Animals from partner shelters and pet parents in your area, sorted by distance to you.'},
     adopt_waiting_singular:{pt:'pet esperando um lar agora',en:'pet waiting for a home right now'},
     adopt_waiting_plural:{pt:'pets esperando um lar agora',en:'pets waiting for a home right now'},
+    adopt_view_disponivel:{pt:'🏠 Disponíveis',en:'🏠 Available'}, adopt_view_adotado:{pt:'💚 Em um novo lar',en:'💚 In a new home'},
+    adopt_ja_adotado:{pt:'💚 Já tem um novo lar',en:'💚 Already has a new home'},
+    adoptform_edit_title:{pt:'Editar anúncio de adoção',en:'Edit adoption listing'},
+    adoptform_edit_submit:{pt:'Salvar alterações',en:'Save changes'},
+    adoptform_marcar_adotado:{pt:'🏠 Marcar como adotado',en:'🏠 Mark as adopted'},
+    adoptform_excluir:{pt:'🗑️ Excluir anúncio',en:'🗑️ Delete listing'},
+    adopt_confirm_excluir:{pt:'Tem certeza que quer excluir esse anúncio de adoção? Essa ação não pode ser desfeita.',en:'Are you sure you want to delete this adoption listing? This cannot be undone.'},
+    adopt_confirm_adotado:{pt:'Marcar esse pet como adotado? Ele vai sair da lista de disponíveis e aparecer em "Em um novo lar".',en:'Mark this pet as adopted? It will move out of the available list into "In a new home".'},
     adopt_cadastrar_btn:{pt:'Cadastrar pet para adoção',en:'List a pet for adoption'},
 
     loja_desc:{pt:'Links de parceiros e lojas — MeuPet ganha uma pequena comissão em cada compra. Também mostramos a loja física mais próxima de você para retirar na hora.',
@@ -2837,6 +2851,7 @@
         if(typeof loadCuidados === 'function') loadCuidados();
         if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
         if(typeof loadFeedback === 'function') loadFeedback();
+        if(typeof loadAdoption === 'function') loadAdoption();
       }
     });
   }
@@ -2911,6 +2926,7 @@
       if(typeof loadCuidados === 'function') loadCuidados();
       if(typeof refreshVaccineBadge === 'function') refreshVaccineBadge();
       if(typeof loadFeedback === 'function') loadFeedback();
+      if(typeof loadAdoption === 'function') loadAdoption();
       setTimeout(()=>{
         overlay.classList.remove('open');
         // se o clique original era "criar carteirinha" (ou cadastrar pet pra
@@ -4614,7 +4630,9 @@
 
   const adoptFavorites = new Set();
   let adoptFilter = 'todos';
+  let adoptView = 'disponivel'; // 'disponivel' | 'adotado'
   let adoptItemsCache = [];
+  let adoptEditingId = null;
 
   function renderAdoptCards(items){
     const grid = document.getElementById('adoptGrid');
@@ -4623,19 +4641,25 @@
       grid.innerHTML = '<div class="adopt-empty">Nenhum pet dessa categoria por perto ainda 🐾 — tente "Todos" ou volte mais tarde.</div>';
       return;
     }
-    grid.innerHTML = filtered.map(a => `
+    grid.innerHTML = filtered.map(a => {
+      const isOwner = currentUser && a.created_by === currentUser.id;
+      return `
       <div class="adopt-card">
         <div class="media">
           ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
           <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="${t('adopt_favoritar_title')}" aria-label="${t('adopt_favoritar_title')} ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
+          ${isOwner ? `<button class="icon-btn edit-post-btn" data-edit-adopt="${esc(a.id)}" title="Editar anúncio" aria-label="Editar anúncio">✏️</button>` : ''}
         </div>
         <div class="info">
           <h4>${esc(a.name)}</h4>
           ${a.meta ? `<div class="dist" style="margin-bottom:2px;">${esc(a.meta)}</div>` : ''}
           <div class="dist">📍 ${esc(a.dist)}</div>
-          <button class="btn-block" data-adopt="${esc(a.id)}">${t('adopt_quero_adotar')}</button>
+          ${adoptView === 'adotado'
+            ? `<div class="dist" style="font-weight:700; color:var(--teal);">${t('adopt_ja_adotado')}</div>`
+            : `<button class="btn-block" data-adopt="${esc(a.id)}">${t('adopt_quero_adotar')}</button>`}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   async function loadAdoptWaitingCount(){
@@ -4650,9 +4674,10 @@
 
   async function loadAdoption(){
     loadAdoptWaitingCount();
+    const dbStatus = adoptView === 'adotado' ? 'adopted' : 'available';
     let items = null;
     if(DB_READY){
-      const { data, error } = await supa.from('adoption_listings').select('*').eq('status','available').limit(30);
+      const { data, error } = await supa.from('adoption_listings').select('*').eq('status', dbStatus).limit(30);
       if(!error && data && data.length){
         items = data.map(a => {
           const bucket = speciesBucket(a.species);
@@ -4662,14 +4687,14 @@
             : `${a.ong_name || 'Tutor independente'}${a.city ? ' · ' + a.city : ''}`;
           const sizeLabel = { pequeno:'Pequeno porte', medio:'Médio porte', grande:'Grande porte' }[a.size] || null;
           const meta = [a.breed, a.age_years != null ? `${a.age_years} anos` : null, sizeLabel].filter(Boolean).join(' · ');
-          return { id:a.id, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km, photo_url:a.photo_url, meta };
+          return { id:a.id, created_by:a.created_by, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km, photo_url:a.photo_url, meta };
         });
         items.sort((x,y) => (x.km ?? Infinity) - (y.km ?? Infinity));
         items = items.slice(0, 8);
       }
     }
     if(!items){
-      items = adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist }));
+      items = adoptView === 'adotado' ? [] : adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist }));
     }
     adoptItemsCache = items;
     renderAdoptCards(items);
@@ -4678,6 +4703,15 @@
   loadCuidados();
   refreshVaccineBadge();
   loadFeedback();
+
+  document.getElementById('adoptViewTabs').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-view]');
+    if(!btn) return;
+    document.querySelectorAll('#adoptViewTabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    adoptView = btn.dataset.view;
+    loadAdoption();
+  });
 
   document.getElementById('adoptFilters').addEventListener('click', e=>{
     const btn = e.target.closest('button[data-species]');
@@ -4696,6 +4730,8 @@
       renderAdoptCards(adoptItemsCache);
       return;
     }
+    const editAdoptBtn = e.target.closest('[data-edit-adopt]');
+    if(editAdoptBtn){ openAdoptFormModal(editAdoptBtn.dataset.editAdopt); return; }
     const adoptBtn = e.target.closest('[data-adopt]');
     if(adoptBtn){
       if(!currentUser){ openModal('login'); return; }
@@ -4750,8 +4786,9 @@
     }, document.getElementById('adoptPhotoFile'));
   });
 
-  function openAdoptFormModal(){
+  async function openAdoptFormModal(editId){
     if(!currentUser){ pendingIntent = 'createAdoption'; openModal('signup'); return; }
+    adoptEditingId = editId || null;
     document.getElementById('adoptPetName').value = '';
     document.getElementById('adoptSpecies').value = 'cao';
     document.getElementById('adoptBreed').value = '';
@@ -4770,7 +4807,45 @@
     document.getElementById('adoptPhotoLabel').textContent = 'Adicionar uma foto (opcional)';
     document.getElementById('adoptFormStatus').textContent = '';
     document.getElementById('adoptFormStatus').className = 'modal-status';
-    loadBreedList('cao', 'adoptBreedList');
+
+    const titleEl = document.querySelector('#adoptFormModal h3');
+    const submitBtn = document.getElementById('adoptFormSubmit');
+    const markAdoptedBtn = document.getElementById('adoptFormMarkAdopted');
+    const deleteBtn = document.getElementById('adoptFormDelete');
+
+    if(adoptEditingId){
+      titleEl.textContent = t('adoptform_edit_title');
+      submitBtn.textContent = t('adoptform_edit_submit');
+      markAdoptedBtn.style.display = 'block';
+      deleteBtn.style.display = 'block';
+
+      const [{ data: listing, error }, { data: contact }] = await Promise.all([
+        supa.from('adoption_listings').select('*').eq('id', adoptEditingId).single(),
+        supa.from('adoption_contacts').select('phone').eq('listing_id', adoptEditingId).single(),
+      ]);
+      if(!error && listing){
+        document.getElementById('adoptPetName').value = listing.pet_name || '';
+        document.getElementById('adoptSpecies').value = listing.species || 'cao';
+        document.getElementById('adoptBreed').value = listing.breed || '';
+        document.getElementById('adoptAge').value = listing.age_years ?? '';
+        document.getElementById('adoptWeight').value = listing.weight_kg ?? '';
+        document.getElementById('adoptSex').value = listing.sex || '';
+        document.getElementById('adoptSize').value = listing.size || '';
+        document.getElementById('adoptNeutered').value = listing.neutered == null ? '' : (listing.neutered ? 'sim' : 'nao');
+        document.getElementById('adoptVaccinated').value = listing.vaccinated == null ? '' : (listing.vaccinated ? 'sim' : 'nao');
+        document.getElementById('adoptOng').value = listing.ong_name || '';
+        document.getElementById('adoptDescription').value = listing.description || '';
+        if(listing.photo_url) document.getElementById('adoptPhotoPreview').innerHTML = `<img src="${safeUrl(listing.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+      }
+      if(contact) document.getElementById('adoptPhone').value = contact.phone || '';
+      loadBreedList(listing?.species || 'cao', 'adoptBreedList');
+    } else {
+      titleEl.textContent = t('adoptform_title');
+      submitBtn.textContent = t('adoptform_submit');
+      markAdoptedBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+      loadBreedList('cao', 'adoptBreedList');
+    }
     document.getElementById('adoptFormModal').classList.add('open');
   }
   document.getElementById('closeAdoptFormModal').onclick = ()=> document.getElementById('adoptFormModal').classList.remove('open');
@@ -4817,34 +4892,77 @@
       }
     }
 
-    const { data: listing, error } = await supa.from('adoption_listings').insert({
-      created_by: currentUser.id, pet_name, species, breed, description, photo_url, ong_name,
-      city: currentGeo.city || null, country: currentGeo.country || null,
-      lat: currentGeo.lat || null, lng: currentGeo.lng || null,
+    const fields = {
+      pet_name, species, breed, description, ong_name,
       age_years, weight_kg, sex, size, neutered, vaccinated,
-    }).select().single();
+    };
+    if(photo_url) fields.photo_url = photo_url; // só sobrescreve se uma foto nova foi enviada
 
-    if(error){
-      submitBtn.disabled = false;
-      statusEl.textContent = error.message;
-      statusEl.className = 'modal-status err';
-      return;
+    let listingId = adoptEditingId;
+    if(adoptEditingId){
+      const { error } = await supa.from('adoption_listings').update(fields).eq('id', adoptEditingId);
+      if(error){
+        submitBtn.disabled = false;
+        statusEl.textContent = error.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+    } else {
+      const { data: listing, error } = await supa.from('adoption_listings').insert({
+        created_by: currentUser.id, ...fields,
+        city: currentGeo.city || null, country: currentGeo.country || null,
+        lat: currentGeo.lat || null, lng: currentGeo.lng || null,
+      }).select().single();
+      if(error){
+        submitBtn.disabled = false;
+        statusEl.textContent = error.message;
+        statusEl.className = 'modal-status err';
+        return;
+      }
+      listingId = listing.id;
     }
 
-    const { error: contactError } = await supa.from('adoption_contacts').insert({ listing_id: listing.id, phone });
+    // upsert (não update): listagens antigas podem não ter linha de contato
+    // ainda — um update simples afetaria 0 linhas e falharia silenciosamente
+    const { error: contactError } = await supa.from('adoption_contacts')
+      .upsert({ listing_id: listingId, phone }, { onConflict: 'listing_id' });
     submitBtn.disabled = false;
     if(contactError){
-      statusEl.textContent = 'Pet cadastrado, mas houve um erro ao salvar o contato: ' + contactError.message;
+      statusEl.textContent = 'Pet salvo, mas houve um erro ao salvar o contato: ' + contactError.message;
       statusEl.className = 'modal-status err';
       return;
     }
 
-    statusEl.textContent = '✅ Pet publicado para adoção!';
+    statusEl.textContent = adoptEditingId ? '✅ Anúncio atualizado!' : '✅ Pet publicado para adoção!';
     statusEl.className = 'modal-status ok';
     setTimeout(()=>{
       document.getElementById('adoptFormModal').classList.remove('open');
       loadAdoption();
     }, 900);
+  });
+
+  document.getElementById('adoptFormMarkAdopted').addEventListener('click', async ()=>{
+    if(!adoptEditingId) return;
+    if(!confirm(t('adopt_confirm_adotado'))) return;
+    const statusEl = document.getElementById('adoptFormStatus');
+    const { error } = await supa.from('adoption_listings').update({ status:'adopted' }).eq('id', adoptEditingId);
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '💚 Marcado como adotado!';
+    statusEl.className = 'modal-status ok';
+    setTimeout(()=>{
+      document.getElementById('adoptFormModal').classList.remove('open');
+      loadAdoption();
+    }, 900);
+  });
+
+  document.getElementById('adoptFormDelete').addEventListener('click', async ()=>{
+    if(!adoptEditingId) return;
+    if(!confirm(t('adopt_confirm_excluir'))) return;
+    const statusEl = document.getElementById('adoptFormStatus');
+    const { error } = await supa.from('adoption_listings').delete().eq('id', adoptEditingId);
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    document.getElementById('adoptFormModal').classList.remove('open');
+    loadAdoption();
   });
 
   document.getElementById('btnCadastrarAdocao').addEventListener('click', () => openAdoptFormModal());
