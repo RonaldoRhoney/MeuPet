@@ -148,6 +148,13 @@
   .btn:active{transform:scale(0.97);}
   .btn-primary{background:var(--coral); color:white; box-shadow:0 8px 18px -6px rgba(255,107,74,0.55);}
   .btn-primary:hover{background:var(--coral-dark);}
+  .feed-post-cta{font-size:0.95rem; padding:12px 24px; transform:scale(1); animation:feedPostPulse 2.6s ease-in-out infinite;}
+  .feed-post-cta:hover{transform:scale(1.05); animation:none;}
+  @keyframes feedPostPulse{
+    0%, 100%{box-shadow:0 8px 18px -6px rgba(255,107,74,0.55);}
+    50%{box-shadow:0 8px 26px -4px rgba(255,107,74,0.85);}
+  }
+  @media (prefers-reduced-motion: reduce){ .feed-post-cta{animation:none;} }
   .nav-actions .btn-ghost{background:var(--surface); border-color:var(--line);}
   .nav-actions .btn-ghost:hover{border-color:var(--teal); background:var(--paper); color:var(--teal);}
   .btn-ghost{background:transparent; color:var(--heading); border:1.5px solid var(--line);}
@@ -938,7 +945,7 @@
           <p data-i18n="feed_desc">Fotos e vídeos postados pelos tutores, mais recentes primeiro.</p>
         </div>
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <button class="btn btn-ghost" id="feedPostBtn" data-i18n="feed_post_btn">📣 Postar</button>
+          <button class="btn btn-primary feed-post-cta" id="feedPostBtn" data-i18n="feed_post_btn">📣 Postar</button>
           <div class="pill-tabs" id="feedFollowTabs">
             <button class="active" data-scope="todos" data-i18n="feed_scope_todos">Todos</button>
             <button data-scope="seguindo" data-i18n="scope_seguindo">Seguindo</button>
@@ -1198,7 +1205,7 @@
   </section>
 
   <!-- ADMIN — painel restrito ao administrador -->
-  <section class="block" id="admin" style="background:var(--surface);">
+  <section class="block" id="admin" style="background:var(--surface); display:none;">
     <div class="wrap">
       <div class="section-head" data-reveal="up">
         <div>
@@ -2105,6 +2112,8 @@
 
     modal_signup_title:{pt:'Crie a carteirinha do seu pet',en:"Create your pet's ID"}, modal_login_title:{pt:'Bem-vindo de volta',en:'Welcome back'},
     modal_signup_sub:{pt:'Cadastre-se em segundos e ganhe sua carteirinha digital.',en:'Sign up in seconds and get your digital pet ID.'},
+    welcome_signup:{pt:'🐾 Seja bem-vindo(a) à família MeuPet! Sua conta foi criada — agora é só cuidar do seu pet com todo carinho, um passo de cada vez.',en:"🐾 Welcome to the MeuPet family! Your account is ready — now let's take good care of your pet, one step at a time."},
+    welcome_login:{pt:'🐾 Que bom te ver de novo! Seu pet já está sentindo sua falta por aqui — vamos cuidar dele juntos.',en:'🐾 Great to see you again! Your pet has been missing you — let\'s take care of them together.'},
     modal_login_sub:{pt:'Entre para acessar a carteirinha do seu pet.',en:"Log in to access your pet's ID."},
     modal_criar_conta:{pt:'Criar conta',en:'Create account'},
     modal_ja_tem_conta:{pt:'Já tem carteirinha?',en:'Already have a pet ID?'}, modal_nao_tem_conta:{pt:'Ainda não tem conta?',en:"Don't have an account yet?"},
@@ -3042,18 +3051,21 @@
 
   async function checkAdminAccess(){
     const link = document.getElementById('navAdminLink');
+    const section = document.getElementById('admin');
     try{
       const { data, error } = await supa.rpc('am_i_admin');
       currentUserIsAdmin = !error && data === true;
-    }catch(e){ currentUserIsAdmin = false; }
+      if(error) console.warn('MeuPet: am_i_admin() falhou', error.message);
+    }catch(e){ currentUserIsAdmin = false; console.warn('MeuPet: checkAdminAccess falhou', e.message); }
     link.style.display = currentUserIsAdmin ? '' : 'none';
+    section.style.display = currentUserIsAdmin ? '' : 'none';
     if(currentUserIsAdmin && typeof loadAdminDashboard === 'function') loadAdminDashboard();
   }
 
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; document.getElementById('admin').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
     const { data: profile } = await supa.from('profiles').select('full_name, is_banned').eq('id', user.id).single();
     if(profile?.is_banned){
       await supa.auth.signOut();
@@ -3227,7 +3239,7 @@
         return;
       }
 
-      statusEl.textContent = '✅ Tudo certo! Entrando…';
+      statusEl.textContent = modalMode === 'signup' ? t('welcome_signup') : t('welcome_login');
       statusEl.className = 'modal-status ok';
       if(data.user) updateAuthNav(data.user);
       await loadOwnPetAndRenderCard();
