@@ -460,7 +460,18 @@
   .admin-stat-card .label{font-size:0.8rem; color:var(--text-muted); margin-top:4px;}
   .admin-chart-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:24px;}
   @media (max-width:800px){ .admin-chart-grid{grid-template-columns:1fr;} }
-  .admin-chart-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; min-height:280px;}
+
+  /* ---------- SCROLL-REVEAL — cards/seções/fotos surgem ao rolar a página ---------- */
+  [data-reveal]{opacity:0; transition:opacity 0.6s ease, transform 0.6s ease; will-change:transform, opacity;}
+  [data-reveal="up"]{transform:translateY(36px);}
+  [data-reveal="left"]{transform:translateX(-36px);}
+  [data-reveal="right"]{transform:translateX(36px);}
+  [data-reveal].in-view{opacity:1; transform:none;}
+  @media (prefers-reduced-motion: reduce){
+    [data-reveal]{transition:none; opacity:1; transform:none;}
+  }
+  .admin-chart-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; height:280px; position:relative; display:flex; flex-direction:column;}
+  .admin-chart-card canvas{flex:1; min-height:0;}
   .admin-chart-card h4{font-family:'Fraunces',serif; color:var(--heading); font-size:0.95rem; margin-bottom:12px;}
 
   /* ---------- MARKETPLACE ---------- */
@@ -907,15 +918,18 @@
   <!-- FEED (postagens individuais, foto/vídeo, mais recentes primeiro) -->
   <section class="block" id="feed">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="feed_kicker">Feed</span>
           <h2 data-i18n="feed_title">O que os pets andam aprontando</h2>
           <p data-i18n="feed_desc">Fotos e vídeos postados pelos tutores, mais recentes primeiro.</p>
         </div>
-        <div class="pill-tabs" id="feedFollowTabs">
-          <button class="active" data-scope="todos" data-i18n="feed_scope_todos">Todos</button>
-          <button data-scope="seguindo" data-i18n="scope_seguindo">Seguindo</button>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" id="feedPostBtn" data-i18n="feed_post_btn">📣 Postar</button>
+          <div class="pill-tabs" id="feedFollowTabs">
+            <button class="active" data-scope="todos" data-i18n="feed_scope_todos">Todos</button>
+            <button data-scope="seguindo" data-i18n="scope_seguindo">Seguindo</button>
+          </div>
         </div>
       </div>
       <div class="pill-tabs species-tabs" id="speciesTabs">
@@ -931,7 +945,7 @@
   <!-- RANQUE (Top 5 postagens, calculado automaticamente) -->
   <section class="block" id="ranque" style="background:var(--surface);">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="rank_kicker">Ranque</span>
           <h2 data-i18n="rank_title">Top 5 postagens</h2>
@@ -980,7 +994,7 @@
   <!-- PETSHOPS / GEO + VITRINE DE PRODUTOS (mesclados numa seção só) -->
   <section class="block" id="petshops" style="background:var(--surface);">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="petshops_kicker">Petshops perto de você</span>
           <h2 data-i18n="petshops_title">Petshops e vets reais no mapa</h2>
@@ -1013,6 +1027,7 @@
                 <option data-lat="38.7223" data-lng="-9.1393">Lisboa, Portugal</option>
                 <option data-i18n="geo_outra_cidade">Outra cidade…</option>
               </select>
+              <button type="button" class="icon-btn" id="geoRefreshBtn" title="Atualizar minha localização" data-i18n-title="geo_atualizar" aria-label="Atualizar minha localização">🔄</button>
             </div>
             <span class="geo-source mono" id="geoSource">fonte: gps · precisão alta</span>
           </div>
@@ -1035,7 +1050,7 @@
   <!-- CUIDADOS (dicas por espécie/idade/peso + vacinação) -->
   <section class="block" id="cuidados" style="background:var(--surface);">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="care_kicker">Cuidados</span>
           <h2 data-i18n="care_title">Dicas e vacinação pro seu pet</h2>
@@ -1050,7 +1065,7 @@
   <!-- GAMES -->
   <section class="block" id="games">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="games_kicker">Hub de games</span>
           <h2 data-i18n="games_title">Pets também jogam</h2>
@@ -1153,7 +1168,7 @@
   <!-- FEEDBACK — mural público de opiniões/sugestões -->
   <section class="block" id="feedback">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="feedback_kicker">Feedback</span>
           <h2 data-i18n="feedback_title">O que você achou do MeuPet?</h2>
@@ -1172,7 +1187,7 @@
   <!-- ADMIN — painel restrito ao administrador -->
   <section class="block" id="admin" style="background:var(--surface);">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head" data-reveal="up">
         <div>
           <span class="kicker" data-i18n="admin_kicker">Painel ADM</span>
           <h2 data-i18n="admin_title">Estatísticas do MeuPet</h2>
@@ -1182,12 +1197,12 @@
       <div id="adminContent">
         <div class="admin-stat-grid" id="adminStatGrid"></div>
         <div class="admin-chart-grid">
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_gender">Gênero dos pets</h4><canvas id="chartGender"></canvas></div>
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_device">Dispositivos</h4><canvas id="chartDevice"></canvas></div>
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_age">Faixa etária</h4><canvas id="chartAge"></canvas></div>
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_country">Países</h4><canvas id="chartCountry"></canvas></div>
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_city">Cidades</h4><canvas id="chartCity"></canvas></div>
-          <div class="admin-chart-card"><h4 data-i18n="admin_chart_neighborhood">Bairros</h4><canvas id="chartNeighborhood"></canvas></div>
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_gender">Gênero dos pets</h4><canvas id="chartGender"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_device">Dispositivos</h4><canvas id="chartDevice"></canvas></div>
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_age">Faixa etária</h4><canvas id="chartAge"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_country">Países</h4><canvas id="chartCountry"></canvas></div>
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_city">Cidades</h4><canvas id="chartCity"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_neighborhood">Bairros</h4><canvas id="chartNeighborhood"></canvas></div>
         </div>
         <div style="margin-top:32px;">
           <h4 data-i18n="admin_users_title" style="font-family:'Fraunces',serif; color:var(--heading); margin-bottom:6px;">Quem está usando</h4>
@@ -1606,14 +1621,27 @@
         <button class="btn btn-ghost" style="width:100%; padding:12px;" id="pushToggle" data-i18n="push_ativar">🔔 Ativar alertas de petshops</button>
         <p class="modal-status" id="pushStatus"></p>
 
-        <h4 style="margin-top:18px; color:var(--coral-dark);" data-i18n="settings_zona_risco">⚠️ Zona de risco</h4>
+        <button class="btn-block" style="width:100%; margin-top:18px; background:#1B2B2A;" id="profileSignOut" data-i18n="profile_sair">Sair da conta</button>
+
+        <h4 style="margin-top:24px; color:var(--coral-dark);" data-i18n="settings_zona_risco">⚠️ Zona de risco</h4>
         <p class="sub" style="margin:0 0 10px;" data-i18n="delete_account_desc">Apaga sua conta e todos os dados associados (pets, posts, comentários, curtidas, feedback, anúncios de adoção) para sempre. Não tem como desfazer.</p>
         <button class="btn-block" style="width:100%; background:var(--coral-dark);" id="deleteAccountBtn" data-i18n="delete_account_btn">🗑️ Excluir minha conta</button>
         <p class="modal-status" id="deleteAccountStatus"></p>
       </div>
-
-      <button class="btn-block" style="width:100%; margin-top:10px; background:#1B2B2A;" id="profileSignOut" data-i18n="profile_sair">Sair da conta</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE CONTA — exige digitar EXCLUIR -->
+<div class="modal-overlay" id="deleteAccountModal">
+  <div class="modal" style="max-width:440px; border:2px solid var(--coral-dark);">
+    <button class="modal-close" id="closeDeleteAccountModal">✕</button>
+    <h3 style="color:var(--coral-dark);" data-i18n="delete_confirm_title">⚠️ Excluir sua conta para sempre?</h3>
+    <p class="sub" data-i18n="delete_confirm_body">Isso apaga permanentemente: sua carteirinha de pet, posts, comentários, curtidas, feedback e anúncios de adoção. <strong>Não tem como desfazer.</strong></p>
+    <p class="sub" style="margin-top:14px;">Digite <strong>EXCLUIR</strong> abaixo para confirmar:</p>
+    <input type="text" id="deleteConfirmInput" placeholder="EXCLUIR" data-i18n-placeholder="delete_confirm_placeholder" autocomplete="off" style="width:100%; margin-top:8px;">
+    <button class="btn-block" style="width:100%; margin-top:16px; background:var(--coral-dark);" id="deleteAccountConfirmBtn" disabled data-i18n="delete_account_btn">🗑️ Excluir minha conta</button>
+    <p class="modal-status" id="deleteAccountModalStatus"></p>
   </div>
 </div>
 
@@ -1630,6 +1658,55 @@
     : null;
   const DB_READY = !!supa;
   if(!DB_READY) console.warn("MeuPet: SUPABASE_URL/ANON_KEY não configurados — usando dados de demonstração.");
+
+  // =====================================================================
+  // SCROLL-REVEAL — cards, seções e fotos surgem das laterais/do fundo
+  // conforme entram na tela. Um único IntersectionObserver compartilhado
+  // (leve, sem listener de scroll) + um MutationObserver que pega
+  // elementos [data-reveal] inseridos depois (grids do feed, petshops,
+  // vitrine etc. são recriados via innerHTML a cada busca/filtro).
+  // =====================================================================
+  (function initRevealSystem(){
+    const observedEls = new WeakSet();
+    const io = new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold:0.15, rootMargin:'0px 0px -40px 0px' });
+
+    function observeReveal(root){
+      if(!root || !root.querySelectorAll) return;
+      const nodes = root.matches?.('[data-reveal]') ? [root, ...root.querySelectorAll('[data-reveal]')] : root.querySelectorAll('[data-reveal]');
+      nodes.forEach(el=>{
+        if(observedEls.has(el)) return;
+        observedEls.add(el);
+        io.observe(el);
+      });
+    }
+    window.observeReveal = observeReveal;
+
+    document.addEventListener('DOMContentLoaded', ()=> observeReveal(document));
+    if(document.readyState !== 'loading') observeReveal(document);
+
+    function unobserveRemoved(root){
+      if(!root || !root.querySelectorAll) return;
+      const nodes = root.matches?.('[data-reveal]') ? [root, ...root.querySelectorAll('[data-reveal]')] : root.querySelectorAll('[data-reveal]');
+      nodes.forEach(el=>{ io.unobserve(el); observedEls.delete(el); });
+    }
+
+    new MutationObserver(mutations=>{
+      mutations.forEach(m=>{
+        m.addedNodes.forEach(node=>{ if(node.nodeType === 1) observeReveal(node); });
+        // cards recriados via innerHTML (feed/vitrine/petshops) removem o nó
+        // antigo antes de entrar na tela às vezes — libera do IO pra não
+        // acumular referência de elemento morto em sessões longas
+        m.removedNodes.forEach(node=>{ if(node.nodeType === 1) unobserveRemoved(node); });
+      });
+    }).observe(document.body, { childList:true, subtree:true });
+  })();
 
   // =====================================================================
   // APARÊNCIA (claro/escuro/sistema) — o <script> no <head> já aplica o
@@ -1683,6 +1760,7 @@
     feed_kicker:{pt:'Feed',en:'Feed'}, feed_title:{pt:'O que os pets andam aprontando',en:'What the pets have been up to'},
     feed_desc:{pt:'Fotos e vídeos postados pelos tutores, mais recentes primeiro.',en:'Photos and videos posted by pet parents, newest first.'},
     feed_scope_todos:{pt:'Todos',en:'All'},
+    feed_post_btn:{pt:'📣 Postar',en:'📣 Post'},
     nav_ranque:{pt:'Ranque',en:'Ranking'},
     rank_kicker:{pt:'Ranque',en:'Ranking'}, rank_title:{pt:'Top 5 postagens',en:'Top 5 posts'},
     rank_desc:{pt:'Calculado automaticamente por curtidas, amei, compartilhamentos e seguidores — ligas do bairro até o país.',
@@ -1719,6 +1797,7 @@
     petshops_desc:{pt:'Localização por GPS (fallback por IP ou seleção manual) e busca real via OpenStreetMap — clique em "como chegar" pra traçar a rota.',
       en:'GPS location (with IP or manual fallback) and real search via OpenStreetMap — click "directions" to trace the route.'},
     geo_detectando:{pt:'📍 Detectando localização ·',en:'📍 Detecting location ·'}, geo_outra_cidade:{pt:'Outra cidade…',en:'Another city…'},
+    geo_atualizar:{pt:'Atualizar minha localização',en:'Refresh my location'},
     petshops_search_placeholder:{pt:'Buscar petshop, clínica, banho e tosa…',en:'Search pet shop, clinic, grooming…'},
     petshops_search_vazio:{pt:'Nenhum petshop ou clínica encontrado por aqui.',en:'No pet shop or clinic found nearby.'},
 
@@ -1799,6 +1878,9 @@
     delete_account_desc:{pt:'Apaga sua conta e todos os dados associados (pets, posts, comentários, curtidas, feedback, anúncios de adoção) para sempre. Não tem como desfazer.',en:'Permanently deletes your account and all associated data (pets, posts, comments, likes, feedback, adoption listings). This cannot be undone.'},
     delete_account_btn:{pt:'🗑️ Excluir minha conta',en:'🗑️ Delete my account'},
     delete_account_confirm:{pt:'Isso vai apagar sua conta e TODOS os seus dados (pets, posts, comentários, curtidas, feedback) para sempre. Essa ação não pode ser desfeita. Tem certeza que quer continuar?',en:'This will permanently delete your account and ALL your data (pets, posts, comments, likes, feedback). This cannot be undone. Are you sure you want to continue?'},
+    delete_confirm_title:{pt:'⚠️ Excluir sua conta para sempre?',en:'⚠️ Delete your account forever?'},
+    delete_confirm_body:{pt:'Isso apaga permanentemente: sua carteirinha de pet, posts, comentários, curtidas, feedback e anúncios de adoção. Não tem como desfazer.',en:'This permanently deletes: your pet ID, posts, comments, likes, feedback and adoption listings. This cannot be undone.'},
+    delete_confirm_placeholder:{pt:'EXCLUIR',en:'DELETE'},
     delete_account_excluindo:{pt:'Excluindo sua conta…',en:'Deleting your account…'},
     delete_account_erro:{pt:'Não deu pra excluir a conta agora. Verifique sua internet e tente de novo.',en:"Couldn't delete your account right now. Check your connection and try again."},
     push_desc:{pt:'Receba um aviso de tempos em tempos quando houver petshops perto de você — mesmo com o app fechado.',en:'Get an occasional alert when there are pet shops near you — even with the app closed.'},
@@ -1931,6 +2013,7 @@
     admin_chart_country:{pt:'Países',en:'Countries'},
     admin_chart_city:{pt:'Cidades',en:'Cities'},
     admin_chart_neighborhood:{pt:'Bairros',en:'Neighborhoods'},
+    admin_sem_dados:{pt:'Ainda não há dados suficientes.',en:'Not enough data yet.'},
     admin_users_title:{pt:'Quem está usando',en:'Who is using it'},
     admin_users_desc:{pt:'Lista de tutores cadastrados, ordenada pelo acesso mais recente.',en:'List of registered tutors, sorted by most recent access.'},
     admin_users_col_name:{pt:'Nome',en:'Name'},
@@ -2436,7 +2519,7 @@
     list.innerHTML = items.map((p, i) => {
       const link = petshopLinkUrl(p);
       return `
-      <div class="geo-row${p.lat != null ? ' clickable' : ''}" ${p.lat != null ? `data-idx="${i}" title="${t('geo_ver_no_mapa')}"` : ''}>
+      <div class="geo-row${p.lat != null ? ' clickable' : ''}" data-reveal="${i % 2 === 0 ? 'left' : 'right'}" ${p.lat != null ? `data-idx="${i}" title="${t('geo_ver_no_mapa')}"` : ''}>
         <div>
           ${link
             ? `<a class="name" href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color:inherit;">${esc(p.name)}</a>`
@@ -2636,6 +2719,14 @@
   });
 
   detectLocation();
+
+  document.getElementById('geoRefreshBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('geoRefreshBtn');
+    btn.disabled = true;
+    document.getElementById('geoSource').textContent = t('geo_detectando_curto');
+    try{ await detectLocation(); }
+    finally{ btn.disabled = false; }
+  });
 
   // clock
   function tick(){
@@ -3596,6 +3687,12 @@
     profileOverlay.classList.add('open');
   }
   document.getElementById('closeProfileModal').onclick = ()=> profileOverlay.classList.remove('open');
+  document.getElementById('feedPostBtn').addEventListener('click', async ()=>{
+    if(!currentUser){ openModal('login'); return; }
+    await openProfileModal();
+    document.getElementById('postPetSelect').closest('.profile-section').scrollIntoView({ behavior:'smooth', block:'start' });
+    document.getElementById('postCaption').focus();
+  });
   document.getElementById('profilePetsList').addEventListener('click', e=>{
     const btn = e.target.closest('.profile-pet-item');
     if(!btn) return;
@@ -3747,11 +3844,23 @@
   // A exclusão de verdade (auth.admin.deleteUser) roda no servidor
   // (api/delete-account.js, service_role) — o cliente só manda o próprio
   // token, nunca poderia apagar outra conta.
-  document.getElementById('deleteAccountBtn').addEventListener('click', async ()=>{
+  const deleteAccountModal = document.getElementById('deleteAccountModal');
+  document.getElementById('deleteAccountBtn').addEventListener('click', ()=>{
     if(!currentUser) return;
-    if(!confirm(t('delete_account_confirm'))) return;
-    const btn = document.getElementById('deleteAccountBtn');
-    const statusEl = document.getElementById('deleteAccountStatus');
+    document.getElementById('deleteConfirmInput').value = '';
+    document.getElementById('deleteAccountConfirmBtn').disabled = true;
+    document.getElementById('deleteAccountModalStatus').textContent = '';
+    document.getElementById('deleteAccountModalStatus').className = 'modal-status';
+    deleteAccountModal.classList.add('open');
+  });
+  document.getElementById('closeDeleteAccountModal').onclick = ()=> deleteAccountModal.classList.remove('open');
+  deleteAccountModal.addEventListener('click', e=>{ if(e.target === deleteAccountModal) deleteAccountModal.classList.remove('open'); });
+  document.getElementById('deleteConfirmInput').addEventListener('input', e=>{
+    document.getElementById('deleteAccountConfirmBtn').disabled = e.target.value.trim().toUpperCase() !== 'EXCLUIR';
+  });
+  document.getElementById('deleteAccountConfirmBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('deleteAccountConfirmBtn');
+    const statusEl = document.getElementById('deleteAccountModalStatus');
     btn.disabled = true;
     statusEl.textContent = t('delete_account_excluindo');
     statusEl.className = 'modal-status';
@@ -3768,7 +3877,7 @@
       await supa.auth.signOut();
       location.href = '/';
     }catch(err){
-      btn.disabled = false;
+      btn.disabled = document.getElementById('deleteConfirmInput').value.trim().toUpperCase() !== 'EXCLUIR' ? true : false;
       statusEl.textContent = t('delete_account_erro');
       statusEl.className = 'modal-status err';
       console.warn('MeuPet: falha ao excluir conta', err);
@@ -3935,10 +4044,11 @@
     return { user, myPets, myOwners };
   }
 
-  function postCardHtml(p, rankLabel, myPets, myOwners, currentUserId){
+  function postCardHtml(p, rankLabel, myPets, myOwners, currentUserId, index){
     const isOwner = currentUserId && currentUserId === p.owner_id;
+    const revealDir = index == null ? 'up' : (index % 2 === 0 ? 'left' : 'right');
     return `
-      <div class="pet-card">
+      <div class="pet-card" data-reveal="${revealDir}">
         <div class="media${p.sex ? ` sex-${p.sex}` : ''}">
           ${renderPostMediaHtml(p)}
           ${rankLabel ? `<span class="rank-chip">${rankLabel}</span>` : ''}
@@ -3997,7 +4107,7 @@
 
       if(items && items.length){
         const { user, myPets, myOwners } = await loadMyFollows(items);
-        grid.innerHTML = items.map(p => postCardHtml(p, null, myPets, myOwners, user?.id)).join('');
+        grid.innerHTML = items.map((p,i) => postCardHtml(p, null, myPets, myOwners, user?.id, i)).join('');
         return;
       }
       if(followScope === 'seguindo') return; // mensagem de vazio já tratada acima
@@ -4035,7 +4145,7 @@
       const { data, error } = await query;
       if(!error && data && data.length){
         const { user, myPets, myOwners } = await loadMyFollows(data);
-        grid.innerHTML = data.map((p,i) => postCardHtml(p, `#${i+1}`, myPets, myOwners, user?.id)).join('');
+        grid.innerHTML = data.map((p,i) => postCardHtml(p, `#${i+1}`, myPets, myOwners, user?.id, i)).join('');
         return;
       }
       grid.innerHTML = `<div class="feed-empty">${t('rank_sem_dados')}</div>`;
@@ -4561,11 +4671,27 @@
     const canvas = document.getElementById(canvasId);
     if(!canvas || typeof Chart === 'undefined') return;
     if(adminCharts[canvasId]) adminCharts[canvasId].destroy();
+    const card = canvas.closest('.admin-chart-card');
+    let emptyMsg = card?.querySelector('.admin-chart-empty');
+    if(!labels.length){
+      canvas.style.display = 'none';
+      if(!emptyMsg){
+        emptyMsg = document.createElement('p');
+        emptyMsg.className = 'sub admin-chart-empty';
+        emptyMsg.style.cssText = 'margin:auto; text-align:center;';
+        emptyMsg.textContent = t('admin_sem_dados');
+        card.appendChild(emptyMsg);
+      }
+      return;
+    }
+    canvas.style.display = '';
+    emptyMsg?.remove();
     adminCharts[canvasId] = new Chart(canvas, {
       type,
       data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: type === 'bar' ? 0 : 2, borderColor: '#FFF8F0' }] },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: type !== 'bar', position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
         scales: type === 'bar' ? { y: { beginAtZero: true, ticks: { precision: 0 } } } : {},
       },
@@ -4584,10 +4710,10 @@
     const { data, error } = await supa.rpc('admin_dashboard_stats');
     if(error || !data){ console.warn('MeuPet: não deu pra carregar estatísticas ADM', error?.message); return; }
     document.getElementById('adminStatGrid').innerHTML = `
-      <div class="admin-stat-card"><div class="num">${data.total_users}</div><div class="label">${t('admin_stat_users')}</div></div>
-      <div class="admin-stat-card"><div class="num">${data.total_pets}</div><div class="label">${t('admin_stat_pets')}</div></div>
-      <div class="admin-stat-card"><div class="num">${data.total_posts}</div><div class="label">${t('admin_stat_posts')}</div></div>
-      <div class="admin-stat-card"><div class="num">${data.total_feedbacks}</div><div class="label">${t('admin_stat_feedbacks')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_users}</div><div class="label">${t('admin_stat_users')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_pets}</div><div class="label">${t('admin_stat_pets')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_posts}</div><div class="label">${t('admin_stat_posts')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_feedbacks}</div><div class="label">${t('admin_stat_feedbacks')}</div></div>
     `;
     const petSexLabels = { macho: t('sex_macho'), femea: t('sex_femea') };
     const petSexRaw = Object.fromEntries(Object.entries(data.by_pet_sex || {}).map(([k,v]) => [petSexLabels[k] || k, v]));
@@ -4641,10 +4767,10 @@
       grid.innerHTML = '<div class="adopt-empty">Nenhum pet dessa categoria por perto ainda 🐾 — tente "Todos" ou volte mais tarde.</div>';
       return;
     }
-    grid.innerHTML = filtered.map(a => {
+    grid.innerHTML = filtered.map((a,i) => {
       const isOwner = currentUser && a.created_by === currentUser.id;
       return `
-      <div class="adopt-card">
+      <div class="adopt-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
         <div class="media">
           ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
           <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="${t('adopt_favoritar_title')}" aria-label="${t('adopt_favoritar_title')} ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
@@ -4675,10 +4801,13 @@
   async function loadAdoption(){
     loadAdoptWaitingCount();
     const dbStatus = adoptView === 'adotado' ? 'adopted' : 'available';
-    let items = null;
+    let items = [];
     if(DB_READY){
+      // sempre real: nunca cai pro array de demonstração quando o banco está
+      // ativo, mesmo se a busca vier vazia (senão apareceria pet fictício
+      // como se fosse real — só o modo 100% offline, sem Supabase, usa mock)
       const { data, error } = await supa.from('adoption_listings').select('*').eq('status', dbStatus).limit(30);
-      if(!error && data && data.length){
+      if(!error && data){
         items = data.map(a => {
           const bucket = speciesBucket(a.species);
           const km = (currentGeo.lat && a.lat != null && a.lng != null) ? haversineKm(currentGeo.lat, currentGeo.lng, a.lat, a.lng) : null;
@@ -4692,8 +4821,7 @@
         items.sort((x,y) => (x.km ?? Infinity) - (y.km ?? Infinity));
         items = items.slice(0, 8);
       }
-    }
-    if(!items){
+    } else {
       items = adoptView === 'adotado' ? [] : adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist }));
     }
     adoptItemsCache = items;
@@ -4985,8 +5113,8 @@
       if(!error && data && data.length){
         // patrocinados aparecem primeiro — sempre com o selo "Parceiro" visível (transparência)
         const sorted = [...data].sort((a,b) => (b.is_sponsored ? 1 : 0) - (a.is_sponsored ? 1 : 0));
-        grid.innerHTML = sorted.map(m=>`
-          <div class="product-card">
+        grid.innerHTML = sorted.map((m,i)=>`
+          <div class="product-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
             ${m.is_sponsored ? '<span class="spons">Parceiro</span>' : ''}
             <div class="media">${m.image_url ? `<img src="${safeUrl(m.image_url)}" alt="${esc(m.name)}" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover;border-radius:10px;">` : '🛍️'}</div>
             <h5>${esc(m.name)}</h5>
@@ -4998,8 +5126,8 @@
       }
     }
     const sortedDemo = [...marketData].sort((a,b) => (b.spons ? 1 : 0) - (a.spons ? 1 : 0));
-    grid.innerHTML = sortedDemo.map(m=>`
-      <div class="product-card">
+    grid.innerHTML = sortedDemo.map((m,i)=>`
+      <div class="product-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
         ${m.spons ? '<span class="spons">Parceiro</span>' : ''}
         <div class="media">${m.emoji}</div>
         <h5>${m.name}</h5>
