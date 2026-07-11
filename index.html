@@ -577,6 +577,10 @@
 
   /* ---------- GAMES ---------- */
   .games-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .videos-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .video-card{position:relative; border-radius:18px; overflow:hidden; box-shadow:var(--shadow-soft); aspect-ratio:16/9; background:#000;}
+  .video-card iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+  @media (max-width:900px){ .videos-grid{grid-template-columns:1fr;} }
   .game-card{
     border-radius:18px; padding:22px; color:white; position:relative; overflow:hidden; min-height:150px;
     display:flex; flex-direction:column; justify-content:space-between; transition:transform .2s ease, box-shadow .2s ease;
@@ -894,6 +898,7 @@
       <a href="#petshops" data-i18n="nav_petshops">Petshops</a>
       <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
       <a href="#games" data-i18n="nav_games">Games</a>
+      <a href="#videos" data-i18n="nav_videos">Vídeos</a>
       <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
       <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
       <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
@@ -1132,6 +1137,30 @@
           <h4>Pet Healer - Vet Hospital</h4>
           <span class="go" data-i18n="games_jogar_agora">Jogar agora ↗</span>
         </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- VÍDEOS ENGRAÇADOS DE PETS (YouTube, busca embutida — sem curadoria manual) -->
+  <section class="block" id="videos" style="background:var(--surface);">
+    <div class="wrap">
+      <div class="section-head" data-reveal="up">
+        <div>
+          <span class="kicker" data-i18n="videos_kicker">Hora da risada</span>
+          <h2 data-i18n="videos_title">Vídeos engraçados de pets</h2>
+          <p data-i18n="videos_desc">Direto do YouTube — uma pausa fofa no meio do seu dia.</p>
+        </div>
+      </div>
+      <div class="videos-grid">
+        <div class="video-card" data-reveal="left">
+          <iframe src="https://www.youtube.com/embed?listType=search&list=gatos+engra%C3%A7ados&iv_load_policy=3" title="Gatos engraçados" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div class="video-card" data-reveal="up">
+          <iframe src="https://www.youtube.com/embed?listType=search&list=cachorros+engra%C3%A7ados&iv_load_policy=3" title="Cachorros engraçados" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div class="video-card" data-reveal="right">
+          <iframe src="https://www.youtube.com/embed?listType=search&list=pets+engra%C3%A7ados+compila%C3%A7%C3%A3o&iv_load_policy=3" title="Pets engraçados - compilação" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
       </div>
     </div>
   </section>
@@ -1920,7 +1949,7 @@
   let currentLang = localStorage.getItem('meupet_lang') || 'pt';
   const I18N = {
     nav_feed:{pt:'Feed',en:'Feed'}, nav_adocao:{pt:'Adoção',en:'Adoption'},
-    nav_petshops:{pt:'Petshops',en:'Pet Shops'}, nav_games:{pt:'Games',en:'Games'},
+    nav_petshops:{pt:'Petshops',en:'Pet Shops'}, nav_games:{pt:'Games',en:'Games'}, nav_videos:{pt:'Vídeos',en:'Videos'},
     nav_parceiros:{pt:'Anuncie no MeuPet',en:'Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
     nav_meu_pet:{pt:'Meu Pet',en:'My Pet'},
     nav_criar_carteirinha:{pt:'Criar carteirinha',en:'Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
@@ -1996,6 +2025,8 @@
     games_desc:{pt:'Curadoria de jogos reais de pet, bem avaliados no CrazyGames — você sai do app só para jogar, e volta pro feed depois.',
       en:'Curated real pet games, well-rated on CrazyGames — you leave the app just to play, then come back to the feed.'},
     games_jogar_agora:{pt:'Jogar agora ↗',en:'Play now ↗'},
+    videos_kicker:{pt:'Hora da risada',en:'Laugh break'}, videos_title:{pt:'Vídeos engraçados de pets',en:'Funny pet videos'},
+    videos_desc:{pt:'Direto do YouTube — uma pausa fofa no meio do seu dia.',en:'Straight from YouTube — a cute break in your day.'},
 
 
     business_kicker:{pt:'MeuPet Business',en:'MeuPet Business'}, business_title:{pt:'Coloque seu negócio na frente de quem tem pet',en:'Put your business in front of pet parents'},
