@@ -63,6 +63,24 @@ create trigger trg_profiles_updated
   before update on public.profiles
   for each row execute procedure public.set_updated_at();
 
+-- plan/is_petshop só podem ser escritos pela automação de pagamento (webhook
+-- via service_role) — a policy profiles_update_own deixa o dono editar o
+-- próprio perfil livremente (sem restrição de coluna), então sem isso ele
+-- poderia se auto-promover a 'premium' direto pelo devtools, de graça
+create or replace function public.protect_profile_plan()
+returns trigger language plpgsql as $$
+begin
+  if current_user <> 'service_role' then
+    if new.plan is distinct from old.plan then new.plan := old.plan; end if;
+    if new.is_petshop is distinct from old.is_petshop then new.is_petshop := old.is_petshop; end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_protect_profile_plan before update on public.profiles
+  for each row execute procedure public.protect_profile_plan();
+
 -- cria profile automaticamente após signup (qualquer provedor social)
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
