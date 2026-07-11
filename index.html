@@ -407,6 +407,12 @@
     padding:26px 28px; margin-bottom:28px;
     display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
   }
+  .profile-incomplete-alert{
+    display:flex; align-items:flex-start; gap:10px; background:rgba(244,163,64,0.14);
+    border:1px solid rgba(244,163,64,0.4); border-radius:14px; padding:12px 14px; margin-bottom:16px;
+  }
+  .profile-incomplete-alert strong{display:block; font-size:0.86rem; color:var(--heading);}
+  .profile-incomplete-alert p{font-size:0.8rem; color:var(--text-muted); margin-top:2px;}
   .adopt-waiting{
     display:inline-flex; align-items:center; gap:8px; margin-top:12px;
     font-size:0.88rem; font-weight:700; color:var(--coral-dark);
@@ -1721,6 +1727,14 @@
       <h3 data-i18n="profile_title">Seu perfil</h3>
       <p class="sub" id="profileSub">Logado como —</p>
 
+      <div class="profile-incomplete-alert" id="profileIncompleteAlert" style="display:none;">
+        <span aria-hidden="true">⚠️</span>
+        <div>
+          <strong data-i18n="profile_incomplete_title">Complete seu perfil</strong>
+          <p id="profileIncompleteText"></p>
+        </div>
+      </div>
+
       <div class="profile-columns">
         <div class="profile-col profile-col-tutor">
           <h4 class="profile-col-title" data-i18n="profile_col_tutor">🧑 Tutor</h4>
@@ -2277,6 +2291,14 @@
     profile_birthdate_label:{pt:'Data de nascimento (opcional)',en:'Birth date (optional)'},
     profile_neighborhood_label:{pt:'Bairro (opcional)',en:'Neighborhood (optional)'},
     profile_neighborhood_ph:{pt:'Seu bairro',en:'Your neighborhood'},
+    profile_incomplete_title:{pt:'Complete seu perfil',en:'Complete your profile'},
+    profile_incomplete_text:{pt:'Faltam {n} de 5 campos opcionais ({list}). Isso ajuda a mostrar petshops e conteúdo mais relevantes perto de você.',
+      en:'{n} of 5 optional fields left ({list}). This helps us show more relevant petshops and content near you.'},
+    profile_field_city:{pt:'cidade',en:'city'},
+    profile_field_country:{pt:'país',en:'country'},
+    profile_field_neighborhood:{pt:'bairro',en:'neighborhood'},
+    profile_field_gender:{pt:'gênero',en:'gender'},
+    profile_field_birthdate:{pt:'data de nascimento',en:'birth date'},
   };
 
   function t(key){
@@ -3892,6 +3914,26 @@
     if(editBtn) openEditPostModal(editBtn.dataset.editPost, editBtn.dataset.caption);
   });
 
+  // avisa o tutor quando campos opcionais do perfil (cidade/país/bairro/gênero/
+  // nascimento) ainda estão vazios — sem obrigar preenchimento, só um empurrão,
+  // já que esses dados alimentam os gráficos do painel ADM (país/cidade/bairro/
+  // faixa etária)
+  function updateProfileIncompleteAlert(profile, ppi){
+    const missing = [];
+    if(!profile?.city) missing.push(t('profile_field_city'));
+    if(!profile?.country) missing.push(t('profile_field_country'));
+    if(!ppi?.neighborhood) missing.push(t('profile_field_neighborhood'));
+    if(!ppi?.gender) missing.push(t('profile_field_gender'));
+    if(!ppi?.birth_date) missing.push(t('profile_field_birthdate'));
+
+    const box = document.getElementById('profileIncompleteAlert');
+    if(!missing.length){ box.style.display = 'none'; return; }
+    document.getElementById('profileIncompleteText').textContent = t('profile_incomplete_text')
+      .replace('{n}', missing.length)
+      .replace('{list}', missing.join(', '));
+    box.style.display = 'flex';
+  }
+
   async function openProfileModal(){
     document.getElementById('profileSub').textContent = 'Logado como ' + currentUser.email;
     document.getElementById('profileStatus').textContent = '';
@@ -3923,6 +3965,7 @@
     document.getElementById('profileNeighborhood').value = ppi?.neighborhood || '';
     document.getElementById('profileGender').value = ppi?.gender || '';
     document.getElementById('profileBirthDate').value = ppi?.birth_date || '';
+    updateProfileIncompleteAlert(data, ppi);
 
     if(!currentUserPets.length) await loadOwnPetAndRenderCard();
 
