@@ -419,6 +419,21 @@
   @media (max-width:700px){
     .adopt-banner{padding:20px;}
   }
+  .adopt-rotator{display:flex; align-items:center; gap:8px; min-height:1.5em; overflow:hidden;}
+  .adopt-paw-pull{display:inline-block; font-size:1.1rem; animation:adoptPawTug 1.8s ease-in-out infinite;}
+  .adopt-rotator-text{display:inline-block; transition:opacity .45s ease, transform .45s ease;}
+  .adopt-rotator-text.tug-out-left{opacity:0; transform:translateX(-22px);}
+  .adopt-rotator-text.tug-out-right{opacity:0; transform:translateX(22px);}
+  .adopt-rotator-text.tug-in-left{opacity:0; transform:translateX(-22px);}
+  .adopt-rotator-text.tug-in-right{opacity:0; transform:translateX(22px);}
+  @keyframes adoptPawTug{
+    0%, 100%{transform:translateX(0) rotate(0deg);}
+    50%{transform:translateX(-4px) rotate(-12deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .adopt-paw-pull{animation:none;}
+    .adopt-rotator-text{transition:none;}
+  }
   .btn-block{width:100%; background:var(--teal); color:white; border-radius:12px; padding:10px; font-weight:700; font-size:0.82rem; border:none;}
   .btn-block:hover{background:var(--teal-light);}
 
@@ -988,7 +1003,10 @@
         <div>
           <span class="kicker" data-i18n="adopt_kicker">Adote um pet</span>
           <h2 data-i18n="adopt_title">Lares esperando por eles</h2>
-          <p data-i18n="adopt_desc">Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.</p>
+          <p class="adopt-rotator">
+            <span class="adopt-paw-pull" aria-hidden="true">🐾</span>
+            <span class="adopt-rotator-text" id="adoptRotatorText">Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.</span>
+          </p>
           <div class="adopt-waiting" id="adoptWaitingLine" style="display:none;">
             <span class="dot-live"></span>
             <span id="adoptWaitingText"></span>
@@ -1931,6 +1949,11 @@
     adopt_kicker:{pt:'Adote um pet',en:'Adopt a pet'}, adopt_title:{pt:'Lares esperando por eles',en:'Homes waiting for them'},
     adopt_desc:{pt:'Animais de ONGs parceiras e tutores da sua região, ordenados pela distância até você.',
       en:'Animals from partner shelters and pet parents in your area, sorted by distance to you.'},
+    adopt_rotate_2:{pt:'Viu um pet abandonado? Cadastre aqui e ajude a encontrar um lar. 🐾',en:'Seen an abandoned pet? Sign them up here and help find them a home. 🐾'},
+    adopt_rotate_3:{pt:'Adote um pet — sua vida fica mais feliz, e a dele também. ❤️',en:'Adopt a pet — your life gets happier, and so does theirs. ❤️'},
+    adopt_rotate_4:{pt:'Cada adoção é um lar a menos vazio e um coração a mais cheio. 🏠',en:'Every adoption means one less empty home and one fuller heart. 🏠'},
+    adopt_rotate_5:{pt:'Eles esperam por você. Um olhar, um carinho, uma vida transformada.',en:'They are waiting for you. One look, one cuddle, one life changed.'},
+    adopt_rotate_6:{pt:'Não é só um pet — é um novo melhor amigo esperando pra te conhecer. 🐶🐱',en:"It's not just a pet — it's a new best friend waiting to meet you. 🐶🐱"},
     adopt_waiting_singular:{pt:'pet esperando um lar agora',en:'pet waiting for a home right now'},
     adopt_waiting_plural:{pt:'pets esperando um lar agora',en:'pets waiting for a home right now'},
     adopt_view_disponivel:{pt:'🏠 Disponíveis',en:'🏠 Available'}, adopt_view_adotado:{pt:'💚 Em um novo lar',en:'💚 In a new home'},
@@ -5582,6 +5605,35 @@
   });
 
   document.getElementById('btnCadastrarAdocao').addEventListener('click', () => openAdoptFormModal());
+
+  // ---------- Banner de Adoção: frases animadas em rodízio aleatório ----------
+  (function initAdoptRotator(){
+    const el = document.getElementById('adoptRotatorText');
+    if(!el) return;
+    const keys = ['adopt_desc','adopt_rotate_2','adopt_rotate_3','adopt_rotate_4','adopt_rotate_5','adopt_rotate_6'];
+    let lastIndex = 0;
+    let paused = false;
+    el.closest('.adopt-rotator').addEventListener('mouseenter', ()=> paused = true);
+    el.closest('.adopt-rotator').addEventListener('mouseleave', ()=> paused = false);
+
+    function nextPhrase(){
+      if(paused) return;
+      let idx;
+      do{ idx = Math.floor(Math.random() * keys.length); }while(idx === lastIndex && keys.length > 1);
+      lastIndex = idx;
+      const side = Math.random() < 0.5 ? 'left' : 'right';
+      el.classList.add(`tug-out-${side}`);
+      setTimeout(()=>{
+        el.textContent = t(keys[idx]);
+        el.classList.remove(`tug-out-${side}`);
+        el.classList.add(`tug-in-${side === 'left' ? 'right' : 'left'}`);
+        requestAnimationFrame(()=> requestAnimationFrame(()=>{
+          el.classList.remove(`tug-in-left`, `tug-in-right`);
+        }));
+      }, 450);
+    }
+    setInterval(nextPhrase, 4600);
+  })();
 
   async function loadMarket(){
     const grid = document.getElementById('marketGrid');
