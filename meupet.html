@@ -1149,7 +1149,7 @@
       <div class="partner-plans-grid">
         <div class="plan-card partner-plan">
           <span class="kicker">Básico</span>
-          <div class="price">R$ 49<span>/mês</span></div>
+          <div class="price">R$ 9,00<span>/mês</span></div>
           <ul>
             <li>Pin no mapa de petshops</li>
             <li>Vitrine própria na Loja</li>
@@ -1159,7 +1159,7 @@
         </div>
         <div class="plan-card partner-plan feat">
           <span class="kicker">Destaque</span>
-          <div class="price">R$ 129<span>/mês</span></div>
+          <div class="price">R$ 19,00<span>/mês</span></div>
           <ul>
             <li>Tudo do Básico</li>
             <li>Prioridade no topo do mapa e da lista</li>
@@ -1170,7 +1170,7 @@
         </div>
         <div class="plan-card partner-plan">
           <span class="kicker">Banner patrocinado</span>
-          <div class="price">R$ 199<span>/mês</span></div>
+          <div class="price">R$ 49,00<span>/mês</span></div>
           <ul>
             <li>Banner rotativo no Feed e nos Petshops</li>
             <li>Relatório real de impressões e cliques</li>
@@ -1198,9 +1198,9 @@
           </select>
         </div>
         <select id="pfPlan" required aria-label="Plano de interesse">
-          <option value="basico">Plano Básico — R$ 49/mês</option>
-          <option value="destaque">Plano Destaque — R$ 129/mês</option>
-          <option value="banner">Banner patrocinado — R$ 199/mês</option>
+          <option value="basico">Plano Básico — R$ 9,00/mês</option>
+          <option value="destaque">Plano Destaque — R$ 19,00/mês</option>
+          <option value="banner">Banner patrocinado — R$ 49,00/mês</option>
         </select>
         <textarea id="pfMessage" placeholder="Conte um pouco sobre o seu negócio (opcional)" data-i18n-placeholder="business_ph_message" rows="3"></textarea>
         <button type="submit" class="btn btn-primary" id="pfSubmit" style="width:100%; padding:14px;" data-i18n="business_form_submit">Enviar solicitação</button>
@@ -5823,7 +5823,7 @@
       statusEl.className = 'partner-form-status err';
       return;
     }
-    const planLabel = { basico:'Básico (R$ 49/mês)', destaque:'Destaque (R$ 129/mês)', banner:'Banner patrocinado (R$ 199/mês)' }[lead.plan_interest] || lead.plan_interest;
+    const planLabel = { basico:'Básico (R$ 9,00/mês)', destaque:'Destaque (R$ 19,00/mês)', banner:'Banner patrocinado (R$ 49,00/mês)' }[lead.plan_interest] || lead.plan_interest;
     const subject = encodeURIComponent(`MeuPet Business — ${lead.business_name}`);
     const body = encodeURIComponent(
       `Negócio: ${lead.business_name}\nContato: ${lead.contact_name}\nE-mail: ${lead.contact_email}\nWhatsApp: ${lead.contact_phone || '-'}\nCidade: ${lead.city || '-'}\nTipo: ${lead.business_type}\nPlano de interesse: ${planLabel}\nMensagem: ${lead.message || '-'}`
