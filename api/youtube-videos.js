@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
   url.searchParams.set('type', 'video');
   url.searchParams.set('videoEmbeddable', 'true');
   url.searchParams.set('safeSearch', 'strict');
-  url.searchParams.set('maxResults', '6');
+  url.searchParams.set('maxResults', '20');
   url.searchParams.set('q', query);
   url.searchParams.set('key', apiKey);
 
@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
       return res.status(502).json({ error: 'YouTube Data API indisponível' });
     }
     const data = await ytRes.json();
-    const videos = (data.items || [])
+    const pool = (data.items || [])
       .filter(item => /^[A-Za-z0-9_-]{11}$/.test(item.id?.videoId || ''))
       .map(item => ({
         videoId: item.id.videoId,
@@ -56,9 +56,14 @@ module.exports = async (req, res) => {
         channelTitle: item.snippet?.channelTitle || '',
       }));
 
-    // cache de 24h na CDN da Vercel — "vídeo engraçado de pet" não precisa
-    // de frescor, e isso mantém o uso da cota do Google bem baixo mesmo
-    // com tráfego alto (todo mundo bate no cache, não na API real)
+    // escolhe 1 vídeo do "pool" de forma determinística por dia — todo
+    // mundo vê o mesmo vídeo no mesmo dia (bom pro cache da CDN), mas ele
+    // troca sozinho a cada 24h assim que o cache expira e o índice avança
+    const dayIndex = Math.floor(Date.now() / 86400000);
+    const videos = pool.length ? [pool[dayIndex % pool.length]] : [];
+
+    // cache de 24h na CDN da Vercel — expira junto com a troca diária de
+    // índice, e mantém o uso de cota do Google bem baixo mesmo sob tráfego alto
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=86400, stale-while-revalidate=172800');
     res.status(200).json({ videos });
   } catch (err) {
