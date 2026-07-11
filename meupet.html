@@ -37,6 +37,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
 <style>
   :root{
     --coral:#FF6B4A;
@@ -452,6 +453,31 @@
   .fb-reply-form{display:flex; gap:8px; margin-top:6px;}
   .fb-reply-form textarea{flex:1; padding:8px 10px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font-family:inherit; font-size:0.85rem; resize:vertical;}
 
+  /* ---------- ADMIN ---------- */
+  .admin-stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-top:20px;}
+  .admin-stat-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; text-align:center;}
+  .admin-stat-card .num{font-family:'Fraunces',serif; font-size:2rem; color:var(--heading); font-weight:700;}
+  .admin-stat-card .label{font-size:0.8rem; color:var(--text-muted); margin-top:4px;}
+  .admin-chart-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:24px;}
+  @media (max-width:800px){ .admin-chart-grid{grid-template-columns:1fr;} }
+  .admin-chart-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; height:280px; position:relative; display:flex; flex-direction:column;}
+  .admin-chart-card canvas{flex:1; min-height:0;}
+  .admin-chart-card h4{font-family:'Fraunces',serif; color:var(--heading); font-size:0.95rem; margin-bottom:12px;}
+  .admin-table-wrap{overflow-x:auto; margin-top:16px;}
+  .admin-table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  .admin-table th{text-align:left; padding:8px 10px; border-bottom:2px solid var(--line); white-space:nowrap;}
+  .admin-table td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .admin-badge{display:inline-block; padding:2px 9px; border-radius:var(--radius-pill); font-size:0.7rem; font-weight:700; margin-right:4px;}
+  .admin-badge.is-admin{background:var(--teal); color:#fff;}
+  .admin-badge.is-banned{background:var(--coral-dark); color:#fff;}
+  .admin-mini-btn{border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-pill); padding:5px 12px; font-size:0.76rem; font-weight:700; cursor:pointer; margin-right:6px; white-space:nowrap;}
+  .admin-mini-btn.danger{border-color:var(--coral-dark); color:var(--coral-dark);}
+  .admin-panel-section{margin-top:32px;}
+  .admin-panel-section h4{font-family:'Fraunces',serif; color:var(--heading); margin-bottom:6px;}
+  .admin-panel-section .sub{margin-bottom:14px;}
+  .admin-form-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:16px;}
+  .admin-form-grid input, .admin-form-grid select, .admin-form-grid textarea{width:100%;}
+
   /* ---------- SCROLL-REVEAL — cards/seções/fotos surgem ao rolar a página ---------- */
   [data-reveal]{opacity:0; transition:opacity 0.6s ease, transform 0.6s ease; will-change:transform, opacity;}
   [data-reveal="up"]{transform:translateY(36px);}
@@ -842,6 +868,7 @@
       <a href="#games" data-i18n="nav_games">Games</a>
       <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
       <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
+      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
     </nav>
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin" data-i18n="nav_entrar">Entrar</button>
@@ -1167,6 +1194,183 @@
         <p id="feedbackStatus" class="partner-form-status"></p>
       </form>
       <div id="feedbackList" class="feedback-list"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN — painel restrito ao administrador -->
+  <section class="block" id="admin" style="background:var(--surface);">
+    <div class="wrap">
+      <div class="section-head" data-reveal="up">
+        <div>
+          <span class="kicker" data-i18n="admin_kicker">Painel ADM</span>
+          <h2 data-i18n="admin_title">Painel do administrador</h2>
+          <p data-i18n="admin_desc">Visível só para administradores.</p>
+        </div>
+        <div class="pill-tabs" id="adminTabs">
+          <button class="active" data-tab="metricas" data-i18n="admin_tab_metricas">📊 Métricas</button>
+          <button data-tab="usuarios" data-i18n="admin_tab_usuarios">👤 Usuários</button>
+          <button data-tab="denuncias" data-i18n="admin_tab_denuncias">🚩 Denúncias</button>
+          <button data-tab="parcerias" data-i18n="admin_tab_parcerias">🤝 Parcerias</button>
+          <button data-tab="catalogo" data-i18n="admin_tab_catalogo">🛍️ Catálogo</button>
+        </div>
+      </div>
+
+      <div id="adminTabMetricas">
+        <div class="admin-stat-grid" id="adminStatGrid"></div>
+        <div class="admin-chart-grid">
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_gender">Gênero dos pets</h4><canvas id="chartGender"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_device">Dispositivos</h4><canvas id="chartDevice"></canvas></div>
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_age">Faixa etária</h4><canvas id="chartAge"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_country">Países</h4><canvas id="chartCountry"></canvas></div>
+          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_city">Cidades</h4><canvas id="chartCity"></canvas></div>
+          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_neighborhood">Bairros</h4><canvas id="chartNeighborhood"></canvas></div>
+        </div>
+      </div>
+
+      <div id="adminTabUsuarios" style="display:none;">
+        <div class="admin-panel-section">
+          <h4 data-i18n="admin_users_title">Quem está usando</h4>
+          <p class="sub" data-i18n="admin_users_desc">Lista de tutores cadastrados, ordenada pelo acesso mais recente.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin_users_col_name">Nome</th>
+                  <th data-i18n="admin_users_col_email">E-mail</th>
+                  <th data-i18n="admin_users_col_local">Cidade</th>
+                  <th data-i18n="admin_users_col_plan">Plano</th>
+                  <th data-i18n="admin_users_col_created">Cadastro</th>
+                  <th data-i18n="admin_users_col_last">Último acesso</th>
+                  <th data-i18n="admin_users_col_actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminTabDenuncias" style="display:none;">
+        <div class="admin-panel-section">
+          <h4 data-i18n="admin_reports_title">Denúncias</h4>
+          <p class="sub" data-i18n="admin_reports_desc">Conteúdo e usuários denunciados pela comunidade.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin_reports_col_type">Tipo</th>
+                  <th data-i18n="admin_reports_col_target">Alvo</th>
+                  <th data-i18n="admin_reports_col_reason">Motivo</th>
+                  <th data-i18n="admin_reports_col_reporter">Denunciante</th>
+                  <th data-i18n="admin_reports_col_date">Data</th>
+                  <th data-i18n="admin_reports_col_status">Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminReportsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminTabParcerias" style="display:none;">
+        <div class="admin-panel-section">
+          <h4 data-i18n="admin_leads_title">Pedidos de parceria</h4>
+          <p class="sub" data-i18n="admin_leads_desc">Negócios que pediram pra virar petshop parceiro/patrocinador.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin_leads_col_business">Negócio</th>
+                  <th data-i18n="admin_leads_col_contact">Contato</th>
+                  <th data-i18n="admin_leads_col_city">Cidade</th>
+                  <th data-i18n="admin_leads_col_type">Tipo</th>
+                  <th data-i18n="admin_leads_col_plan">Plano de interesse</th>
+                  <th data-i18n="admin_leads_col_status">Status</th>
+                  <th data-i18n="admin_leads_col_actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="adminLeadsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-panel-section" id="adminCreatePetshopBox" style="display:none;">
+          <h4 data-i18n="admin_create_petshop_title">Criar petshop a partir da lead</h4>
+          <p class="sub" data-i18n="admin_create_petshop_desc">Preencha os dados que faltam (endereço e coordenadas) pra publicar de verdade no mapa.</p>
+          <div class="admin-form-grid">
+            <input type="text" id="adminPetshopName" placeholder="Nome do petshop" data-i18n-placeholder="admin_ph_petshop_name">
+            <input type="text" id="adminPetshopCity" placeholder="Cidade" data-i18n-placeholder="admin_ph_petshop_city">
+            <input type="text" id="adminPetshopCountry" placeholder="País" value="Brasil" data-i18n-placeholder="admin_ph_petshop_country">
+            <input type="text" id="adminPetshopAddress" placeholder="Endereço" data-i18n-placeholder="admin_ph_petshop_address">
+            <input type="text" id="adminPetshopPhone" placeholder="Telefone" data-i18n-placeholder="admin_ph_petshop_phone">
+            <input type="number" step="any" id="adminPetshopLat" placeholder="Latitude" data-i18n-placeholder="admin_ph_petshop_lat">
+            <input type="number" step="any" id="adminPetshopLng" placeholder="Longitude" data-i18n-placeholder="admin_ph_petshop_lng">
+          </div>
+          <button class="btn btn-primary" id="adminPetshopSubmit" data-i18n="admin_create_petshop_btn">Criar petshop</button>
+          <p class="modal-status" id="adminPetshopStatus"></p>
+        </div>
+      </div>
+
+      <div id="adminTabCatalogo" style="display:none;">
+        <div class="pill-tabs" id="adminCatalogTabs">
+          <button class="active" data-cat="products" data-i18n="admin_cat_products">Produtos</button>
+          <button data-cat="sponsors" data-i18n="admin_cat_sponsors">Patrocinadores</button>
+          <button data-cat="games" data-i18n="admin_cat_games">Games</button>
+          <button data-cat="plans" data-i18n="admin_cat_plans">Planos</button>
+        </div>
+
+        <div id="adminCatProducts" class="admin-panel-section">
+          <div class="admin-form-grid">
+            <input type="text" id="adminProductName" placeholder="Nome" data-i18n-placeholder="admin_ph_product_name">
+            <input type="number" id="adminProductPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
+            <input type="text" id="adminProductShop" placeholder="Loja" data-i18n-placeholder="admin_ph_product_shop">
+            <input type="text" id="adminProductUrl" placeholder="Link de afiliado" data-i18n-placeholder="admin_ph_product_url">
+            <input type="text" id="adminProductImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
+            <input type="text" id="adminProductCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" id="adminProductSponsored" style="width:auto;"> <span data-i18n="admin_ph_product_sponsored">Patrocinado</span></label>
+          </div>
+          <button class="btn btn-primary" id="adminProductSubmit" data-i18n="admin_add_btn">+ Adicionar produto</button>
+          <p class="modal-status" id="adminProductStatus"></p>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+            <th data-i18n="admin_users_col_name">Nome</th><th>Preço</th><th data-i18n="admin_leads_col_business">Loja</th><th data-i18n="admin_users_col_actions">Ações</th>
+          </tr></thead><tbody id="adminProductsBody"></tbody></table></div>
+        </div>
+
+        <div id="adminCatSponsors" class="admin-panel-section" style="display:none;">
+          <div class="admin-form-grid">
+            <input type="text" id="adminSponsorSlot" placeholder="Slot (ex: banner_feed)" data-i18n-placeholder="admin_ph_sponsor_slot">
+            <input type="text" id="adminSponsorHeadline" placeholder="Título do banner" data-i18n-placeholder="admin_ph_sponsor_headline">
+            <input type="text" id="adminSponsorCta" placeholder="Texto do botão" value="Ver oferta" data-i18n-placeholder="admin_ph_sponsor_cta">
+            <input type="text" id="adminSponsorUrl" placeholder="Link de destino" data-i18n-placeholder="admin_ph_sponsor_url">
+          </div>
+          <button class="btn btn-primary" id="adminSponsorSubmit" data-i18n="admin_add_btn">+ Adicionar patrocinador</button>
+          <p class="modal-status" id="adminSponsorStatus"></p>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+            <th data-i18n="admin_leads_col_business">Slot</th><th>Título</th><th data-i18n="admin_reports_col_status">Ativo</th><th data-i18n="admin_users_col_actions">Ações</th>
+          </tr></thead><tbody id="adminSponsorsBody"></tbody></table></div>
+        </div>
+
+        <div id="adminCatGames" class="admin-panel-section" style="display:none;">
+          <div class="admin-form-grid">
+            <input type="text" id="adminGameTitle" placeholder="Título" data-i18n-placeholder="admin_ph_game_title">
+            <input type="text" id="adminGameUrl" placeholder="URL do jogo" data-i18n-placeholder="admin_ph_game_url">
+            <input type="text" id="adminGameCover" placeholder="URL da capa (opcional)" data-i18n-placeholder="admin_ph_game_cover">
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" id="adminGameSponsored" style="width:auto;"> <span data-i18n="admin_ph_product_sponsored">Patrocinado</span></label>
+          </div>
+          <button class="btn btn-primary" id="adminGameSubmit" data-i18n="admin_add_btn">+ Adicionar game</button>
+          <p class="modal-status" id="adminGameStatus"></p>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+            <th data-i18n="admin_users_col_name">Título</th><th data-i18n="admin_users_col_actions">Ações</th>
+          </tr></thead><tbody id="adminGamesBody"></tbody></table></div>
+        </div>
+
+        <div id="adminCatPlans" class="admin-panel-section" style="display:none;">
+          <p class="sub" data-i18n="admin_plans_desc">Planos são poucos e fixos (free/premium/petshop_partner) — edite preço e recursos.</p>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+            <th data-i18n="admin_users_col_name">Nome</th><th>Preço</th><th data-i18n="admin_users_col_actions">Ações</th>
+          </tr></thead><tbody id="adminPlansBody"></tbody></table></div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
@@ -1929,7 +2133,7 @@
     geo_ver_no_mapa:{pt:'Ver no mapa',en:'View on map'},
     feed_empty_especie:{pt:'Nenhum pet dessa espécie nesse recorte ainda.',en:'No pets of this species in this scope yet.'},
 
-    nav_feedback:{pt:'Feedback',en:'Feedback'},
+    nav_feedback:{pt:'Feedback',en:'Feedback'}, nav_admin:{pt:'Admin',en:'Admin'},
     feedback_kicker:{pt:'Feedback',en:'Feedback'},
     feedback_title:{pt:'O que você achou do MeuPet?',en:'What did you think of MeuPet?'},
     feedback_desc:{pt:'Deixe sua opinião ou sugestão. Qualquer pessoa pode responder e curtir.',en:'Leave your opinion or suggestion. Anyone can reply and like it.'},
@@ -1942,6 +2146,96 @@
     feedback_no_replies:{pt:'Nenhuma resposta ainda.',en:'No replies yet.'},
     feedback_like_title:{pt:'Curtir',en:'Like'},
     feedback_reply_toggle:{pt:'Responder',en:'Reply'},
+
+    admin_kicker:{pt:'Painel ADM',en:'Admin panel'},
+    admin_title:{pt:'Painel do administrador',en:'Admin panel'},
+    admin_desc:{pt:'Visível só para administradores.',en:'Visible only to administrators.'},
+    admin_tab_metricas:{pt:'📊 Métricas',en:'📊 Metrics'},
+    admin_tab_usuarios:{pt:'👤 Usuários',en:'👤 Users'},
+    admin_tab_denuncias:{pt:'🚩 Denúncias',en:'🚩 Reports'},
+    admin_tab_parcerias:{pt:'🤝 Parcerias',en:'🤝 Partnerships'},
+    admin_tab_catalogo:{pt:'🛍️ Catálogo',en:'🛍️ Catalog'},
+    admin_stat_users:{pt:'Usuários cadastrados',en:'Registered users'},
+    admin_stat_pets:{pt:'Pets cadastrados',en:'Registered pets'},
+    admin_stat_posts:{pt:'Posts no feed',en:'Feed posts'},
+    admin_stat_feedbacks:{pt:'Feedbacks enviados',en:'Feedback submitted'},
+    admin_chart_gender:{pt:'Gênero dos pets',en:'Pet gender'},
+    admin_chart_device:{pt:'Dispositivos',en:'Devices'},
+    admin_chart_age:{pt:'Faixa etária',en:'Age range'},
+    admin_chart_country:{pt:'Países',en:'Countries'},
+    admin_chart_city:{pt:'Cidades',en:'Cities'},
+    admin_chart_neighborhood:{pt:'Bairros',en:'Neighborhoods'},
+    admin_sem_dados:{pt:'Ainda não há dados suficientes.',en:'Not enough data yet.'},
+    admin_nao_informado:{pt:'Não informado',en:'Not informed'},
+    admin_users_title:{pt:'Quem está usando',en:'Who is using it'},
+    admin_users_desc:{pt:'Lista de tutores cadastrados, ordenada pelo acesso mais recente.',en:'List of registered tutors, sorted by most recent access.'},
+    admin_users_col_name:{pt:'Nome',en:'Name'},
+    admin_users_col_email:{pt:'E-mail',en:'Email'},
+    admin_users_col_local:{pt:'Cidade',en:'City'},
+    admin_users_col_plan:{pt:'Plano',en:'Plan'},
+    admin_users_col_created:{pt:'Cadastro',en:'Signed up'},
+    admin_users_col_last:{pt:'Último acesso',en:'Last access'},
+    admin_users_col_actions:{pt:'Ações',en:'Actions'},
+    admin_users_never:{pt:'nunca',en:'never'},
+    admin_banir:{pt:'Banir',en:'Ban'}, admin_desbanir:{pt:'Desbanir',en:'Unban'},
+    admin_promover:{pt:'Promover',en:'Promote'}, admin_rebaixar:{pt:'Rebaixar',en:'Demote'},
+    admin_confirm_banir:{pt:'Banir este usuário? Ele vai ser deslogado imediatamente e não vai conseguir mais entrar.',en:'Ban this user? They will be signed out immediately and unable to log back in.'},
+    admin_confirm_desbanir:{pt:'Desbanir este usuário?',en:'Unban this user?'},
+    admin_confirm_promover:{pt:'Promover este usuário a administrador? Ele vai ter acesso total ao painel ADM.',en:'Promote this user to administrator? They will have full access to the admin panel.'},
+    admin_confirm_rebaixar:{pt:'Remover privilégio de administrador deste usuário?',en:"Remove this user's administrator privilege?"},
+    admin_reports_title:{pt:'Denúncias',en:'Reports'},
+    admin_reports_desc:{pt:'Conteúdo e usuários denunciados pela comunidade.',en:'Content and users reported by the community.'},
+    admin_reports_col_type:{pt:'Tipo',en:'Type'},
+    admin_reports_col_target:{pt:'Alvo',en:'Target'},
+    admin_reports_col_reason:{pt:'Motivo',en:'Reason'},
+    admin_reports_col_reporter:{pt:'Denunciante',en:'Reporter'},
+    admin_reports_col_date:{pt:'Data',en:'Date'},
+    admin_reports_col_status:{pt:'Status',en:'Status'},
+    admin_reports_empty:{pt:'Nenhuma denúncia por enquanto.',en:'No reports so far.'},
+    admin_leads_title:{pt:'Pedidos de parceria',en:'Partnership requests'},
+    admin_leads_desc:{pt:'Negócios que pediram pra virar petshop parceiro/patrocinador.',en:'Businesses that requested to become a partner petshop/sponsor.'},
+    admin_leads_col_business:{pt:'Negócio',en:'Business'},
+    admin_leads_col_contact:{pt:'Contato',en:'Contact'},
+    admin_leads_col_city:{pt:'Cidade',en:'City'},
+    admin_leads_col_type:{pt:'Tipo',en:'Type'},
+    admin_leads_col_plan:{pt:'Plano de interesse',en:'Plan of interest'},
+    admin_leads_col_status:{pt:'Status',en:'Status'},
+    admin_leads_col_actions:{pt:'Ações',en:'Actions'},
+    admin_leads_empty:{pt:'Nenhum pedido de parceria ainda.',en:'No partnership requests yet.'},
+    admin_aprovar:{pt:'Aprovar',en:'Approve'},
+    admin_criar_petshop:{pt:'Criar petshop',en:'Create petshop'},
+    admin_create_petshop_title:{pt:'Criar petshop a partir da lead',en:'Create petshop from lead'},
+    admin_create_petshop_desc:{pt:'Preencha os dados que faltam (endereço e coordenadas) pra publicar de verdade no mapa.',en:'Fill in the missing data (address and coordinates) to actually publish it on the map.'},
+    admin_ph_petshop_name:{pt:'Nome do petshop',en:'Petshop name'},
+    admin_ph_petshop_city:{pt:'Cidade',en:'City'},
+    admin_ph_petshop_country:{pt:'País',en:'Country'},
+    admin_ph_petshop_address:{pt:'Endereço',en:'Address'},
+    admin_ph_petshop_phone:{pt:'Telefone',en:'Phone'},
+    admin_ph_petshop_lat:{pt:'Latitude',en:'Latitude'},
+    admin_ph_petshop_lng:{pt:'Longitude',en:'Longitude'},
+    admin_create_petshop_btn:{pt:'Criar petshop',en:'Create petshop'},
+    admin_cat_products:{pt:'Produtos',en:'Products'},
+    admin_cat_sponsors:{pt:'Patrocinadores',en:'Sponsors'},
+    admin_cat_games:{pt:'Games',en:'Games'},
+    admin_cat_plans:{pt:'Planos',en:'Plans'},
+    admin_add_btn:{pt:'+ Adicionar',en:'+ Add'},
+    admin_ph_product_name:{pt:'Nome',en:'Name'},
+    admin_ph_product_price:{pt:'Preço (R$)',en:'Price ($)'},
+    admin_ph_product_shop:{pt:'Loja',en:'Shop'},
+    admin_ph_product_url:{pt:'Link de afiliado',en:'Affiliate link'},
+    admin_ph_product_image:{pt:'URL da imagem (opcional)',en:'Image URL (optional)'},
+    admin_ph_product_category:{pt:'Categoria (opcional)',en:'Category (optional)'},
+    admin_ph_product_sponsored:{pt:'Patrocinado',en:'Sponsored'},
+    admin_ph_sponsor_slot:{pt:'Slot (ex: banner_feed)',en:'Slot (e.g. banner_feed)'},
+    admin_ph_sponsor_headline:{pt:'Título do banner',en:'Banner headline'},
+    admin_ph_sponsor_cta:{pt:'Texto do botão',en:'Button text'},
+    admin_ph_sponsor_url:{pt:'Link de destino',en:'Target link'},
+    admin_ph_game_title:{pt:'Título',en:'Title'},
+    admin_ph_game_url:{pt:'URL do jogo',en:'Game URL'},
+    admin_ph_game_cover:{pt:'URL da capa (opcional)',en:'Cover URL (optional)'},
+    admin_plans_desc:{pt:'Planos são poucos e fixos (free/premium/petshop_partner) — edite preço e recursos.',en:'Plans are few and fixed (free/premium/petshop_partner) — edit price and features.'},
+    admin_excluir:{pt:'Excluir',en:'Delete'},
+    admin_banned_login_msg:{pt:'Sua conta foi suspensa. Fale com o suporte pelo e-mail rhoneyinc@gmail.com.',en:'Your account has been suspended. Contact support at rhoneyinc@gmail.com.'},
 
     profile_gender_label:{pt:'Gênero (opcional)',en:'Gender (optional)'},
     profile_gender_placeholder:{pt:'Prefiro não informar',en:'Prefer not to say'},
@@ -2724,6 +3018,7 @@
   // e-mail/senha via Supabase Auth — antes só os botões sociais funcionavam,
   // o botão de e-mail/senha não tinha nenhum handler (clicar não fazia nada)
   let currentUser = null;
+  let currentUserIsAdmin = false;
   let currentUserPets = []; // todos os pets do tutor logado, mais recente primeiro
   let cartIndex = 0; // qual pet está em destaque no carrossel do Hero
 
@@ -2737,11 +3032,37 @@
     badge: document.getElementById('cartBadge').textContent,
   };
 
+  function detectDeviceType(){
+    const ua = navigator.userAgent || '';
+    if(/iPhone|iPad|iPod/i.test(ua)) return 'mobile_ios';
+    if(/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'mobile_android' : 'tablet_android';
+    if(/Mobi/i.test(ua)) return 'mobile_outro';
+    return 'desktop';
+  }
+
+  async function checkAdminAccess(){
+    const link = document.getElementById('navAdminLink');
+    try{
+      const { data, error } = await supa.rpc('am_i_admin');
+      currentUserIsAdmin = !error && data === true;
+    }catch(e){ currentUserIsAdmin = false; }
+    link.style.display = currentUserIsAdmin ? '' : 'none';
+    if(currentUserIsAdmin && typeof loadAdminDashboard === 'function') loadAdminDashboard();
+  }
+
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('openSignup').style.display = 'none'; return; }
-    const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
+    const { data: profile } = await supa.from('profiles').select('full_name, is_banned').eq('id', user.id).single();
+    if(profile?.is_banned){
+      await supa.auth.signOut();
+      currentUser = null;
+      openModal('login');
+      const statusEl = document.getElementById('modalStatus');
+      if(statusEl){ statusEl.textContent = t('admin_banned_login_msg'); statusEl.className = 'modal-status err'; }
+      return;
+    }
     currentUserProfile = profile || currentUserProfile;
     const label = profile?.full_name || user.email;
     btn.textContent = t('nav_meu_pet');
@@ -2751,6 +3072,10 @@
     // cadastro de conta já acontece pelo link "Não tem conta?" dentro do
     // modal de "Entrar", e pelo CTA do hero (heroCta)
     document.getElementById('openSignup').style.display = '';
+
+    supa.rpc('set_my_device', { p_device: detectDeviceType() })
+      .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
+    checkAdminAccess();
   }
 
   // carrega TODOS os pets do tutor e reflete o primeiro na carteirinha do Hero
@@ -4555,6 +4880,354 @@
       if(error){ console.warn('MeuPet: não deu pra responder', error.message); return; }
       loadFeedback();
     }
+  });
+
+  // =====================================================================
+  // PAINEL ADM — métricas, usuários, denúncias, parcerias e catálogo
+  // (tudo aqui só carrega/funciona se currentUserIsAdmin, checado no
+  // client por conveniência de UX — a autorização real é sempre no banco,
+  // via is_admin() dentro de cada RPC/policy RLS chamada abaixo)
+  // =====================================================================
+  document.querySelectorAll('#adminTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#adminTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tabs = { metricas:'adminTabMetricas', usuarios:'adminTabUsuarios', denuncias:'adminTabDenuncias', parcerias:'adminTabParcerias', catalogo:'adminTabCatalogo' };
+      Object.entries(tabs).forEach(([key, id]) => {
+        document.getElementById(id).style.display = btn.dataset.tab === key ? '' : 'none';
+      });
+      if(btn.dataset.tab === 'usuarios') loadAdminUsers();
+      if(btn.dataset.tab === 'denuncias') loadAdminReports();
+      if(btn.dataset.tab === 'parcerias') loadAdminLeads();
+      if(btn.dataset.tab === 'catalogo') loadAdminCatalog('products');
+    };
+  });
+  document.querySelectorAll('#adminCatalogTabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#adminCatalogTabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const cats = { products:'adminCatProducts', sponsors:'adminCatSponsors', games:'adminCatGames', plans:'adminCatPlans' };
+      Object.entries(cats).forEach(([key, id]) => {
+        document.getElementById(id).style.display = btn.dataset.cat === key ? '' : 'none';
+      });
+      loadAdminCatalog(btn.dataset.cat);
+    };
+  });
+
+  // ---------- Métricas ----------
+  let adminCharts = {};
+
+  function renderAdminChart(canvasId, type, labels, values, colors){
+    const canvas = document.getElementById(canvasId);
+    if(!canvas || typeof Chart === 'undefined') return;
+    if(adminCharts[canvasId]) adminCharts[canvasId].destroy();
+    const card = canvas.closest('.admin-chart-card');
+    let emptyMsg = card?.querySelector('.admin-chart-empty');
+    if(!labels.length){
+      canvas.style.display = 'none';
+      if(!emptyMsg){
+        emptyMsg = document.createElement('p');
+        emptyMsg.className = 'sub admin-chart-empty';
+        emptyMsg.style.cssText = 'margin:auto; text-align:center;';
+        emptyMsg.textContent = t('admin_sem_dados');
+        card.appendChild(emptyMsg);
+      }
+      return;
+    }
+    canvas.style.display = '';
+    emptyMsg?.remove();
+    adminCharts[canvasId] = new Chart(canvas, {
+      type,
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: type === 'bar' ? 0 : 2, borderColor: '#FFF8F0' }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: type !== 'bar', position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+        scales: type === 'bar' ? { y: { beginAtZero: true, ticks: { precision: 0 } } } : {},
+      },
+    });
+  }
+
+  const ADMIN_PALETTE = ['#0F3D3E','#FF6B4A','#F4A340','#7FB88A','#3B7A7B','#D9895A','#8FD9CE','#C97B63','#5C8A8B','#E6B655'];
+
+  function labelMap(obj){
+    const entries = Object.entries(obj || {}).sort((a,b) => b[1]-a[1]);
+    return { labels: entries.map(([k]) => k === 'nao_informado' || k === 'desconhecido' ? t('admin_nao_informado') : k), values: entries.map(([,v]) => v) };
+  }
+
+  async function loadAdminDashboard(){
+    if(!currentUserIsAdmin || !DB_READY) return;
+    const { data, error } = await supa.rpc('admin_dashboard_stats');
+    if(error || !data){ console.warn('MeuPet: não deu pra carregar estatísticas ADM', error?.message); return; }
+    document.getElementById('adminStatGrid').innerHTML = `
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_users}</div><div class="label">${t('admin_stat_users')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_pets}</div><div class="label">${t('admin_stat_pets')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_posts}</div><div class="label">${t('admin_stat_posts')}</div></div>
+      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_feedbacks}</div><div class="label">${t('admin_stat_feedbacks')}</div></div>
+    `;
+    const petSexLabels = { macho: t('sex_macho'), femea: t('sex_femea') };
+    const petSexRaw = Object.fromEntries(Object.entries(data.by_pet_sex || {}).map(([k,v]) => [petSexLabels[k] || k, v]));
+    const gender = labelMap(petSexRaw);
+    renderAdminChart('chartGender', 'doughnut', gender.labels, gender.values, ADMIN_PALETTE);
+    const device = labelMap(data.by_device);
+    renderAdminChart('chartDevice', 'doughnut', device.labels, device.values, ADMIN_PALETTE);
+    const age = labelMap(data.by_age_bucket);
+    renderAdminChart('chartAge', 'bar', age.labels, age.values, ADMIN_PALETTE);
+    const country = labelMap(data.by_country);
+    renderAdminChart('chartCountry', 'bar', country.labels, country.values, ADMIN_PALETTE);
+    const city = labelMap(data.by_city);
+    renderAdminChart('chartCity', 'bar', city.labels, city.values, ADMIN_PALETTE);
+    const neighborhood = labelMap(data.by_neighborhood);
+    renderAdminChart('chartNeighborhood', 'bar', neighborhood.labels, neighborhood.values, ADMIN_PALETTE);
+  }
+
+  function fmtAdminDate(iso){
+    if(!iso) return t('admin_users_never');
+    const d = new Date(iso);
+    return d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ---------- Usuários ----------
+  async function loadAdminUsers(){
+    const tbody = document.getElementById('adminUsersBody');
+    if(!tbody || !currentUserIsAdmin) return;
+    const { data, error } = await supa.rpc('admin_user_list');
+    if(error || !data){ console.warn('MeuPet: não deu pra carregar lista de usuários ADM', error?.message); return; }
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td>${esc(u.full_name || '—')} ${u.is_admin ? `<span class="admin-badge is-admin">Admin</span>` : ''}${u.is_banned ? `<span class="admin-badge is-banned">${t('admin_banir')}</span>` : ''}</td>
+        <td>${esc(u.email || '—')}</td>
+        <td>${esc([u.city, u.country].filter(Boolean).join(', ') || '—')}</td>
+        <td>${esc(u.plan || 'free')}</td>
+        <td>${fmtAdminDate(u.created_at)}</td>
+        <td>${fmtAdminDate(u.last_sign_in_at)}</td>
+        <td>
+          <button class="admin-mini-btn ${u.is_banned ? '' : 'danger'}" data-admin-action="${u.is_banned ? 'unban' : 'ban'}" data-user-id="${esc(u.id)}">${u.is_banned ? t('admin_desbanir') : t('admin_banir')}</button>
+          <button class="admin-mini-btn" data-admin-action="${u.is_admin ? 'demote' : 'promote'}" data-user-id="${esc(u.id)}">${u.is_admin ? t('admin_rebaixar') : t('admin_promover')}</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('adminUsersBody').addEventListener('click', async e=>{
+    const btn = e.target.closest('[data-admin-action]');
+    if(!btn) return;
+    const userId = btn.dataset.userId;
+    const action = btn.dataset.adminAction;
+    const confirmMsgs = { ban:'admin_confirm_banir', unban:'admin_confirm_desbanir', promote:'admin_confirm_promover', demote:'admin_confirm_rebaixar' };
+    if(!confirm(t(confirmMsgs[action]))) return;
+    btn.disabled = true;
+    let error;
+    if(action === 'ban') ({ error } = await supa.rpc('admin_set_user_banned', { p_user_id: userId, p_banned: true }));
+    if(action === 'unban') ({ error } = await supa.rpc('admin_set_user_banned', { p_user_id: userId, p_banned: false }));
+    if(action === 'promote') ({ error } = await supa.rpc('admin_promote_user', { p_user_id: userId }));
+    if(action === 'demote') ({ error } = await supa.rpc('admin_demote_user', { p_user_id: userId }));
+    btn.disabled = false;
+    if(error){ alert(error.message); return; }
+    loadAdminUsers();
+  });
+
+  // ---------- Denúncias ----------
+  async function loadAdminReports(){
+    const tbody = document.getElementById('adminReportsBody');
+    if(!tbody || !currentUserIsAdmin) return;
+    const { data, error } = await supa.from('reports').select('*, profiles!reporter_id(full_name)').order('created_at', { ascending:false }).limit(50);
+    if(error){ console.warn('MeuPet: não deu pra carregar denúncias', error.message); return; }
+    if(!data || !data.length){ tbody.innerHTML = `<tr><td colspan="6">${t('admin_reports_empty')}</td></tr>`; return; }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${esc(r.target_type)}</td>
+        <td class="mono" style="font-size:0.76rem;">${esc(String(r.target_id).slice(0,8))}…</td>
+        <td>${esc(r.reason)}</td>
+        <td>${esc(r.profiles?.full_name || '—')}</td>
+        <td>${fmtAdminDate(r.created_at)}</td>
+        <td>
+          <select data-report-id="${esc(r.id)}" class="admin-report-status">
+            <option value="open" ${r.status==='open'?'selected':''}>open</option>
+            <option value="reviewing" ${r.status==='reviewing'?'selected':''}>reviewing</option>
+            <option value="resolved" ${r.status==='resolved'?'selected':''}>resolved</option>
+            <option value="dismissed" ${r.status==='dismissed'?'selected':''}>dismissed</option>
+          </select>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('adminReportsBody').addEventListener('change', async e=>{
+    const sel = e.target.closest('.admin-report-status');
+    if(!sel) return;
+    const { error } = await supa.from('reports').update({ status: sel.value }).eq('id', sel.dataset.reportId);
+    if(error) alert(error.message);
+  });
+
+  // ---------- Parcerias ----------
+  let adminLeadForCreate = null;
+
+  async function loadAdminLeads(){
+    const tbody = document.getElementById('adminLeadsBody');
+    if(!tbody || !currentUserIsAdmin) return;
+    const { data, error } = await supa.from('partner_leads').select('*').order('created_at', { ascending:false }).limit(50);
+    if(error){ console.warn('MeuPet: não deu pra carregar parcerias', error.message); return; }
+    if(!data || !data.length){ tbody.innerHTML = `<tr><td colspan="7">${t('admin_leads_empty')}</td></tr>`; return; }
+    window.__adminLeadsCache = data;
+    tbody.innerHTML = data.map(l => `
+      <tr>
+        <td>${esc(l.business_name)}</td>
+        <td>${esc(l.contact_name)}<br><span style="color:var(--text-muted); font-size:0.78rem;">${esc(l.contact_email)}${l.contact_phone ? ' · ' + esc(l.contact_phone) : ''}</span></td>
+        <td>${esc(l.city || '—')}</td>
+        <td>${esc(l.business_type)}</td>
+        <td>${esc(l.plan_interest)}</td>
+        <td>${esc(l.status)}</td>
+        <td>
+          ${l.status !== 'aprovado' ? `<button class="admin-mini-btn" data-lead-action="approve" data-lead-id="${esc(l.id)}">${t('admin_aprovar')}</button>` : ''}
+          <button class="admin-mini-btn" data-lead-action="create-petshop" data-lead-id="${esc(l.id)}">${t('admin_criar_petshop')}</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('adminLeadsBody').addEventListener('click', async e=>{
+    const btn = e.target.closest('[data-lead-action]');
+    if(!btn) return;
+    if(btn.dataset.leadAction === 'approve'){
+      btn.disabled = true;
+      const { error } = await supa.rpc('admin_approve_partner_lead', { p_lead_id: btn.dataset.leadId });
+      btn.disabled = false;
+      if(error){ alert(error.message); return; }
+      loadAdminLeads();
+    }
+    if(btn.dataset.leadAction === 'create-petshop'){
+      const lead = (window.__adminLeadsCache || []).find(l => l.id === btn.dataset.leadId);
+      if(!lead) return;
+      adminLeadForCreate = lead;
+      document.getElementById('adminPetshopName').value = lead.business_name || '';
+      document.getElementById('adminPetshopCity').value = lead.city || '';
+      document.getElementById('adminPetshopPhone').value = lead.contact_phone || '';
+      document.getElementById('adminPetshopAddress').value = '';
+      document.getElementById('adminPetshopLat').value = '';
+      document.getElementById('adminPetshopLng').value = '';
+      document.getElementById('adminPetshopStatus').textContent = '';
+      document.getElementById('adminPetshopStatus').className = 'modal-status';
+      document.getElementById('adminCreatePetshopBox').style.display = '';
+      document.getElementById('adminCreatePetshopBox').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+  });
+
+  document.getElementById('adminPetshopSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adminPetshopStatus');
+    const name = document.getElementById('adminPetshopName').value.trim();
+    const city = document.getElementById('adminPetshopCity').value.trim();
+    const country = document.getElementById('adminPetshopCountry').value.trim() || 'Brasil';
+    const address = document.getElementById('adminPetshopAddress').value.trim() || null;
+    const phone = document.getElementById('adminPetshopPhone').value.trim() || null;
+    const lat = parseFloat(document.getElementById('adminPetshopLat').value);
+    const lng = parseFloat(document.getElementById('adminPetshopLng').value);
+    if(!name || !city || Number.isNaN(lat) || Number.isNaN(lng)){
+      statusEl.textContent = 'Preenche nome, cidade, latitude e longitude.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    const { error } = await supa.from('petshops').insert({ name, city, country, address, phone, lat, lng, is_partner: true });
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '✅ Petshop criado!';
+    statusEl.className = 'modal-status ok';
+    if(adminLeadForCreate) await supa.rpc('admin_approve_partner_lead', { p_lead_id: adminLeadForCreate.id });
+    loadAdminLeads();
+  });
+
+  // ---------- Catálogo (products/sponsors/games/plans) ----------
+  async function loadAdminCatalog(cat){
+    if(!currentUserIsAdmin) return;
+    if(cat === 'products'){
+      const { data } = await supa.from('products').select('*').order('created_at', { ascending:false });
+      document.getElementById('adminProductsBody').innerHTML = (data || []).map(p => `
+        <tr><td>${esc(p.name)}</td><td>R$ ${(p.price_cents/100).toFixed(2)}</td><td>${esc(p.shop_name)}</td>
+        <td><button class="admin-mini-btn danger" data-del="products" data-id="${esc(p.id)}">${t('admin_excluir')}</button></td></tr>`).join('');
+    }
+    if(cat === 'sponsors'){
+      const { data } = await supa.from('sponsors').select('*').order('created_at', { ascending:false });
+      document.getElementById('adminSponsorsBody').innerHTML = (data || []).map(s => `
+        <tr><td>${esc(s.slot)}</td><td>${esc(s.headline)}</td><td>${s.active ? '✅' : '—'}</td>
+        <td><button class="admin-mini-btn danger" data-del="sponsors" data-id="${esc(s.id)}">${t('admin_excluir')}</button></td></tr>`).join('');
+    }
+    if(cat === 'games'){
+      const { data } = await supa.from('games').select('*');
+      document.getElementById('adminGamesBody').innerHTML = (data || []).map(g => `
+        <tr><td>${esc(g.title)}</td>
+        <td><button class="admin-mini-btn danger" data-del="games" data-id="${esc(g.id)}">${t('admin_excluir')}</button></td></tr>`).join('');
+    }
+    if(cat === 'plans'){
+      const { data } = await supa.from('plans').select('*');
+      document.getElementById('adminPlansBody').innerHTML = (data || []).map(p => `
+        <tr><td>${esc(p.name)}</td><td>R$ ${(p.price_cents/100).toFixed(2)}</td><td>—</td></tr>`).join('');
+    }
+  }
+
+  document.querySelectorAll('#adminTabCatalogo .admin-table-wrap').forEach(wrap=>{
+    wrap.addEventListener('click', async e=>{
+      const btn = e.target.closest('[data-del]');
+      if(!btn) return;
+      if(!confirm('Excluir este item do catálogo?')) return;
+      const { error } = await supa.from(btn.dataset.del).delete().eq('id', btn.dataset.id);
+      if(error){ alert(error.message); return; }
+      loadAdminCatalog(btn.dataset.del);
+    });
+  });
+
+  document.getElementById('adminProductSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adminProductStatus');
+    const name = document.getElementById('adminProductName').value.trim();
+    const price_cents = Math.round(parseFloat(document.getElementById('adminProductPrice').value || '0') * 100);
+    const shop_name = document.getElementById('adminProductShop').value.trim();
+    const affiliate_url = document.getElementById('adminProductUrl').value.trim();
+    const image_url = document.getElementById('adminProductImage').value.trim() || null;
+    const category = document.getElementById('adminProductCategory').value.trim() || null;
+    const is_sponsored = document.getElementById('adminProductSponsored').checked;
+    if(!name || !price_cents || !shop_name || !affiliate_url){
+      statusEl.textContent = 'Preenche nome, preço, loja e link de afiliado.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    const { error } = await supa.from('products').insert({ name, price_cents, shop_name, affiliate_url, image_url, category, is_sponsored });
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '✅ Produto adicionado!'; statusEl.className = 'modal-status ok';
+    ['adminProductName','adminProductPrice','adminProductShop','adminProductUrl','adminProductImage','adminProductCategory'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('adminProductSponsored').checked = false;
+    loadAdminCatalog('products');
+  });
+
+  document.getElementById('adminSponsorSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adminSponsorStatus');
+    const slot = document.getElementById('adminSponsorSlot').value.trim();
+    const headline = document.getElementById('adminSponsorHeadline').value.trim();
+    const cta_text = document.getElementById('adminSponsorCta').value.trim() || 'Ver oferta';
+    const target_url = document.getElementById('adminSponsorUrl').value.trim();
+    if(!slot || !headline || !target_url){
+      statusEl.textContent = 'Preenche slot, título e link.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    const { error } = await supa.from('sponsors').insert({ slot, headline, cta_text, target_url, active: true });
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '✅ Patrocinador adicionado!'; statusEl.className = 'modal-status ok';
+    ['adminSponsorSlot','adminSponsorHeadline','adminSponsorUrl'].forEach(id => document.getElementById(id).value = '');
+    loadAdminCatalog('sponsors');
+  });
+
+  document.getElementById('adminGameSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adminGameStatus');
+    const title = document.getElementById('adminGameTitle').value.trim();
+    const url = document.getElementById('adminGameUrl').value.trim();
+    const cover_url = document.getElementById('adminGameCover').value.trim() || null;
+    const is_sponsored = document.getElementById('adminGameSponsored').checked;
+    if(!title || !url){
+      statusEl.textContent = 'Preenche título e URL do jogo.';
+      statusEl.className = 'modal-status err';
+      return;
+    }
+    const { error } = await supa.from('games').insert({ title, url, cover_url, is_sponsored });
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '✅ Game adicionado!'; statusEl.className = 'modal-status ok';
+    ['adminGameTitle','adminGameUrl','adminGameCover'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('adminGameSponsored').checked = false;
+    loadAdminCatalog('games');
   });
 
   const adoptFavorites = new Set();

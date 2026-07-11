@@ -55,6 +55,7 @@ create table public.profiles (
   country text,
   plan text not null default 'free' check (plan in ('free','premium','petshop_partner')),
   is_petshop boolean not null default false,
+  is_banned boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -80,6 +81,36 @@ $$;
 
 create trigger trg_protect_profile_plan before update on public.profiles
   for each row execute procedure public.protect_profile_plan();
+
+-- is_banned só pode ser alterado por quem passa is_admin() — diferente de
+-- plan (só service_role/webhook), banir precisa poder ser feito por uma
+-- sessão admin comum a partir do painel; sem essa trava, o próprio usuário
+-- banido poderia se desbanir com um update direto via devtools (a policy
+-- profiles_update_own permite auth.uid() = id sem checar essa coluna)
+create or replace function public.protect_profile_ban()
+returns trigger language plpgsql as $$
+begin
+  if not public.is_admin() and new.is_banned is distinct from old.is_banned then
+    new.is_banned := old.is_banned;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_protect_profile_ban before update on public.profiles
+  for each row execute procedure public.protect_profile_ban();
+
+-- checa se QUEM ESTÁ CHAMANDO (auth.uid()) está banido — usada nas policies
+-- de insert/update de conteúdo abaixo, pra banir de verdade bloquear no
+-- servidor, não só esconder o botão no front-end
+create or replace function public.is_banned()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce((select is_banned from public.profiles where id = auth.uid()), false);
+$$;
 
 -- cria profile automaticamente após signup (qualquer provedor social)
 create or replace function public.handle_new_user()
@@ -369,7 +400,7 @@ create table public.post_shares (
 );
 alter table public.post_shares enable row level security;
 create policy "post_shares_select_public" on public.post_shares for select using (true);
-create policy "post_shares_insert_own" on public.post_shares for insert with check (auth.uid() = user_id);
+create policy "post_shares_insert_own" on public.post_shares for insert with check (auth.uid() = user_id and not public.is_banned());
 
 -- o app assina mudanças em tempo real nessas 3 tabelas (likes, pet_follows,
 -- post_shares) pra atualizar Feed/Ranque sem precisar recarregar a página.
@@ -704,7 +735,7 @@ create index idx_feedback_posts_created on public.feedback_posts(created_at desc
 
 alter table public.feedback_posts enable row level security;
 create policy "feedback_posts_select_public" on public.feedback_posts for select using (true);
-create policy "feedback_posts_insert_own" on public.feedback_posts for insert with check (auth.uid() = owner_id);
+create policy "feedback_posts_insert_own" on public.feedback_posts for insert with check (auth.uid() = owner_id and not public.is_banned());
 create policy "feedback_posts_update_own" on public.feedback_posts for update using (auth.uid() = owner_id or public.is_admin()) with check (auth.uid() = owner_id or public.is_admin());
 create policy "feedback_posts_delete_own" on public.feedback_posts for delete using (auth.uid() = owner_id or public.is_admin());
 
@@ -719,7 +750,7 @@ create index idx_feedback_comments_feedback on public.feedback_comments(feedback
 
 alter table public.feedback_comments enable row level security;
 create policy "feedback_comments_select_public" on public.feedback_comments for select using (true);
-create policy "feedback_comments_insert_own" on public.feedback_comments for insert with check (auth.uid() = user_id);
+create policy "feedback_comments_insert_own" on public.feedback_comments for insert with check (auth.uid() = user_id and not public.is_banned());
 create policy "feedback_comments_update_own" on public.feedback_comments for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "feedback_comments_delete_own" on public.feedback_comments for delete using (auth.uid() = user_id or public.is_admin());
 
@@ -733,7 +764,7 @@ create index idx_feedback_likes_feedback on public.feedback_likes(feedback_id);
 
 alter table public.feedback_likes enable row level security;
 create policy "feedback_likes_select_public" on public.feedback_likes for select using (true);
-create policy "feedback_likes_insert_own" on public.feedback_likes for insert with check (auth.uid() = user_id);
+create policy "feedback_likes_insert_own" on public.feedback_likes for insert with check (auth.uid() = user_id and not public.is_banned());
 create policy "feedback_likes_delete_own" on public.feedback_likes for delete using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
@@ -878,7 +909,7 @@ create policy "profiles_insert_self" on public.profiles for insert with check (a
 
 -- PETS: leitura pública, escrita do dono
 create policy "pets_select_public" on public.pets for select using (true);
-create policy "pets_insert_own" on public.pets for insert with check (auth.uid() = owner_id);
+create policy "pets_insert_own" on public.pets for insert with check (auth.uid() = owner_id and not public.is_banned());
 create policy "pets_update_own" on public.pets for update using (auth.uid() = owner_id or public.is_admin());
 create policy "pets_delete_own" on public.pets for delete using (auth.uid() = owner_id or public.is_admin());
 
@@ -893,7 +924,8 @@ create policy "posts_select_public" on public.posts for select using (true);
 -- autenticado poderia postar em nome do pet de outra pessoa (pets é leitura
 -- pública, então o id de qualquer pet é conhecível)
 create policy "posts_insert_own" on public.posts for insert with check (
-  auth.uid() = owner_id and exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
+  auth.uid() = owner_id and not public.is_banned()
+  and exists (select 1 from public.pets p where p.id = pet_id and p.owner_id = auth.uid())
 );
 create policy "posts_delete_own" on public.posts for delete using (auth.uid() = owner_id or public.is_admin());
 -- editar caption/mídia direto do card do feed/ranque, sem passar pelo
@@ -906,29 +938,29 @@ create policy "posts_update_own" on public.posts for update
 -- LIKES: leitura pública, qualquer autenticado curte/descurte só por si.
 -- update_own existe pra trocar o tipo de reação (curtir <-> amei) sem duplicar linha
 create policy "likes_select_public" on public.likes for select using (true);
-create policy "likes_insert_own" on public.likes for insert with check (auth.uid() = user_id);
+create policy "likes_insert_own" on public.likes for insert with check (auth.uid() = user_id and not public.is_banned());
 create policy "likes_update_own" on public.likes for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "likes_delete_own" on public.likes for delete using (auth.uid() = user_id);
 
 -- COMMENTS: leitura pública, escrita/edição/remoção só de quem comentou (ou admin)
 create policy "comments_select_public" on public.comments for select using (true);
-create policy "comments_insert_own" on public.comments for insert with check (auth.uid() = user_id);
+create policy "comments_insert_own" on public.comments for insert with check (auth.uid() = user_id and not public.is_banned());
 create policy "comments_update_own" on public.comments for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "comments_delete_own" on public.comments for delete using (auth.uid() = user_id or public.is_admin());
 
 -- PET_FOLLOWS / PROFILE_FOLLOWS: leitura pública (contagem de seguidores),
 -- só o próprio seguidor cria/remove o próprio follow
 create policy "pet_follows_select_public" on public.pet_follows for select using (true);
-create policy "pet_follows_insert_own" on public.pet_follows for insert with check (auth.uid() = follower_id);
+create policy "pet_follows_insert_own" on public.pet_follows for insert with check (auth.uid() = follower_id and not public.is_banned());
 create policy "pet_follows_delete_own" on public.pet_follows for delete using (auth.uid() = follower_id);
 
 create policy "profile_follows_select_public" on public.profile_follows for select using (true);
-create policy "profile_follows_insert_own" on public.profile_follows for insert with check (auth.uid() = follower_id);
+create policy "profile_follows_insert_own" on public.profile_follows for insert with check (auth.uid() = follower_id and not public.is_banned());
 create policy "profile_follows_delete_own" on public.profile_follows for delete using (auth.uid() = follower_id);
 
 -- ADOPTION_LISTINGS: leitura pública, escrita de quem criou
 create policy "adoption_select_public" on public.adoption_listings for select using (true);
-create policy "adoption_insert_auth" on public.adoption_listings for insert with check (auth.uid() = created_by);
+create policy "adoption_insert_auth" on public.adoption_listings for insert with check (auth.uid() = created_by and not public.is_banned());
 create policy "adoption_update_own" on public.adoption_listings for update using (auth.uid() = created_by or public.is_admin());
 create policy "adoption_delete_own" on public.adoption_listings for delete using (auth.uid() = created_by or public.is_admin());
 
@@ -980,7 +1012,7 @@ create policy "partner_leads_select_own_or_admin" on public.partner_leads for se
 create policy "partner_leads_update_admin" on public.partner_leads for update using (public.is_admin());
 
 -- REPORTS: qualquer autenticado reporta, só admin lê/atualiza ("agente de segurança/moderação")
-create policy "reports_insert_auth" on public.reports for insert with check (auth.uid() = reporter_id or reporter_id is null);
+create policy "reports_insert_auth" on public.reports for insert with check ((auth.uid() = reporter_id or reporter_id is null) and not public.is_banned());
 create policy "reports_select_admin" on public.reports for select using (public.is_admin());
 create policy "reports_update_admin" on public.reports for update using (public.is_admin());
 
@@ -1053,6 +1085,8 @@ begin
       'city', p.city,
       'country', p.country,
       'plan', p.plan,
+      'is_banned', p.is_banned,
+      'is_admin', exists(select 1 from public.admins a where a.user_id = p.id),
       'created_at', p.created_at,
       'last_sign_in_at', au.last_sign_in_at
     ) as u,
@@ -1066,6 +1100,62 @@ end;
 $$;
 revoke all on function public.admin_user_list() from public;
 grant execute on function public.admin_user_list() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- ADMIN — banir/desbanir, promover/rebaixar, aprovar parceria
+-- ---------------------------------------------------------------------
+create or replace function public.admin_set_user_banned(p_user_id uuid, p_banned boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  update public.profiles set is_banned = p_banned where id = p_user_id;
+end;
+$$;
+revoke all on function public.admin_set_user_banned(uuid, boolean) from public;
+grant execute on function public.admin_set_user_banned(uuid, boolean) to authenticated;
+
+-- admins não tem policy de insert/delete (só select) — promoção/rebaixamento
+-- só acontece por aqui dentro, nunca direto do client
+create or replace function public.admin_promote_user(p_user_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  insert into public.admins (user_id) values (p_user_id) on conflict do nothing;
+end;
+$$;
+revoke all on function public.admin_promote_user(uuid) from public;
+grant execute on function public.admin_promote_user(uuid) to authenticated;
+
+create or replace function public.admin_demote_user(p_user_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  if (select count(*) from public.admins) <= 1 then
+    raise exception 'não é possível remover o último admin do app';
+  end if;
+  delete from public.admins where user_id = p_user_id;
+end;
+$$;
+revoke all on function public.admin_demote_user(uuid) from public;
+grant execute on function public.admin_demote_user(uuid) to authenticated;
+
+create or replace function public.admin_approve_partner_lead(p_lead_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  update public.partner_leads set status = 'aprovado' where id = p_lead_id;
+end;
+$$;
+revoke all on function public.admin_approve_partner_lead(uuid) from public;
+grant execute on function public.admin_approve_partner_lead(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- ADMIN — relatório diário agregado, uso exclusivo de automação server-side
