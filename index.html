@@ -37,7 +37,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
 <style>
   :root{
     --coral:#FF6B4A;
@@ -454,12 +453,6 @@
   .fb-reply-form textarea{flex:1; padding:8px 10px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font-family:inherit; font-size:0.85rem; resize:vertical;}
 
   /* ---------- ADMIN (painel de estatísticas) ---------- */
-  .admin-stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-top:20px;}
-  .admin-stat-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; text-align:center;}
-  .admin-stat-card .num{font-family:'Fraunces',serif; font-size:2rem; color:var(--heading); font-weight:700;}
-  .admin-stat-card .label{font-size:0.8rem; color:var(--text-muted); margin-top:4px;}
-  .admin-chart-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-top:24px;}
-  @media (max-width:800px){ .admin-chart-grid{grid-template-columns:1fr;} }
 
   /* ---------- SCROLL-REVEAL — cards/seções/fotos surgem ao rolar a página ---------- */
   [data-reveal]{opacity:0; transition:opacity 0.6s ease, transform 0.6s ease; will-change:transform, opacity;}
@@ -470,10 +463,6 @@
   @media (prefers-reduced-motion: reduce){
     [data-reveal]{transition:none; opacity:1; transform:none;}
   }
-  .admin-chart-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; height:280px; position:relative; display:flex; flex-direction:column;}
-  .admin-chart-card canvas{flex:1; min-height:0;}
-  .admin-chart-card h4{font-family:'Fraunces',serif; color:var(--heading); font-size:0.95rem; margin-bottom:12px;}
-
   /* ---------- MARKETPLACE ---------- */
   .market-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
   .product-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; position:relative; transition:transform .2s ease, box-shadow .2s ease;}
@@ -855,7 +844,6 @@
       <a href="#games" data-i18n="nav_games">Games</a>
       <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
       <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
-      <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
     </nav>
     <div class="nav-actions">
       <button class="btn btn-ghost" id="openLogin" data-i18n="nav_entrar">Entrar</button>
@@ -1185,47 +1173,6 @@
   </section>
 
   <!-- ADMIN — painel restrito ao administrador -->
-  <section class="block" id="admin" style="background:var(--surface);">
-    <div class="wrap">
-      <div class="section-head" data-reveal="up">
-        <div>
-          <span class="kicker" data-i18n="admin_kicker">Painel ADM</span>
-          <h2 data-i18n="admin_title">Estatísticas do MeuPet</h2>
-          <p data-i18n="admin_desc">Visível só para administradores.</p>
-        </div>
-      </div>
-      <div id="adminContent">
-        <div class="admin-stat-grid" id="adminStatGrid"></div>
-        <div class="admin-chart-grid">
-          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_gender">Gênero dos pets</h4><canvas id="chartGender"></canvas></div>
-          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_device">Dispositivos</h4><canvas id="chartDevice"></canvas></div>
-          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_age">Faixa etária</h4><canvas id="chartAge"></canvas></div>
-          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_country">Países</h4><canvas id="chartCountry"></canvas></div>
-          <div class="admin-chart-card" data-reveal="left"><h4 data-i18n="admin_chart_city">Cidades</h4><canvas id="chartCity"></canvas></div>
-          <div class="admin-chart-card" data-reveal="right"><h4 data-i18n="admin_chart_neighborhood">Bairros</h4><canvas id="chartNeighborhood"></canvas></div>
-        </div>
-        <div style="margin-top:32px;">
-          <h4 data-i18n="admin_users_title" style="font-family:'Fraunces',serif; color:var(--heading); margin-bottom:6px;">Quem está usando</h4>
-          <p data-i18n="admin_users_desc" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Lista de tutores cadastrados, ordenada pelo acesso mais recente.</p>
-          <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
-              <thead>
-                <tr style="text-align:left; border-bottom:2px solid var(--line);">
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_name">Nome</th>
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_email">E-mail</th>
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_local">Cidade</th>
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_plan">Plano</th>
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_created">Cadastro</th>
-                  <th style="padding:8px 10px;" data-i18n="admin_users_col_last">Último acesso</th>
-                </tr>
-              </thead>
-              <tbody id="adminUsersBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer class="site">
@@ -1986,7 +1933,7 @@
     geo_ver_no_mapa:{pt:'Ver no mapa',en:'View on map'},
     feed_empty_especie:{pt:'Nenhum pet dessa espécie nesse recorte ainda.',en:'No pets of this species in this scope yet.'},
 
-    nav_feedback:{pt:'Feedback',en:'Feedback'}, nav_admin:{pt:'Admin',en:'Admin'},
+    nav_feedback:{pt:'Feedback',en:'Feedback'},
     feedback_kicker:{pt:'Feedback',en:'Feedback'},
     feedback_title:{pt:'O que você achou do MeuPet?',en:'What did you think of MeuPet?'},
     feedback_desc:{pt:'Deixe sua opinião ou sugestão. Qualquer pessoa pode responder e curtir.',en:'Leave your opinion or suggestion. Anyone can reply and like it.'},
@@ -1999,31 +1946,6 @@
     feedback_no_replies:{pt:'Nenhuma resposta ainda.',en:'No replies yet.'},
     feedback_like_title:{pt:'Curtir',en:'Like'},
     feedback_reply_toggle:{pt:'Responder',en:'Reply'},
-
-    admin_kicker:{pt:'Painel ADM',en:'Admin panel'},
-    admin_title:{pt:'Estatísticas do MeuPet',en:'MeuPet statistics'},
-    admin_desc:{pt:'Visível só para administradores.',en:'Visible only to administrators.'},
-    admin_stat_users:{pt:'Usuários cadastrados',en:'Registered users'},
-    admin_stat_pets:{pt:'Pets cadastrados',en:'Registered pets'},
-    admin_stat_posts:{pt:'Posts no feed',en:'Feed posts'},
-    admin_stat_feedbacks:{pt:'Feedbacks enviados',en:'Feedback submitted'},
-    admin_chart_gender:{pt:'Gênero dos pets',en:'Pet gender'},
-    admin_chart_device:{pt:'Dispositivos',en:'Devices'},
-    admin_chart_age:{pt:'Faixa etária',en:'Age range'},
-    admin_chart_country:{pt:'Países',en:'Countries'},
-    admin_chart_city:{pt:'Cidades',en:'Cities'},
-    admin_chart_neighborhood:{pt:'Bairros',en:'Neighborhoods'},
-    admin_sem_dados:{pt:'Ainda não há dados suficientes.',en:'Not enough data yet.'},
-    admin_users_title:{pt:'Quem está usando',en:'Who is using it'},
-    admin_users_desc:{pt:'Lista de tutores cadastrados, ordenada pelo acesso mais recente.',en:'List of registered tutors, sorted by most recent access.'},
-    admin_users_col_name:{pt:'Nome',en:'Name'},
-    admin_users_col_email:{pt:'E-mail',en:'Email'},
-    admin_users_col_local:{pt:'Cidade',en:'City'},
-    admin_users_col_plan:{pt:'Plano',en:'Plan'},
-    admin_users_col_created:{pt:'Cadastro',en:'Signed up'},
-    admin_users_col_last:{pt:'Último acesso',en:'Last access'},
-    admin_users_never:{pt:'nunca',en:'never'},
-    admin_nao_informado:{pt:'Não informado',en:'Not informed'},
 
     profile_gender_label:{pt:'Gênero (opcional)',en:'Gender (optional)'},
     profile_gender_placeholder:{pt:'Prefiro não informar',en:'Prefer not to say'},
@@ -2806,7 +2728,6 @@
   // e-mail/senha via Supabase Auth — antes só os botões sociais funcionavam,
   // o botão de e-mail/senha não tinha nenhum handler (clicar não fazia nada)
   let currentUser = null;
-  let currentUserIsAdmin = false;
   let currentUserPets = []; // todos os pets do tutor logado, mais recente primeiro
   let cartIndex = 0; // qual pet está em destaque no carrossel do Hero
 
@@ -2820,28 +2741,10 @@
     badge: document.getElementById('cartBadge').textContent,
   };
 
-  function detectDeviceType(){
-    const ua = navigator.userAgent || '';
-    if(/iPhone|iPad|iPod/i.test(ua)) return 'mobile_ios';
-    if(/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'mobile_android' : 'tablet_android';
-    if(/Mobi/i.test(ua)) return 'mobile_outro';
-    return 'desktop';
-  }
-
-  async function checkAdminAccess(){
-    const link = document.getElementById('navAdminLink');
-    try{
-      const { data, error } = await supa.rpc('am_i_admin');
-      currentUserIsAdmin = !error && data === true;
-    }catch(e){ currentUserIsAdmin = false; }
-    link.style.display = currentUserIsAdmin ? '' : 'none';
-    if(currentUserIsAdmin && typeof loadAdminDashboard === 'function') loadAdminDashboard();
-  }
-
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
+    if(!user){ document.getElementById('openSignup').style.display = 'none'; return; }
     const { data: profile } = await supa.from('profiles').select('full_name').eq('id', user.id).single();
     currentUserProfile = profile || currentUserProfile;
     const label = profile?.full_name || user.email;
@@ -2852,10 +2755,6 @@
     // cadastro de conta já acontece pelo link "Não tem conta?" dentro do
     // modal de "Entrar", e pelo CTA do hero (heroCta)
     document.getElementById('openSignup').style.display = '';
-
-    supa.rpc('set_my_device', { p_device: detectDeviceType() })
-      .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
-    checkAdminAccess();
   }
 
   // carrega TODOS os pets do tutor e reflete o primeiro na carteirinha do Hero
@@ -4661,98 +4560,6 @@
       loadFeedback();
     }
   });
-
-  // =====================================================================
-  // PAINEL ADM — estatísticas agregadas (só renderiza se am_i_admin() = true)
-  // =====================================================================
-  let adminCharts = {};
-
-  function renderAdminChart(canvasId, type, labels, values, colors){
-    const canvas = document.getElementById(canvasId);
-    if(!canvas || typeof Chart === 'undefined') return;
-    if(adminCharts[canvasId]) adminCharts[canvasId].destroy();
-    const card = canvas.closest('.admin-chart-card');
-    let emptyMsg = card?.querySelector('.admin-chart-empty');
-    if(!labels.length){
-      canvas.style.display = 'none';
-      if(!emptyMsg){
-        emptyMsg = document.createElement('p');
-        emptyMsg.className = 'sub admin-chart-empty';
-        emptyMsg.style.cssText = 'margin:auto; text-align:center;';
-        emptyMsg.textContent = t('admin_sem_dados');
-        card.appendChild(emptyMsg);
-      }
-      return;
-    }
-    canvas.style.display = '';
-    emptyMsg?.remove();
-    adminCharts[canvasId] = new Chart(canvas, {
-      type,
-      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: type === 'bar' ? 0 : 2, borderColor: '#FFF8F0' }] },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: type !== 'bar', position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
-        scales: type === 'bar' ? { y: { beginAtZero: true, ticks: { precision: 0 } } } : {},
-      },
-    });
-  }
-
-  const ADMIN_PALETTE = ['#0F3D3E','#FF6B4A','#F4A340','#7FB88A','#3B7A7B','#D9895A','#8FD9CE','#C97B63','#5C8A8B','#E6B655'];
-
-  function labelMap(obj){
-    const entries = Object.entries(obj || {}).sort((a,b) => b[1]-a[1]);
-    return { labels: entries.map(([k]) => k === 'nao_informado' || k === 'desconhecido' ? t('admin_nao_informado') : k), values: entries.map(([,v]) => v) };
-  }
-
-  async function loadAdminDashboard(){
-    if(!currentUserIsAdmin || !DB_READY) return;
-    const { data, error } = await supa.rpc('admin_dashboard_stats');
-    if(error || !data){ console.warn('MeuPet: não deu pra carregar estatísticas ADM', error?.message); return; }
-    document.getElementById('adminStatGrid').innerHTML = `
-      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_users}</div><div class="label">${t('admin_stat_users')}</div></div>
-      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_pets}</div><div class="label">${t('admin_stat_pets')}</div></div>
-      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_posts}</div><div class="label">${t('admin_stat_posts')}</div></div>
-      <div class="admin-stat-card" data-reveal="up"><div class="num">${data.total_feedbacks}</div><div class="label">${t('admin_stat_feedbacks')}</div></div>
-    `;
-    const petSexLabels = { macho: t('sex_macho'), femea: t('sex_femea') };
-    const petSexRaw = Object.fromEntries(Object.entries(data.by_pet_sex || {}).map(([k,v]) => [petSexLabels[k] || k, v]));
-    const gender = labelMap(petSexRaw);
-    renderAdminChart('chartGender', 'doughnut', gender.labels, gender.values, ADMIN_PALETTE);
-    const device = labelMap(data.by_device);
-    renderAdminChart('chartDevice', 'doughnut', device.labels, device.values, ADMIN_PALETTE);
-    const age = labelMap(data.by_age_bucket);
-    renderAdminChart('chartAge', 'bar', age.labels, age.values, ADMIN_PALETTE);
-    const country = labelMap(data.by_country);
-    renderAdminChart('chartCountry', 'bar', country.labels, country.values, ADMIN_PALETTE);
-    const city = labelMap(data.by_city);
-    renderAdminChart('chartCity', 'bar', city.labels, city.values, ADMIN_PALETTE);
-    const neighborhood = labelMap(data.by_neighborhood);
-    renderAdminChart('chartNeighborhood', 'bar', neighborhood.labels, neighborhood.values, ADMIN_PALETTE);
-    loadAdminUsers();
-  }
-
-  function fmtAdminDate(iso){
-    if(!iso) return t('admin_users_never');
-    const d = new Date(iso);
-    return d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-  }
-
-  async function loadAdminUsers(){
-    const tbody = document.getElementById('adminUsersBody');
-    if(!tbody) return;
-    const { data, error } = await supa.rpc('admin_user_list');
-    if(error || !data){ console.warn('MeuPet: não deu pra carregar lista de usuários ADM', error?.message); return; }
-    tbody.innerHTML = data.map(u => `
-      <tr style="border-bottom:1px solid var(--line);">
-        <td style="padding:8px 10px;">${esc(u.full_name || '—')}</td>
-        <td style="padding:8px 10px;">${esc(u.email || '—')}</td>
-        <td style="padding:8px 10px;">${esc([u.city, u.country].filter(Boolean).join(', ') || '—')}</td>
-        <td style="padding:8px 10px;">${esc(u.plan || 'free')}</td>
-        <td style="padding:8px 10px;">${fmtAdminDate(u.created_at)}</td>
-        <td style="padding:8px 10px;">${fmtAdminDate(u.last_sign_in_at)}</td>
-      </tr>`).join('');
-  }
 
   const adoptFavorites = new Set();
   let adoptFilter = 'todos';
