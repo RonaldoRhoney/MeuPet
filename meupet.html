@@ -1201,6 +1201,46 @@
         <button type="submit" class="btn btn-primary" id="pfSubmit" style="width:100%; padding:14px;" data-i18n="business_form_submit">Enviar solicitação</button>
         <p id="pfStatus" class="partner-form-status"></p>
       </form>
+
+      <!-- MEU NEGÓCIO — autoatendimento do parceiro logado: cadastra o próprio -->
+      <!-- petshop (grátis) e gerencia seus próprios produtos na vitrine. -->
+      <div id="myBusinessBox" class="partner-form" style="display:none; margin-top:24px;">
+        <h3 data-i18n="mybiz_title">Meu Negócio</h3>
+
+        <div id="myBizNoShop">
+          <p class="sub" data-i18n="mybiz_no_shop_sub">Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.</p>
+          <div class="partner-form-grid">
+            <input type="text" id="mbName" placeholder="Nome do negócio" data-i18n-placeholder="business_ph_nome" required>
+            <input type="text" id="mbCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade" required>
+            <input type="text" id="mbCountry" placeholder="País" value="Brasil" data-i18n-placeholder="admin_ph_petshop_country">
+            <input type="text" id="mbAddress" placeholder="Endereço (opcional)" data-i18n-placeholder="admin_ph_petshop_address">
+          </div>
+          <input type="hidden" id="mbLat" value=""><input type="hidden" id="mbLng" value="">
+          <button type="button" class="admin-mini-btn" id="mbGeoBtn" data-i18n="mybiz_use_location">📍 Usar minha localização</button>
+          <span id="mbGeoStatus" style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;"></span>
+          <button type="button" class="btn btn-primary" id="mbCreateSubmit" style="width:100%; padding:14px; margin-top:14px;" data-i18n="mybiz_create_submit">Cadastrar meu negócio — grátis</button>
+          <p id="mbCreateStatus" class="partner-form-status"></p>
+        </div>
+
+        <div id="myBizHasShop" style="display:none;">
+          <p class="sub"><strong id="mbShopName"></strong> · <span id="mbShopCity"></span> <span id="mbShopBadge"></span></p>
+
+          <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="mybiz_products_title">Meus produtos</h4>
+          <div class="partner-form-grid">
+            <input type="text" id="mpName" placeholder="Nome do produto" data-i18n-placeholder="mybiz_ph_product_name">
+            <input type="number" id="mpPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
+            <input type="text" id="mpLink" placeholder="Link do produto" data-i18n-placeholder="mybiz_ph_product_link">
+            <input type="text" id="mpImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
+            <input type="text" id="mpCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
+          </div>
+          <input type="hidden" id="mpEditId" value="">
+          <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar produto</button>
+          <p id="mpStatus" class="partner-form-status"></p>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+            <th data-i18n="admin_users_col_name">Nome</th><th>Preço</th><th data-i18n="admin_leads_col_actions">Ações</th>
+          </tr></thead><tbody id="mpTableBody"></tbody></table></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -2012,6 +2052,25 @@
     business_type_produto:{pt:'Marca de produto',en:'Product brand'}, business_type_servico:{pt:'Serviço (banho, adestramento...)',en:'Service (grooming, training...)'},
     business_ph_message:{pt:'Conte um pouco sobre o seu negócio (opcional)',en:'Tell us a bit about your business (optional)'},
     business_form_submit:{pt:'Enviar solicitação',en:'Send request'},
+    mybiz_title:{pt:'Meu Negócio',en:'My Business'},
+    mybiz_no_shop_sub:{pt:'Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.',en:"You're already logged in — register your business right now, for free, with no need to wait for approval."},
+    mybiz_use_location:{pt:'📍 Usar minha localização',en:'📍 Use my location'},
+    mybiz_create_submit:{pt:'Cadastrar meu negócio — grátis',en:'Register my business — free'},
+    mybiz_products_title:{pt:'Meus produtos',en:'My products'},
+    mybiz_ph_product_name:{pt:'Nome do produto',en:'Product name'},
+    mybiz_ph_product_link:{pt:'Link do produto',en:'Product link'},
+    mybiz_add_product:{pt:'+ Adicionar produto',en:'+ Add product'},
+    mybiz_verified_badge:{pt:'Parceiro verificado',en:'Verified partner'},
+    mybiz_pending_badge:{pt:'Aguardando verificação',en:'Awaiting verification'},
+    mybiz_geo_unsupported:{pt:'Seu navegador não suporta localização — preencha manualmente.',en:"Your browser doesn't support geolocation — fill in manually."},
+    mybiz_geo_loading:{pt:'Obtendo localização…',en:'Getting location…'},
+    mybiz_geo_ok:{pt:'Localização capturada!',en:'Location captured!'},
+    mybiz_geo_error:{pt:'Não deu pra obter sua localização — tenta de novo ou preenche manualmente.',en:"Couldn't get your location — try again or fill in manually."},
+    mybiz_create_missing:{pt:'Preenche nome, cidade e localização (use o botão acima).',en:'Fill in name, city and location (use the button above).'},
+    mybiz_product_missing:{pt:'Preenche nome, preço e link do produto.',en:'Fill in name, price and product link.'},
+    mybiz_confirm_delete:{pt:'Excluir este produto?',en:'Delete this product?'},
+    admin_editar:{pt:'Editar',en:'Edit'},
+    admin_salvar:{pt:'Salvar',en:'Save'},
     opt_outro:{pt:'Outro',en:'Other'},
     ph_seu_nome:{pt:'Seu nome',en:'Your name'}, ph_email:{pt:'E-mail',en:'Email'}, ph_whatsapp_opcional:{pt:'WhatsApp (opcional)',en:'WhatsApp (optional)'},
     ph_cidade:{pt:'Cidade',en:'City'},
@@ -2350,14 +2409,6 @@
     return String(str ?? '').replace(/[&<>"']/g, c => ({
       '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
     }[c]));
-  }
-  // só permite renderizar como href clicável se o protocolo for http(s) —
-  // bloqueia javascript:/data: injetados via insert direto na API (bypassa o type="url" do form)
-  function safeHttpUrl(str){
-    try{
-      const u = new URL(String(str ?? '').trim());
-      return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
-    }catch{ return null; }
   }
 
   // ícone de compartilhar único pro App inteiro (seta estilizada, mesma
@@ -3122,7 +3173,7 @@
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; document.getElementById('admin').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; return; }
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; document.getElementById('admin').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; document.getElementById('myBusinessBox').style.display = 'none'; return; }
     const { data: profile } = await supa.from('profiles').select('full_name, is_banned').eq('id', user.id).single();
     if(profile?.is_banned){
       await supa.auth.signOut();
@@ -3145,6 +3196,8 @@
     supa.rpc('set_my_device', { p_device: detectDeviceType() })
       .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
     checkAdminAccess();
+    document.getElementById('myBusinessBox').style.display = '';
+    loadMyBusiness();
   }
 
   // carrega TODOS os pets do tutor e reflete o primeiro na carteirinha do Hero
@@ -5164,7 +5217,7 @@
         <td>${esc(l.contact_name)}<br><span style="color:var(--text-muted); font-size:0.78rem;">${esc(l.contact_email)}${l.contact_phone ? ' · ' + esc(l.contact_phone) : ''}</span></td>
         <td>${esc(l.city || '—')}</td>
         <td>${esc(l.business_type)}</td>
-        <td>${safeHttpUrl(l.website_url) ? `<a href="${esc(safeHttpUrl(l.website_url))}" target="_blank" rel="noopener">${esc(l.website_url)}</a>` : (l.website_url ? esc(l.website_url) : '—')}</td>
+        <td>${l.website_url ? `<a href="${safeUrl(l.website_url)}" target="_blank" rel="noopener">${esc(l.website_url)}</a>` : '—'}</td>
         <td>${esc(l.status)}</td>
         <td>
           ${l.status !== 'aprovado' ? `<button class="admin-mini-btn" data-lead-action="approve" data-lead-id="${esc(l.id)}">${t('admin_aprovar')}</button>` : ''}
@@ -5735,7 +5788,7 @@
       : `<a class="nearby-cta" href="#petshops"><span class="nearby-cta-title">🧭 Ver petshops perto de você</span></a>`;
 
     if(DB_READY){
-      const { data, error } = await supa.from('products').select('*').limit(8);
+      const { data, error } = await supa.from('products_feed').select('*').limit(8);
       if(!error && data && data.length){
         // patrocinados aparecem primeiro — sempre com o selo "Parceiro" visível (transparência)
         const sorted = [...data].sort((a,b) => (b.is_sponsored ? 1 : 0) - (a.is_sponsored ? 1 : 0));
@@ -5869,6 +5922,138 @@
     window.location.href = `mailto:${SPONSOR_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
     statusEl.textContent = 'Abrindo seu e-mail pra concluir o envio…';
     statusEl.className = 'partner-form-status ok';
+  });
+
+  // =====================================================================
+  // MEU NEGÓCIO — autoatendimento do parceiro logado (grátis, sem espera
+  // de aprovação): cadastra o próprio petshop (RLS: owner_id = auth.uid())
+  // e gerencia os próprios produtos na vitrine (RLS: products_owner_write).
+  // =====================================================================
+  let myPetshop = null;
+
+  async function loadMyBusiness(){
+    if(!currentUser || !DB_READY) return;
+    const { data, error } = await supa.from('petshops').select('*').eq('owner_id', currentUser.id).maybeSingle();
+    if(error){ console.warn('MeuPet: não deu pra carregar meu negócio', error.message); return; }
+    myPetshop = data || null;
+    document.getElementById('myBizNoShop').style.display = myPetshop ? 'none' : '';
+    document.getElementById('myBizHasShop').style.display = myPetshop ? '' : 'none';
+    if(myPetshop){
+      document.getElementById('mbShopName').textContent = myPetshop.name;
+      document.getElementById('mbShopCity').textContent = myPetshop.city;
+      document.getElementById('mbShopBadge').textContent = myPetshop.is_partner ? '✅ ' + t('mybiz_verified_badge') : '⏳ ' + t('mybiz_pending_badge');
+      loadMyProducts();
+    }
+  }
+
+  document.getElementById('mbGeoBtn').addEventListener('click', ()=>{
+    const statusEl = document.getElementById('mbGeoStatus');
+    if(!navigator.geolocation){ statusEl.textContent = t('mybiz_geo_unsupported'); return; }
+    statusEl.textContent = t('mybiz_geo_loading');
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('mbLat').value = pos.coords.latitude;
+      document.getElementById('mbLng').value = pos.coords.longitude;
+      statusEl.textContent = '✅ ' + t('mybiz_geo_ok');
+    }, err => {
+      statusEl.textContent = t('mybiz_geo_error');
+      console.warn('MeuPet: geolocalização falhou', err.message);
+    });
+  });
+
+  document.getElementById('mbCreateSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('mbCreateStatus');
+    const name = document.getElementById('mbName').value.trim();
+    const city = document.getElementById('mbCity').value.trim();
+    const country = document.getElementById('mbCountry').value.trim() || 'Brasil';
+    const address = document.getElementById('mbAddress').value.trim() || null;
+    const lat = parseFloat(document.getElementById('mbLat').value);
+    const lng = parseFloat(document.getElementById('mbLng').value);
+    if(!name || !city || Number.isNaN(lat) || Number.isNaN(lng)){
+      statusEl.textContent = t('mybiz_create_missing');
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    const { error } = await supa.from('petshops').insert({ name, city, country, address, lat, lng, owner_id: currentUser.id });
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    statusEl.textContent = '';
+    loadMyBusiness();
+  });
+
+  async function loadMyProducts(){
+    if(!myPetshop) return;
+    const { data } = await supa.from('products').select('*').eq('petshop_id', myPetshop.id).order('created_at', { ascending:false });
+    const tbody = document.getElementById('mpTableBody');
+    tbody.innerHTML = (data || []).map(p => `
+      <tr>
+        <td>${esc(p.name)}</td>
+        <td>R$ ${(p.price_cents/100).toFixed(2)}</td>
+        <td>
+          <button class="admin-mini-btn" data-mp-action="edit" data-mp-id="${esc(p.id)}">${t('admin_editar')}</button>
+          <button class="admin-mini-btn danger" data-mp-action="delete" data-mp-id="${esc(p.id)}">${t('admin_excluir')}</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('mpSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('mpStatus');
+    if(!myPetshop) return;
+    const name = document.getElementById('mpName').value.trim();
+    const priceStr = document.getElementById('mpPrice').value;
+    const link = document.getElementById('mpLink').value.trim();
+    const image = document.getElementById('mpImage').value.trim() || null;
+    const category = document.getElementById('mpCategory').value.trim() || null;
+    const editId = document.getElementById('mpEditId').value || null;
+    const price = parseFloat(priceStr);
+    if(!name || Number.isNaN(price) || price < 0 || !link){
+      statusEl.textContent = t('mybiz_product_missing');
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    const row = {
+      petshop_id: myPetshop.id, name, price_cents: Math.round(price * 100),
+      shop_name: myPetshop.name, affiliate_url: link, image_url: image, category,
+    };
+    const { error } = editId
+      ? await supa.from('products').update(row).eq('id', editId)
+      : await supa.from('products').insert(row);
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    statusEl.textContent = '';
+    document.getElementById('mpEditId').value = '';
+    document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
+    ['mpName','mpPrice','mpLink','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+    loadMyProducts();
+  });
+
+  document.getElementById('mpTableBody').addEventListener('click', async e=>{
+    const btn = e.target.closest('[data-mp-action]');
+    if(!btn) return;
+    const id = btn.dataset.mpId;
+    if(btn.dataset.mpAction === 'delete'){
+      if(!confirm(t('mybiz_confirm_delete'))) return;
+      await supa.from('products').delete().eq('id', id);
+      loadMyProducts();
+      return;
+    }
+    if(btn.dataset.mpAction === 'edit'){
+      const { data } = await supa.from('products').select('*').eq('id', id).single();
+      if(!data) return;
+      document.getElementById('mpName').value = data.name;
+      document.getElementById('mpPrice').value = (data.price_cents/100).toFixed(2);
+      document.getElementById('mpLink').value = data.affiliate_url;
+      document.getElementById('mpImage').value = data.image_url || '';
+      document.getElementById('mpCategory').value = data.category || '';
+      document.getElementById('mpEditId').value = data.id;
+      document.getElementById('mpSubmit').textContent = t('admin_salvar');
+      document.getElementById('mpName').scrollIntoView({ behavior:'smooth', block:'center' });
+    }
   });
 
   // service worker (PWA)

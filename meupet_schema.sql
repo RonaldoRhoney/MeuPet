@@ -550,17 +550,19 @@ grant execute on function public.reveal_adoption_contact(uuid) to authenticated;
 create table public.petshops (
   id uuid primary key default uuid_generate_v4(),
   owner_id uuid references public.profiles(id) on delete set null,
-  name text not null,
-  address text,
-  city text not null,
-  country text not null,
-  lat double precision not null,
-  lng double precision not null,
+  name text not null check (char_length(name) <= 200),
+  address text check (char_length(address) <= 300),
+  city text not null check (char_length(city) <= 120),
+  country text not null check (char_length(country) <= 80),
+  lat double precision not null check (lat between -90 and 90),
+  lng double precision not null check (lng between -180 and 180),
   rating numeric default 0,
   opening_hours jsonb,
   is_partner boolean not null default false,
   partner_plan text check (partner_plan in (null,'basic','featured')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- um negócio autoatendido por conta; petshops criados pelo admin ficam com owner_id null (sem limite)
+  unique (owner_id)
 );
 
 create index idx_petshops_city on public.petshops(city, country);
@@ -609,15 +611,68 @@ create trigger trg_petshops_protect_partner
 -- ---------------------------------------------------------------------
 create table public.products (
   id uuid primary key default uuid_generate_v4(),
-  name text not null,
-  price_cents integer not null,
-  image_url text,
-  shop_name text not null,
-  affiliate_url text not null,
-  category text,
+  -- dono da vitrine (parceiro autoatendido); null = produto cadastrado pelo admin
+  petshop_id uuid references public.petshops(id) on delete cascade,
+  name text not null check (char_length(name) <= 200),
+  price_cents integer not null check (price_cents >= 0),
+  image_url text check (char_length(image_url) <= 500),
+  shop_name text not null check (char_length(shop_name) <= 200),
+  affiliate_url text not null check (char_length(affiliate_url) <= 500),
+  category text check (char_length(category) <= 60),
   is_sponsored boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+create index idx_products_petshop on public.products(petshop_id);
+
+-- is_sponsored (destaque pago) só pode ser ligado por admin — mesmo padrão de
+-- protect_partner_columns: parceiro autoatendido não pode se autopromover.
+create or replace function public.protect_product_sponsor_column()
+returns trigger language plpgsql security definer as $$
+begin
+  if public.is_admin() then
+    return new;
+  end if;
+  if TG_OP = 'INSERT' then
+    new.is_sponsored := false;
+  else
+    new.is_sponsored := old.is_sponsored;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_products_protect_sponsor
+  before insert or update on public.products
+  for each row execute procedure public.protect_product_sponsor_column();
+
+-- shop_name é só exibição — sem isso, um parceiro autoatendido poderia mandar
+-- qualquer texto (ex: "Petz Oficial") num produto pra se passar por outra loja.
+-- Quando o produto pertence a um petshop, o nome vem sempre do petshop dono.
+create or replace function public.lock_product_shop_name()
+returns trigger language plpgsql security definer as $$
+begin
+  if new.petshop_id is not null then
+    select name into new.shop_name from public.petshops where id = new.petshop_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_products_lock_shop_name
+  before insert or update on public.products
+  for each row execute procedure public.lock_product_shop_name();
+
+-- feed público (home) só mostra produtos curados pelo admin (petshop_id null)
+-- ou de parceiros já verificados (is_partner=true) — produto autoatendido de
+-- petshop ainda não verificado não aparece pra todo mundo até o admin revisar.
+create or replace view public.products_feed as
+select p.* from public.products p
+left join public.petshops s on s.id = p.petshop_id
+where p.petshop_id is null or s.is_partner = true;
+
+alter view public.products_feed set (security_invoker = true);
+grant select on public.products_feed to anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 9. GAMES (hub)
@@ -973,6 +1028,12 @@ create policy "petshops_update_own" on public.petshops for update using (auth.ui
 -- PRODUCTS / GAMES / PLANS: leitura pública, escrita só admin
 create policy "products_select_public" on public.products for select using (true);
 create policy "products_admin_write" on public.products for all using (public.is_admin()) with check (public.is_admin());
+-- parceiro autoatendido só mexe em produtos do próprio petshop (petshop_id obrigatório e dele)
+create policy "products_owner_write" on public.products for all using (
+  petshop_id is not null and exists (select 1 from public.petshops p where p.id = products.petshop_id and p.owner_id = auth.uid())
+) with check (
+  petshop_id is not null and exists (select 1 from public.petshops p where p.id = products.petshop_id and p.owner_id = auth.uid())
+);
 
 create policy "games_select_public" on public.games for select using (true);
 create policy "games_admin_write" on public.games for all using (public.is_admin()) with check (public.is_admin());
