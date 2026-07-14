@@ -696,7 +696,8 @@ create table public.partner_leads (
   contact_phone text check (char_length(contact_phone) <= 40),
   city text check (char_length(city) <= 120),
   business_type text,   -- 'petshop' | 'veterinaria' | 'produto' | 'servico' | 'outro'
-  plan_interest text not null check (plan_interest in ('basico','destaque','banner')),
+  plan_interest text,   -- legado: MeuPet virou 100% gratuito, campo não é mais preenchido pelo formulário
+  website_url text check (char_length(website_url) <= 500 and website_url ~* '^https?://'), -- link do site/Instagram do parceiro; só http(s), sem javascript:/data:
   message text check (char_length(message) <= 2000),
   status text not null default 'novo' check (status in ('novo','em_contato','aprovado','recusado')),
   created_at timestamptz not null default now()

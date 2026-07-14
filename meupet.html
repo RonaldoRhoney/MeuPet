@@ -419,11 +419,12 @@
   }
   .adopt-waiting b{font-family:'Fraunces', serif; font-size:1.15rem;}
   .btn-adopt-cta{
-    display:inline-flex; align-items:center; gap:8px; padding:14px 24px !important;
-    font-size:0.95rem !important; box-shadow:0 12px 26px -8px rgba(255,107,74,0.55);
+    display:inline-flex; align-items:center; gap:8px; padding:17px 30px !important;
+    font-size:1.08rem !important; box-shadow:0 12px 26px -8px rgba(255,107,74,0.55);
   }
   @media (max-width:700px){
-    .adopt-banner{padding:20px;}
+    .adopt-banner{padding:20px; flex-direction:column; align-items:center; text-align:center;}
+    .btn-adopt-cta{width:100%; justify-content:center;}
   }
   .adopt-rotator{display:flex; align-items:center; gap:8px; min-height:1.5em; overflow:hidden;}
   .adopt-paw-pull{display:inline-block; font-size:1.1rem; animation:adoptPawTug 1.8s ease-in-out infinite;}
@@ -604,22 +605,14 @@
   .g2{background:linear-gradient(135deg,#E1502E,#FF6B4A);}
   .g3{background:linear-gradient(135deg,#B8861F,#FFB627);}
 
-  /* ---------- PLANS ---------- */
-  .plan-card{background:var(--surface); border:1.5px solid var(--line); border-radius:22px; padding:30px 26px;}
-  .plan-card.feat{border-color:var(--coral); position:relative; box-shadow:var(--shadow-soft);}
-  .plan-card.feat::before{
-    content:"Mais popular"; position:absolute; top:-13px; left:26px; background:var(--coral); color:white;
-    font-size:0.68rem; font-weight:700; padding:5px 12px; border-radius:var(--radius-pill);
+  /* ---------- PARCEIROS (parceria gratuita) ---------- */
+  .partner-benefits{
+    max-width:520px; margin:0 auto 40px; background:rgba(255,248,240,0.08); border:1.5px solid rgba(255,248,240,0.25);
+    border-radius:22px; padding:30px 26px; text-align:center;
   }
-  .plan-card .price{font-family:'Fraunces',serif; font-size:2.1rem; margin:14px 0 4px; color:var(--heading);}
-  .plan-card .price span{font-size:0.9rem; font-family:'Plus Jakarta Sans'; color:var(--text-muted); font-weight:500;}
-  .plan-card ul{list-style:none; padding:0; margin:20px 0 26px; display:flex; flex-direction:column; gap:10px;}
-  .plan-card li{font-size:0.86rem; color:var(--text-muted-2); display:flex; gap:8px; align-items:flex-start;}
-  .plan-card li::before{content:"✓"; color:var(--sage); font-weight:700;}
-
-  /* ---------- MEUPET BUSINESS (parceiros e patrocinadores) ---------- */
-  .partner-plans-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:40px;}
-  .plan-card.partner-plan .price{color:var(--heading);}
+  .partner-benefits ul{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:10px; text-align:left;}
+  .partner-benefits li{font-size:0.92rem; color:#FFF8F0; display:flex; gap:8px; align-items:flex-start;}
+  .partner-benefits li::before{content:"✓"; color:var(--mustard); font-weight:700;}
   .partner-form{
     background:var(--paper); border-radius:24px; padding:32px 34px; max-width:620px; margin:0 auto;
     box-shadow:0 30px 60px -30px rgba(0,0,0,0.4);
@@ -738,7 +731,6 @@
     font-family:inherit; font-size:0.88rem; resize:vertical;
   }
   @media (max-width:720px){
-    .partner-plans-grid{grid-template-columns:1fr;}
     .partner-form-grid{grid-template-columns:1fr;}
     .partner-form{padding:26px 22px;}
   }
@@ -872,7 +864,7 @@
     .carteirinha-stage{margin-top:20px;}
     .feed-grid{grid-template-columns:repeat(2,1fr);}
     .adopt-grid, .market-grid{grid-template-columns:repeat(2,1fr);}
-    .games-grid, .partner-plans-grid{grid-template-columns:1fr;}
+    .games-grid{grid-template-columns:1fr;}
     .geo-panel{grid-template-columns:1fr;}
     .footer-top{grid-template-columns:1fr 1fr;}
   }
@@ -907,7 +899,7 @@
       <a href="#cuidados" data-i18n="nav_cuidados">Cuidados</a>
       <a href="#games" data-i18n="nav_games">Games</a>
       <a href="#videos" data-i18n="nav_videos">Vídeos</a>
-      <a href="#parceiros" data-i18n="nav_parceiros">Anuncie no MeuPet</a>
+      <a href="#parceiros" data-i18n="nav_parceiros">Seja Parceiro</a>
       <a href="#feedback" data-i18n="nav_feedback">Feedback</a>
       <a href="#admin" id="navAdminLink" data-i18n="nav_admin" style="display:none;">Admin</a>
     </nav>
@@ -1172,54 +1164,31 @@
   <section class="block" id="parceiros" style="background:var(--teal);">
     <div class="wrap">
       <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
-        <span class="kicker" style="color:var(--mustard);" data-i18n="business_kicker">MeuPet Business</span>
-        <h2 style="color:#FFF8F0;" data-i18n="business_title">Coloque seu negócio na frente de quem tem pet</h2>
-        <p style="color:rgba(255,248,240,0.75);" data-i18n="business_desc">Petshops, clínicas, marcas e produtos — apareça no mapa, na vitrine e no feed de milhares de tutores. Preços de referência abaixo; cobrança combinada direto com nosso time (Pix ou boleto).</p>
+        <span class="kicker" style="color:var(--mustard);" data-i18n="business_kicker">Parceiros</span>
+        <h2 style="color:#FFF8F0;" data-i18n="business_title">Coloque seu negócio na frente de quem tem pet — de graça</h2>
+        <p style="color:rgba(255,248,240,0.75);" data-i18n="business_desc">Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça no mapa, na vitrine e no feed de milhares de tutores.</p>
       </div>
 
-      <div class="partner-plans-grid">
-        <div class="plan-card partner-plan">
-          <span class="kicker">Básico</span>
-          <div class="price">R$ 9,00<span>/mês</span></div>
-          <ul>
-            <li>Pin no mapa de petshops</li>
-            <li>Vitrine própria na Loja</li>
-            <li>Selo de parceiro verificado</li>
-          </ul>
-          <button class="btn-block partner-choose" style="background:#1B2B2A;" data-plan="basico">Quero esse plano</button>
-        </div>
-        <div class="plan-card partner-plan feat">
-          <span class="kicker">Destaque</span>
-          <div class="price">R$ 19,00<span>/mês</span></div>
-          <ul>
-            <li>Tudo do Básico</li>
-            <li>Prioridade no topo do mapa e da lista</li>
-            <li>Badge "Destaque" diferenciado</li>
-            <li>Até 6 produtos na vitrine</li>
-          </ul>
-          <button class="btn-block partner-choose" style="background:var(--coral);" data-plan="destaque">Quero esse plano</button>
-        </div>
-        <div class="plan-card partner-plan">
-          <span class="kicker">Banner patrocinado</span>
-          <div class="price">R$ 49,00<span>/mês</span></div>
-          <ul>
-            <li>Banner rotativo no Feed e nos Petshops</li>
-            <li>Relatório real de impressões e cliques</li>
-            <li>Ideal pra marcas (ração, saúde, serviços)</li>
-          </ul>
-          <button class="btn-block partner-choose" style="background:#1B2B2A;" data-plan="banner">Quero esse plano</button>
-        </div>
+      <div class="partner-benefits">
+        <ul>
+          <li data-i18n="business_benefit_1">Pin no mapa de petshops</li>
+          <li data-i18n="business_benefit_2">Vitrine própria na Loja</li>
+          <li data-i18n="business_benefit_3">Selo de parceiro verificado</li>
+          <li data-i18n="business_benefit_4">Link direto pro site/Instagram do seu negócio</li>
+        </ul>
+        <button type="button" class="btn btn-primary partner-cta" id="partnerCta" style="width:100%; padding:16px; font-size:1.05rem;" data-i18n="business_cta">Quero ser parceiro — grátis</button>
       </div>
 
       <form id="partnerForm" class="partner-form">
         <h3 data-i18n="business_form_title">Cadastre seu negócio</h3>
-        <p class="sub" data-i18n="business_form_sub">Preenchemos sua solicitação, nosso time entra em contato pra combinar a ativação e a cobrança.</p>
+        <p class="sub" data-i18n="business_form_sub">Parceria 100% gratuita — preenche o formulário e nosso time entra em contato pra ativar.</p>
         <div class="partner-form-grid">
           <input type="text" id="pfBusiness" placeholder="Nome do negócio" data-i18n-placeholder="business_ph_nome" required>
           <input type="text" id="pfContact" placeholder="Seu nome" data-i18n-placeholder="ph_seu_nome" required>
           <input type="email" id="pfEmail" placeholder="E-mail" data-i18n-placeholder="ph_email" required>
           <input type="tel" id="pfPhone" placeholder="WhatsApp (opcional)" data-i18n-placeholder="ph_whatsapp_opcional">
           <input type="text" id="pfCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade">
+          <input type="url" id="pfLink" placeholder="Link do site/Instagram (opcional)" data-i18n-placeholder="business_ph_link">
           <select id="pfType" aria-label="Tipo de negócio">
             <option value="petshop" data-i18n="business_type_petshop">Petshop</option>
             <option value="veterinaria" data-i18n="business_type_vet">Clínica veterinária</option>
@@ -1228,11 +1197,6 @@
             <option value="outro" data-i18n="opt_outro">Outro</option>
           </select>
         </div>
-        <select id="pfPlan" required aria-label="Plano de interesse">
-          <option value="basico">Plano Básico — R$ 9,00/mês</option>
-          <option value="destaque">Plano Destaque — R$ 19,00/mês</option>
-          <option value="banner">Banner patrocinado — R$ 49,00/mês</option>
-        </select>
         <textarea id="pfMessage" placeholder="Conte um pouco sobre o seu negócio (opcional)" data-i18n-placeholder="business_ph_message" rows="3"></textarea>
         <button type="submit" class="btn btn-primary" id="pfSubmit" style="width:100%; padding:14px;" data-i18n="business_form_submit">Enviar solicitação</button>
         <p id="pfStatus" class="partner-form-status"></p>
@@ -1346,7 +1310,7 @@
                   <th data-i18n="admin_leads_col_contact">Contato</th>
                   <th data-i18n="admin_leads_col_city">Cidade</th>
                   <th data-i18n="admin_leads_col_type">Tipo</th>
-                  <th data-i18n="admin_leads_col_plan">Plano de interesse</th>
+                  <th data-i18n="admin_leads_col_plan">Link</th>
                   <th data-i18n="admin_leads_col_status">Status</th>
                   <th data-i18n="admin_leads_col_actions">Ações</th>
                 </tr>
@@ -1952,7 +1916,7 @@
   const I18N = {
     nav_feed:{pt:'Feed',en:'Feed'}, nav_adocao:{pt:'Adoção',en:'Adoption'},
     nav_petshops:{pt:'Petshops',en:'Pet Shops'}, nav_games:{pt:'Games',en:'Games'}, nav_videos:{pt:'Vídeos',en:'Videos'},
-    nav_parceiros:{pt:'Anuncie no MeuPet',en:'Advertise on MeuPet'}, nav_entrar:{pt:'Entrar',en:'Log in'},
+    nav_parceiros:{pt:'Seja Parceiro',en:'Become a Partner'}, nav_entrar:{pt:'Entrar',en:'Log in'},
     nav_meu_pet:{pt:'Meu Pet',en:'My Pet'},
     nav_criar_carteirinha:{pt:'Criar carteirinha',en:'Create pet ID'}, nav_abrir_menu:{pt:'Abrir menu',en:'Open menu'},
 
@@ -2032,12 +1996,18 @@
     videos_erro:{pt:'Não deu pra carregar esse vídeo agora 🐾',en:"Couldn't load this video right now 🐾"},
 
 
-    business_kicker:{pt:'MeuPet Business',en:'MeuPet Business'}, business_title:{pt:'Coloque seu negócio na frente de quem tem pet',en:'Put your business in front of pet parents'},
-    business_desc:{pt:'Petshops, clínicas, marcas e produtos — apareça no mapa, na vitrine e no feed de milhares de tutores. Preços de referência abaixo; cobrança combinada direto com nosso time (Pix ou boleto).',
-      en:'Pet shops, clinics, brands and products — appear on the map, in the showcase and in the feed of thousands of pet parents. Reference prices below; billing arranged directly with our team.'},
+    business_kicker:{pt:'Parceiros',en:'Partners'}, business_title:{pt:'Coloque seu negócio na frente de quem tem pet — de graça',en:'Put your business in front of pet parents — for free'},
+    business_desc:{pt:'Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça no mapa, na vitrine e no feed de milhares de tutores.',
+      en:'Pet shops, clinics, brands and products: while MeuPet grows, every partnership is 100% free. Register your business and appear on the map, in the showcase and in the feed of thousands of pet parents.'},
+    business_benefit_1:{pt:'Pin no mapa de petshops',en:'Pin on the pet shop map'},
+    business_benefit_2:{pt:'Vitrine própria na Loja',en:'Your own showcase in the Store'},
+    business_benefit_3:{pt:'Selo de parceiro verificado',en:'Verified partner badge'},
+    business_benefit_4:{pt:'Link direto pro site/Instagram do seu negócio',en:'Direct link to your business website/Instagram'},
+    business_cta:{pt:'Quero ser parceiro — grátis',en:'I want to be a partner — free'},
     business_form_title:{pt:'Cadastre seu negócio',en:'Register your business'},
-    business_form_sub:{pt:'Preenchemos sua solicitação, nosso time entra em contato pra combinar a ativação e a cobrança.',en:"We'll log your request and our team will reach out to arrange activation and billing."},
+    business_form_sub:{pt:'Parceria 100% gratuita — preenche o formulário e nosso time entra em contato pra ativar.',en:"100% free partnership — fill out the form and our team will reach out to activate it."},
     business_ph_nome:{pt:'Nome do negócio',en:'Business name'},
+    business_ph_link:{pt:'Link do site/Instagram (opcional)',en:'Website/Instagram link (optional)'},
     business_type_petshop:{pt:'Petshop',en:'Pet shop'}, business_type_vet:{pt:'Clínica veterinária',en:'Veterinary clinic'},
     business_type_produto:{pt:'Marca de produto',en:'Product brand'}, business_type_servico:{pt:'Serviço (banho, adestramento...)',en:'Service (grooming, training...)'},
     business_ph_message:{pt:'Conte um pouco sobre o seu negócio (opcional)',en:'Tell us a bit about your business (optional)'},
@@ -2278,7 +2248,7 @@
     admin_leads_col_contact:{pt:'Contato',en:'Contact'},
     admin_leads_col_city:{pt:'Cidade',en:'City'},
     admin_leads_col_type:{pt:'Tipo',en:'Type'},
-    admin_leads_col_plan:{pt:'Plano de interesse',en:'Plan of interest'},
+    admin_leads_col_plan:{pt:'Link',en:'Link'},
     admin_leads_col_status:{pt:'Status',en:'Status'},
     admin_leads_col_actions:{pt:'Ações',en:'Actions'},
     admin_leads_empty:{pt:'Nenhum pedido de parceria ainda.',en:'No partnership requests yet.'},
@@ -2380,6 +2350,14 @@
     return String(str ?? '').replace(/[&<>"']/g, c => ({
       '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
     }[c]));
+  }
+  // só permite renderizar como href clicável se o protocolo for http(s) —
+  // bloqueia javascript:/data: injetados via insert direto na API (bypassa o type="url" do form)
+  function safeHttpUrl(str){
+    try{
+      const u = new URL(String(str ?? '').trim());
+      return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+    }catch{ return null; }
   }
 
   // ícone de compartilhar único pro App inteiro (seta estilizada, mesma
@@ -5186,7 +5164,7 @@
         <td>${esc(l.contact_name)}<br><span style="color:var(--text-muted); font-size:0.78rem;">${esc(l.contact_email)}${l.contact_phone ? ' · ' + esc(l.contact_phone) : ''}</span></td>
         <td>${esc(l.city || '—')}</td>
         <td>${esc(l.business_type)}</td>
-        <td>${esc(l.plan_interest)}</td>
+        <td>${safeHttpUrl(l.website_url) ? `<a href="${esc(safeHttpUrl(l.website_url))}" target="_blank" rel="noopener">${esc(l.website_url)}</a>` : (l.website_url ? esc(l.website_url) : '—')}</td>
         <td>${esc(l.status)}</td>
         <td>
           ${l.status !== 'aprovado' ? `<button class="admin-mini-btn" data-lead-action="approve" data-lead-id="${esc(l.id)}">${t('admin_aprovar')}</button>` : ''}
@@ -5827,17 +5805,13 @@
   loadSponsorSlot('adSlotPetshops', 'banner_petshops');
 
   // =====================================================================
-  // MEUPET BUSINESS — formulário de parceiros/patrocinadores (partner_leads).
-  // Nunca ativa o parceiro/patrocínio sozinho: só cria um "lead" — a ativação
-  // real (petshops.is_partner / linha em sponsors) é sempre manual, depois do
-  // time comercial combinar e confirmar o pagamento.
+  // PARCEIROS — formulário de parceria gratuita (partner_leads).
+  // Nunca ativa o parceiro sozinho: só cria um "lead" — a ativação real
+  // (petshops.is_partner) é sempre manual, feita pelo time depois de revisar.
   // =====================================================================
-  document.querySelectorAll('.partner-choose').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.getElementById('pfPlan').value = btn.dataset.plan;
-      document.getElementById('partnerForm').scrollIntoView({ behavior:'smooth', block:'center' });
-      document.getElementById('pfBusiness').focus();
-    });
+  document.getElementById('partnerCta').addEventListener('click', ()=>{
+    document.getElementById('partnerForm').scrollIntoView({ behavior:'smooth', block:'center' });
+    document.getElementById('pfBusiness').focus();
   });
 
   document.getElementById('partnerForm').addEventListener('submit', async e=>{
@@ -5851,7 +5825,7 @@
       contact_phone: document.getElementById('pfPhone').value.trim() || null,
       city: document.getElementById('pfCity').value.trim() || null,
       business_type: document.getElementById('pfType').value,
-      plan_interest: document.getElementById('pfPlan').value,
+      website_url: document.getElementById('pfLink').value.trim() || null,
       message: document.getElementById('pfMessage').value.trim() || null,
     };
     if(!lead.business_name || !lead.contact_name || !lead.contact_email){
@@ -5874,7 +5848,7 @@
         console.warn('MeuPet: falha ao enviar partner_lead', error.message);
         return;
       }
-      statusEl.textContent = 'Recebemos seu pedido! Nosso time entra em contato pra combinar a ativação e a cobrança (Pix ou boleto).';
+      statusEl.textContent = 'Recebemos seu pedido! Nosso time entra em contato pra ativar sua parceria — sem custo.';
       statusEl.className = 'partner-form-status ok';
       e.target.reset();
       return;
@@ -5888,10 +5862,9 @@
       statusEl.className = 'partner-form-status err';
       return;
     }
-    const planLabel = { basico:'Básico (R$ 9,00/mês)', destaque:'Destaque (R$ 19,00/mês)', banner:'Banner patrocinado (R$ 49,00/mês)' }[lead.plan_interest] || lead.plan_interest;
-    const subject = encodeURIComponent(`MeuPet Business — ${lead.business_name}`);
+    const subject = encodeURIComponent(`MeuPet Parceiros — ${lead.business_name}`);
     const body = encodeURIComponent(
-      `Negócio: ${lead.business_name}\nContato: ${lead.contact_name}\nE-mail: ${lead.contact_email}\nWhatsApp: ${lead.contact_phone || '-'}\nCidade: ${lead.city || '-'}\nTipo: ${lead.business_type}\nPlano de interesse: ${planLabel}\nMensagem: ${lead.message || '-'}`
+      `Negócio: ${lead.business_name}\nContato: ${lead.contact_name}\nE-mail: ${lead.contact_email}\nWhatsApp: ${lead.contact_phone || '-'}\nCidade: ${lead.city || '-'}\nTipo: ${lead.business_type}\nLink: ${lead.website_url || '-'}\nMensagem: ${lead.message || '-'}`
     );
     window.location.href = `mailto:${SPONSOR_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
     statusEl.textContent = 'Abrindo seu e-mail pra concluir o envio…';
