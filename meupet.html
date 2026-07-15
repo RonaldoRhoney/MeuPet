@@ -638,17 +638,19 @@
   .partner-form h3{font-size:1.25rem; color:var(--heading); margin-bottom:4px;}
   .partner-form .sub{font-size:0.84rem; color:var(--text-muted); margin-bottom:20px;}
   .partners-carousel{
-    max-width:420px; margin:0 auto; min-height:110px; display:flex; align-items:center; justify-content:center;
+    display:flex; gap:14px; overflow-x:auto; padding:6px 4px 14px; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
   }
+  .partners-carousel::-webkit-scrollbar{height:6px;}
+  .partners-carousel::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
   .partners-carousel-card{
-    width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:20px;
-    padding:22px 26px; text-align:center; opacity:0; transform:translateY(8px);
-    transition:opacity .5s ease, transform .5s ease, border-color .2s ease; cursor:pointer;
+    flex:0 0 auto; width:168px; scroll-snap-align:start; background:var(--surface); border:1.5px solid var(--line);
+    border-radius:20px; padding:20px 16px; text-align:center; transition:border-color .2s ease, transform .15s ease; cursor:pointer;
   }
-  .partners-carousel-card:hover, .partners-carousel-card:focus-visible{border-color:var(--coral);}
-  .partners-carousel-card.show{opacity:1; transform:translateY(0);}
+  .partners-carousel-card:hover, .partners-carousel-card:focus-visible{border-color:var(--coral); transform:translateY(-2px);}
   .partners-carousel-card .pc-icon{font-size:1.6rem; margin-bottom:6px;}
-  .partners-carousel-card .pc-name{font-family:'Fraunces',serif; font-size:1.15rem; color:var(--heading);}
+  .partners-carousel-card .pc-name{font-family:'Fraunces',serif; font-size:1rem; color:var(--heading); line-height:1.25;}
+  @media (max-width:600px){ .partners-carousel-card{width:148px;} }
   .pd-products-list{display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto;}
   .pd-product-item{display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:8px 10px;}
   .pd-product-item img{width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0;}
@@ -6100,10 +6102,9 @@
   loadMarket();
 
   // CARROSSEL DE PARCEIROS — só negócios já verificados (is_partner=true),
-  // ordem embaralhada, troca sozinha a cada 2.1s (ver rotatePartnersCarousel).
+  // prateleira horizontal com todos os cards visíveis, ordem embaralhada a
+  // cada carregamento da página; a pessoa rola pra ver mais (sem troca automática).
   const businessTypeIcon = { petshop:'🐾', veterinaria:'🩺', produto:'📦', servico:'✂️', outro:'🏪', pet_sitter:'🏠', adestrador:'🎾', banho_tosa:'🛁' };
-  let partnersCarouselList = [];
-  let partnersCarouselIndex = 0;
 
   async function loadPartnersCarousel(){
     if(!DB_READY) return;
@@ -6117,27 +6118,19 @@
     }
     if(error || !data || !data.length) return;
     // Fisher-Yates — ordem aleatória a cada carregamento da página
-    partnersCarouselList = [...data];
-    for(let i = partnersCarouselList.length - 1; i > 0; i--){
+    const shuffled = [...data];
+    for(let i = shuffled.length - 1; i > 0; i--){
       const j = Math.floor(Math.random() * (i + 1));
-      [partnersCarouselList[i], partnersCarouselList[j]] = [partnersCarouselList[j], partnersCarouselList[i]];
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     document.getElementById('partnersCarouselSection').style.display = '';
-    renderPartnersCarouselCard();
-    setInterval(rotatePartnersCarousel, 2100);
-  }
-
-  function renderPartnersCarouselCard(){
-    const p = partnersCarouselList[partnersCarouselIndex];
     const el = document.getElementById('partnersCarousel');
-    const icon = businessTypeIcon[p.business_type] || '🐾';
-    el.innerHTML = `
-      <div class="partners-carousel-card" id="pcCard" data-partner-id="${esc(p.id)}" role="button" tabindex="0">
-        <div class="pc-icon">${icon}</div>
+    el.innerHTML = shuffled.map(p => `
+      <div class="partners-carousel-card" data-partner-id="${esc(p.id)}" role="button" tabindex="0">
+        <div class="pc-icon">${businessTypeIcon[p.business_type] || '🐾'}</div>
         <div class="pc-name">${esc(p.name)}</div>
         <div class="pc-meta">${esc(p.city)} · ✅ ${t('mybiz_verified_badge')}</div>
-      </div>`;
-    requestAnimationFrame(()=> requestAnimationFrame(()=> document.getElementById('pcCard')?.classList.add('show')));
+      </div>`).join('');
   }
 
   document.getElementById('partnersCarousel').addEventListener('click', e=>{
@@ -6195,15 +6188,6 @@
   document.getElementById('partnerDetailModal').addEventListener('click', e=>{
     if(e.target.id === 'partnerDetailModal') document.getElementById('partnerDetailModal').classList.remove('open');
   });
-
-  function rotatePartnersCarousel(){
-    const card = document.getElementById('pcCard');
-    if(card) card.classList.remove('show');
-    setTimeout(()=>{
-      partnersCarouselIndex = (partnersCarouselIndex + 1) % partnersCarouselList.length;
-      renderPartnersCarouselCard();
-    }, 500);
-  }
 
   loadPartnersCarousel();
 
