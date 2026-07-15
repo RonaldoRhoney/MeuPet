@@ -440,7 +440,7 @@ create table public.adoption_listings (
   id uuid primary key default uuid_generate_v4(),
   created_by uuid not null references public.profiles(id) on delete cascade,
   pet_name text not null,
-  species text not null,
+  species text not null check (char_length(species) <= 40),
   breed text,
   description text,
   photo_url text,

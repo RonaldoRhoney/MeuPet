@@ -1206,9 +1206,13 @@
               <option value="servico" data-i18n="business_type_servico">Serviço (banho, adestramento...)</option>
               <option value="outro" data-i18n="opt_outro">Outro</option>
             </select>
-            <input type="text" id="mbCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade" required>
+            <select id="mbCountry" aria-label="País">
+              <option value="Brasil">🇧🇷 Brasil</option>
+              <option value="_outro_">🌎 Outro país</option>
+            </select>
+            <input type="text" id="mbCountryManual" placeholder="Nome do país" style="display:none;">
             <select id="mbState" aria-label="Estado">
-              <option value="">Estado (opcional)</option>
+              <option value="">Escolha o estado</option>
               <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
               <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
               <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
@@ -1218,9 +1222,11 @@
               <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
               <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
               <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
-              <option value="_outro_">Outro / fora do Brasil</option>
             </select>
-            <input type="text" id="mbCountry" placeholder="País" value="Brasil" data-i18n-placeholder="admin_ph_petshop_country">
+            <select id="mbCity" aria-label="Cidade" disabled>
+              <option value="">Escolha o estado primeiro</option>
+            </select>
+            <input type="text" id="mbCityManual" placeholder="Cidade" style="display:none;">
             <input type="text" id="mbAddress" placeholder="Endereço (opcional)" data-i18n-placeholder="admin_ph_petshop_address">
           </div>
           <input type="hidden" id="mbLat" value=""><input type="hidden" id="mbLng" value="">
@@ -1642,6 +1648,7 @@
         <option value="gato" data-i18n="species_gato_opt">🐱 Gato</option>
         <option value="outro" data-i18n="opt_outro">🐾 Outro</option>
       </select>
+      <input type="text" placeholder="Qual espécie? (ex: coelho, pássaro...)" id="adoptSpeciesOther" data-i18n-placeholder="ph_qual_especie" maxlength="40" style="display:none;">
       <input type="text" placeholder="Raça — escolha ou digite uma nova" id="adoptBreed" data-i18n-placeholder="ph_raca" list="adoptBreedList" autocomplete="off">
       <datalist id="adoptBreedList"></datalist>
 
@@ -2144,6 +2151,7 @@
     pet_settings_shortcut:{pt:'⚙️ Configurações da conta',en:'⚙️ Account settings'}, pet_excluir:{pt:'🗑️ Excluir carteirinha',en:'🗑️ Delete pet ID'},
     species_cao_opt:{pt:'🐶 Cachorro',en:'🐶 Dog'}, species_gato_opt:{pt:'🐱 Gato',en:'🐱 Cat'},
     ph_nome_pet:{pt:'Nome do pet',en:"Pet's name"}, ph_raca:{pt:'Raça — escolha ou digite uma nova',en:'Breed — choose or type a new one'},
+    ph_qual_especie:{pt:'Qual espécie? (ex: coelho, pássaro...)',en:'Which species? (e.g. rabbit, bird...)'},
     ph_idade_anos:{pt:'Idade (anos)',en:'Age (years)'}, ph_peso_kg:{pt:'Peso (kg)',en:'Weight (kg)'},
     sex_opcional:{pt:'Sexo (opcional)',en:'Sex (optional)'}, sex_macho:{pt:'Macho',en:'Male'}, sex_femea:{pt:'Fêmea',en:'Female'},
     ph_cor_pelagem:{pt:'Cor/pelagem (opcional)',en:'Color/coat (optional)'}, ph_conte_pet:{pt:'Conte um pouco sobre seu pet (opcional)',en:'Tell us a bit about your pet (optional)'},
@@ -5622,6 +5630,10 @@
   let adoptPhotoFileSelected = null;
 
   document.getElementById('adoptSpecies').addEventListener('change', e=>{
+    const isOther = e.target.value === 'outro';
+    const otherInput = document.getElementById('adoptSpeciesOther');
+    otherInput.style.display = isOther ? '' : 'none';
+    if(isOther) otherInput.focus(); else otherInput.value = '';
     loadBreedList(e.target.value, 'adoptBreedList');
   });
 
@@ -5640,6 +5652,8 @@
     adoptEditingId = editId || null;
     document.getElementById('adoptPetName').value = '';
     document.getElementById('adoptSpecies').value = 'cao';
+    document.getElementById('adoptSpeciesOther').value = '';
+    document.getElementById('adoptSpeciesOther').style.display = 'none';
     document.getElementById('adoptBreed').value = '';
     document.getElementById('adoptAge').value = '';
     document.getElementById('adoptWeight').value = '';
@@ -5674,7 +5688,10 @@
       ]);
       if(!error && listing){
         document.getElementById('adoptPetName').value = listing.pet_name || '';
-        document.getElementById('adoptSpecies').value = listing.species || 'cao';
+        const knownSpecies = ['cao','gato'].includes(listing.species) ? listing.species : (listing.species ? 'outro' : 'cao');
+        document.getElementById('adoptSpecies').value = knownSpecies;
+        document.getElementById('adoptSpeciesOther').style.display = knownSpecies === 'outro' ? '' : 'none';
+        document.getElementById('adoptSpeciesOther').value = knownSpecies === 'outro' ? listing.species : '';
         document.getElementById('adoptBreed').value = listing.breed || '';
         document.getElementById('adoptAge').value = listing.age_years ?? '';
         document.getElementById('adoptWeight').value = listing.weight_kg ?? '';
@@ -5706,7 +5723,9 @@
     const statusEl = document.getElementById('adoptFormStatus');
     const submitBtn = document.getElementById('adoptFormSubmit');
     const pet_name = document.getElementById('adoptPetName').value.trim();
-    const species = document.getElementById('adoptSpecies').value;
+    const speciesSel = document.getElementById('adoptSpecies').value;
+    const speciesOther = document.getElementById('adoptSpeciesOther').value.trim();
+    const species = (speciesSel === 'outro' && speciesOther) ? speciesOther : speciesSel;
     const breed = document.getElementById('adoptBreed').value.trim() || null;
     const ageRaw = document.getElementById('adoptAge').value;
     const age_years = ageRaw ? parseFloat(ageRaw) : null;
@@ -6055,13 +6074,60 @@
 
   // catálogo compartilhado — cresce sozinho: todo produto que um parceiro
   // cadastra vira sugestão pra próxima pessoa escolher em vez de digitar.
+  // Além disso, uma lista inicial "semente" por tipo de negócio garante que
+  // até quem é o primeiro veterinária/petshop/etc. já veja sugestões
+  // relevantes, em vez de uma lista vazia ou cheia de itens de outro ramo.
   let productCatalog = [];
 
+  const catalogSeeds = {
+    petshop: [
+      { name:'Ração Premium 1kg', price_cents:2500, category:'Alimentação', item_type:'produto' },
+      { name:'Ração Premium 5kg', price_cents:9000, category:'Alimentação', item_type:'produto' },
+      { name:'Areia Higiênica 4kg', price_cents:1800, category:'Higiene', item_type:'produto' },
+      { name:'Brinquedo Mordedor', price_cents:1500, category:'Brinquedos', item_type:'produto' },
+      { name:'Coleira Ajustável', price_cents:3500, category:'Acessórios', item_type:'produto' },
+      { name:'Shampoo Pet 500ml', price_cents:2800, category:'Higiene', item_type:'produto' },
+    ],
+    veterinaria: [
+      { name:'Consulta Veterinária', price_cents:12000, category:'Consulta', item_type:'servico' },
+      { name:'Vacina V10', price_cents:9000, category:'Vacinação', item_type:'servico' },
+      { name:'Vacina Antirrábica', price_cents:6000, category:'Vacinação', item_type:'servico' },
+      { name:'Exame de Sangue', price_cents:8000, category:'Exames', item_type:'servico' },
+      { name:'Castração', price_cents:35000, category:'Cirurgia', item_type:'servico' },
+      { name:'Microchipagem', price_cents:15000, category:'Identificação', item_type:'servico' },
+    ],
+    produto: [
+      { name:'Ração Natural 1kg', price_cents:3500, category:'Alimentação', item_type:'produto' },
+      { name:'Petisco Natural 100g', price_cents:1800, category:'Petiscos', item_type:'produto' },
+      { name:'Suplemento Vitamínico', price_cents:4500, category:'Saúde', item_type:'produto' },
+      { name:'Areia Ecológica 4kg', price_cents:2200, category:'Higiene', item_type:'produto' },
+    ],
+    servico: [
+      { name:'Banho e Tosa', price_cents:6000, category:'Estética', item_type:'servico' },
+      { name:'Tosa Higiênica', price_cents:4000, category:'Estética', item_type:'servico' },
+      { name:'Hidratação', price_cents:3500, category:'Estética', item_type:'servico' },
+      { name:'Adestramento (sessão)', price_cents:8000, category:'Adestramento', item_type:'servico' },
+      { name:'Táxi Dog', price_cents:2500, category:'Transporte', item_type:'servico' },
+    ],
+  };
+
   async function loadProductCatalog(){
-    const { data } = await supa.from('products').select('name,price_cents,category,image_url,item_type')
+    const bizType = myPetshop?.business_type;
+    // tenta filtrar pelo mesmo tipo de negócio (embed products→petshops); se
+    // a coluna business_type ainda não existir nesse banco, cai pro catálogo
+    // geral sem filtro em vez de quebrar a lista inteira
+    let query = supa.from('products')
+      .select('name,price_cents,category,image_url,item_type,petshops!inner(business_type)')
       .not('petshop_id', 'is', null).order('created_at', { ascending:false }).limit(300);
+    if(bizType) query = query.eq('petshops.business_type', bizType);
+    let { data, error } = await query;
+    if(error){
+      ({ data } = await supa.from('products').select('name,price_cents,category,image_url,item_type')
+        .not('petshop_id', 'is', null).order('created_at', { ascending:false }).limit(300));
+    }
+    const seed = bizType ? (catalogSeeds[bizType] || []) : [];
     const byName = new Map();
-    (data || []).forEach(p => { const k = p.item_type + ':' + p.name.toLowerCase(); if(!byName.has(k)) byName.set(k, p); });
+    [...seed, ...(data || [])].forEach(p => { const k = p.item_type + ':' + p.name.toLowerCase(); if(!byName.has(k)) byName.set(k, p); });
     productCatalog = [...byName.values()].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
     const pick = document.getElementById('mpPick');
     pick.innerHTML = `<option value="">${t('mybiz_pick_placeholder')}</option>`
@@ -6092,6 +6158,44 @@
     document.getElementById('mpLink').focus();
   });
 
+  // País/Estado/Cidade por escolha em vez de digitação — a cidade vem da
+  // API pública do IBGE (municípios reais do estado escolhido), sem chave.
+  document.getElementById('mbCountry').addEventListener('change', e=>{
+    const isOutro = e.target.value === '_outro_';
+    document.getElementById('mbCountryManual').style.display = isOutro ? '' : 'none';
+    document.getElementById('mbState').style.display = isOutro ? 'none' : '';
+    document.getElementById('mbCity').style.display = isOutro ? 'none' : '';
+    document.getElementById('mbCityManual').style.display = isOutro ? '' : 'none';
+    if(isOutro) document.getElementById('mbCountryManual').focus();
+  });
+
+  document.getElementById('mbState').addEventListener('change', async e=>{
+    const uf = e.target.value;
+    const citySel = document.getElementById('mbCity');
+    if(!uf){ citySel.innerHTML = `<option value="">Escolha o estado primeiro</option>`; citySel.disabled = true; return; }
+    citySel.disabled = true;
+    citySel.innerHTML = `<option value="">Carregando cidades…</option>`;
+    try{
+      const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+      const cidades = await res.json();
+      citySel.innerHTML = `<option value="">Escolha a cidade</option>`
+        + cidades.map(c => `<option value="${esc(c.nome)}">${esc(c.nome)}</option>`).join('')
+        + `<option value="_manual_">✍️ Não achei, digitar</option>`;
+      citySel.disabled = false;
+    }catch(err){
+      console.warn('MeuPet: falha ao buscar municípios do IBGE', err.message);
+      citySel.innerHTML = `<option value="_manual_" selected>✍️ Digitar cidade</option>`;
+      citySel.disabled = false;
+      citySel.dispatchEvent(new Event('change'));
+    }
+  });
+
+  document.getElementById('mbCity').addEventListener('change', e=>{
+    const manual = e.target.value === '_manual_';
+    document.getElementById('mbCityManual').style.display = manual ? '' : 'none';
+    if(manual) document.getElementById('mbCityManual').focus();
+  });
+
   document.getElementById('mbGeoBtn').addEventListener('click', ()=>{
     const statusEl = document.getElementById('mbGeoStatus');
     if(!navigator.geolocation){ statusEl.textContent = t('mybiz_geo_unsupported'); return; }
@@ -6110,10 +6214,14 @@
     const statusEl = document.getElementById('mbCreateStatus');
     const name = document.getElementById('mbName').value.trim();
     const businessType = document.getElementById('mbType').value;
-    const city = document.getElementById('mbCity').value.trim();
-    const stateVal = document.getElementById('mbState').value;
-    const state = (stateVal && stateVal !== '_outro_') ? stateVal : null;
-    const country = document.getElementById('mbCountry').value.trim() || 'Brasil';
+    const countrySel = document.getElementById('mbCountry').value;
+    const isForeign = countrySel === '_outro_';
+    const country = isForeign ? document.getElementById('mbCountryManual').value.trim() : 'Brasil';
+    const state = isForeign ? null : (document.getElementById('mbState').value || null);
+    const cityPick = document.getElementById('mbCity').value;
+    const city = isForeign || cityPick === '_manual_'
+      ? document.getElementById('mbCityManual').value.trim()
+      : cityPick;
     const address = document.getElementById('mbAddress').value.trim() || null;
     const lat = parseFloat(document.getElementById('mbLat').value);
     const lng = parseFloat(document.getElementById('mbLng').value);
