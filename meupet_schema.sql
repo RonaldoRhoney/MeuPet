@@ -595,12 +595,14 @@ $$;
 -- trava um dono comum conseguiria se auto-declarar "Parceiro" (is_partner=true)
 -- sem pagar — o selo de patrocínio do MeuPet Business só pode vir de um admin,
 -- depois do pagamento combinado no fluxo de partner_leads.
+-- NÃO é security definer de propósito: dentro de uma função security
+-- definer, current_user vira o DONO da função (ex: postgres), não quem
+-- está chamando — current_user='service_role' nunca seria true e o bug
+-- voltaria. is_admin() (chamada abaixo) continua security definer por
+-- conta própria, então ela funciona normalmente mesmo sem essa aqui ser.
 create or replace function public.protect_partner_columns()
-returns trigger language plpgsql security definer as $$
+returns trigger language plpgsql as $$
 begin
-  -- current_user = 'service_role' também passa (mesmo padrão de
-  -- protect_profile_plan): automação/backend confiável, sem auth.uid()
-  -- associado, então is_admin() sozinho sempre bloquearia esses casos
   if public.is_admin() or current_user = 'service_role' then
     return new;
   end if;
@@ -642,8 +644,9 @@ create index idx_products_petshop on public.products(petshop_id);
 
 -- is_sponsored (destaque pago) só pode ser ligado por admin — mesmo padrão de
 -- protect_partner_columns: parceiro autoatendido não pode se autopromover.
+-- também sem security definer, pelo mesmo motivo do protect_partner_columns acima
 create or replace function public.protect_product_sponsor_column()
-returns trigger language plpgsql security definer as $$
+returns trigger language plpgsql as $$
 begin
   if public.is_admin() or current_user = 'service_role' then
     return new;
