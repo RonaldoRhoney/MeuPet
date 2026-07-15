@@ -2557,6 +2557,23 @@
     return { data: null, error: { message: 'falha inesperada no update' } };
   }
 
+  // mesma ideia, pra select — sem isso, pedir uma coluna que ainda não existe
+  // (ex: profiles.state antes da migration rodar) quebra a leitura inteira
+  // em vez de só a coluna nova, e o app acha que o perfil nunca fica completo
+  async function selectResilient(table, columns, applyQuery){
+    let cols = columns.split(',');
+    for(let attempts = cols.length; attempts >= 0; attempts--){
+      const result = await applyQuery(supa.from(table).select(cols.join(',')));
+      if(!result.error) return result;
+      const m = /column ['"]?[a-zA-Z0-9_]*\.?([a-zA-Z0-9_]+)['"]?|'([a-zA-Z0-9_]+)' column/.exec(result.error.message);
+      const badCol = m?.[1] || m?.[2];
+      if(!badCol || !cols.includes(badCol)) return result;
+      console.warn(`MeuPet: coluna "${badCol}" ainda não existe em ${table} (migration pendente) — lendo sem ela`);
+      cols = cols.filter(c => c !== badCol);
+    }
+    return { data: null, error: { message: 'falha inesperada no select' } };
+  }
+
   // =====================================================================
   // COMPARTILHAMENTO — usa a Web Share API nativa quando disponível (no
   // celular, o próprio sistema mostra Instagram/WhatsApp/Facebook e tudo
@@ -6116,11 +6133,12 @@
   // e serviços. Cada passo some assim que o anterior é preenchido.
   async function loadMyBusiness(){
     if(!currentUser || !DB_READY) return;
-    const [{ data: petshop, error }, { data: profile }] = await Promise.all([
+    const [{ data: petshop, error: petshopError }, { data: profile, error: profileError }] = await Promise.all([
       supa.from('petshops').select('*').eq('owner_id', currentUser.id).maybeSingle(),
-      supa.from('profiles').select('full_name,city,state,country').eq('id', currentUser.id).single(),
+      selectResilient('profiles', 'full_name,city,state,country', q => q.eq('id', currentUser.id).single()),
     ]);
-    if(error){ console.warn('MeuPet: não deu pra carregar meu negócio', error.message); return; }
+    if(petshopError){ console.warn('MeuPet: não deu pra carregar meu negócio', petshopError.message); return; }
+    if(profileError){ console.warn('MeuPet: não deu pra carregar meu perfil', profileError.message); return; }
     myPetshop = petshop || null;
 
     const hasPersonal = !!(profile?.full_name && profile?.city);
@@ -6394,7 +6412,7 @@
       shop_name: myPetshop.name, affiliate_url: link, image_url: image, category,
     };
     const { error } = editId
-      ? await supa.from('products').update(row).eq('id', editId)
+      ? await updateResilient('products', row, 'id', editId)
       : await insertResilient('products', row);
     if(error){
       statusEl.textContent = error.message;
