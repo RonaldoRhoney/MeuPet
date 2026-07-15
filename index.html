@@ -625,11 +625,19 @@
   .partners-carousel-card{
     width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:20px;
     padding:22px 26px; text-align:center; opacity:0; transform:translateY(8px);
-    transition:opacity .5s ease, transform .5s ease;
+    transition:opacity .5s ease, transform .5s ease, border-color .2s ease; cursor:pointer;
   }
+  .partners-carousel-card:hover, .partners-carousel-card:focus-visible{border-color:var(--coral);}
   .partners-carousel-card.show{opacity:1; transform:translateY(0);}
   .partners-carousel-card .pc-icon{font-size:1.6rem; margin-bottom:6px;}
   .partners-carousel-card .pc-name{font-family:'Fraunces',serif; font-size:1.15rem; color:var(--heading);}
+  .pd-products-list{display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto;}
+  .pd-product-item{display:flex; gap:10px; align-items:center; border:1px solid var(--line); border-radius:12px; padding:8px 10px;}
+  .pd-product-item img{width:48px; height:48px; border-radius:8px; object-fit:cover; flex-shrink:0;}
+  .pd-product-item .pd-product-icon{width:48px; height:48px; border-radius:8px; background:var(--paper); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;}
+  .pd-product-item .pd-product-name{font-weight:700; font-size:0.88rem;}
+  .pd-product-item .pd-product-desc{font-size:0.78rem; color:var(--text-muted);}
+  .pd-product-item .pd-product-price{font-size:0.82rem; color:var(--heading); font-weight:700; white-space:nowrap;}
   .partners-carousel-card .pc-meta{font-size:0.82rem; color:var(--text-muted); margin-top:2px;}
   .partner-form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .partner-form input, .partner-form select, .partner-form textarea{
@@ -1171,13 +1179,13 @@
       <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center;">
         <span class="kicker" style="color:var(--mustard);" data-i18n="business_kicker">Parceiros</span>
         <h2 style="color:#FFF8F0;" data-i18n="business_title">Coloque seu negócio na frente de quem tem pet — de graça</h2>
-        <p style="color:rgba(255,248,240,0.75);" data-i18n="business_desc">Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça no mapa, na vitrine e no feed de milhares de tutores.</p>
+        <p style="color:rgba(255,248,240,0.75);" data-i18n="business_desc">Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça na vitrine de Parceiros pra milhares de tutores.</p>
       </div>
 
       <div class="partner-benefits">
         <ul>
-          <li data-i18n="business_benefit_1">Pin no mapa de petshops</li>
-          <li data-i18n="business_benefit_2">Vitrine própria na Loja</li>
+          <li data-i18n="business_benefit_1">Vitrine própria na seção Parceiros</li>
+          <li data-i18n="business_benefit_2">Cadastre quantos produtos e serviços quiser</li>
           <li data-i18n="business_benefit_3">Selo de parceiro verificado</li>
           <li data-i18n="business_benefit_4">Link direto pro site/Instagram do seu negócio</li>
         </ul>
@@ -1234,8 +1242,11 @@
             <select id="mbType" aria-label="Tipo de negócio">
               <option value="petshop" data-i18n="business_type_petshop">Petshop</option>
               <option value="veterinaria" data-i18n="business_type_vet">Clínica veterinária</option>
+              <option value="pet_sitter" data-i18n="business_type_petsitter">Pet Sitter</option>
+              <option value="adestrador" data-i18n="business_type_adestrador">Adestrador</option>
+              <option value="banho_tosa" data-i18n="business_type_banhotosa">Banho e Tosa</option>
               <option value="produto" data-i18n="business_type_produto">Marca de produto</option>
-              <option value="servico" data-i18n="business_type_servico">Serviço (banho, adestramento...)</option>
+              <option value="servico" data-i18n="business_type_servico">Outro serviço</option>
               <option value="outro" data-i18n="opt_outro">Outro</option>
             </select>
             <select id="mbCountry" aria-label="País">
@@ -1260,7 +1271,10 @@
             </select>
             <input type="text" id="mbCityManual" placeholder="Cidade" style="display:none;">
             <input type="text" id="mbAddress" placeholder="Bairro (opcional)" data-i18n-placeholder="ph_bairro">
+            <input type="text" id="mbStreet" placeholder="Endereço — rua e número" data-i18n-placeholder="ph_endereco" required>
+            <input type="tel" id="mbPhone" placeholder="Telefone/WhatsApp" data-i18n-placeholder="ph_telefone" required maxlength="15">
           </div>
+          <textarea id="mbAbout" placeholder="Sobre o negócio (opcional)" data-i18n-placeholder="ph_sobre" rows="3" style="margin-top:12px;"></textarea>
           <input type="hidden" id="mbLat" value=""><input type="hidden" id="mbLng" value="">
           <button type="button" class="admin-mini-btn" id="mbGeoBtn" data-i18n="mybiz_use_location">📍 Usar minha localização</button>
           <span id="mbGeoStatus" style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;"></span>
@@ -1283,11 +1297,14 @@
                 <option value="servico" data-i18n="mybiz_type_servico">✂️ Serviço</option>
               </select>
               <input type="text" id="mpName" placeholder="Nome do produto ou serviço" data-i18n-placeholder="mybiz_ph_product_name">
-              <input type="number" id="mpPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
+              <input type="number" id="mpPrice" placeholder="Preço (R$, opcional)" step="0.01" data-i18n-placeholder="mybiz_ph_product_price">
               <input type="text" id="mpLink" placeholder="Link (seu WhatsApp, site ou loja)" data-i18n-placeholder="mybiz_ph_product_link">
-              <input type="text" id="mpImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
               <input type="text" id="mpCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
             </div>
+            <textarea id="mpDescription" placeholder="Descrição curta (opcional)" data-i18n-placeholder="mybiz_ph_product_desc" rows="2" maxlength="500"></textarea>
+            <input type="file" id="mpPhotoFile" accept="image/*" style="display:none;">
+            <label for="mpPhotoFile" class="admin-mini-btn" style="display:inline-block; cursor:pointer; margin-top:8px;">📷 <span id="mpPhotoLabel" data-i18n="mybiz_photo_label">Foto (opcional)</span></label>
+            <input type="hidden" id="mpImage" value="">
             <input type="hidden" id="mpEditId" value="">
             <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar</button>
             <p id="mpStatus" class="partner-form-status"></p>
@@ -1803,6 +1820,23 @@
   </div>
 </div>
 
+<!-- DETALHES DO PARCEIRO — aberto ao clicar num card do carrossel -->
+<div class="modal-overlay" id="partnerDetailModal">
+  <div class="modal">
+    <button class="modal-close" id="closePartnerDetailModal">✕</button>
+    <div class="modal-body">
+      <span class="kicker" id="pdType"></span>
+      <h3 id="pdName"></h3>
+      <p class="sub" id="pdLocation"></p>
+      <p class="sub" id="pdAddress"></p>
+      <a class="btn btn-primary" id="pdWhatsapp" target="_blank" rel="noopener" style="display:none; width:100%; text-align:center; padding:12px; margin:10px 0;">💬 <span data-i18n="pd_whatsapp">Chamar no WhatsApp</span></a>
+      <p id="pdAbout" style="display:none; font-size:0.9rem; color:var(--text-muted); margin:10px 0;"></p>
+      <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="pd_products_title">Produtos e serviços</h4>
+      <div id="pdProductsList" class="pd-products-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- POST + COMENTÁRIOS (aninhados) -->
 <div class="modal-overlay" id="postModal">
   <div class="modal post-modal">
@@ -2123,10 +2157,10 @@
 
 
     business_kicker:{pt:'Parceiros',en:'Partners'}, business_title:{pt:'Coloque seu negócio na frente de quem tem pet — de graça',en:'Put your business in front of pet parents — for free'},
-    business_desc:{pt:'Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça no mapa, na vitrine e no feed de milhares de tutores.',
-      en:'Pet shops, clinics, brands and products: while MeuPet grows, every partnership is 100% free. Register your business and appear on the map, in the showcase and in the feed of thousands of pet parents.'},
-    business_benefit_1:{pt:'Pin no mapa de petshops',en:'Pin on the pet shop map'},
-    business_benefit_2:{pt:'Vitrine própria na Loja',en:'Your own showcase in the Store'},
+    business_desc:{pt:'Petshops, clínicas, marcas e produtos: enquanto o MeuPet cresce, toda parceria é 100% gratuita. Cadastre seu negócio e apareça na vitrine de Parceiros pra milhares de tutores.',
+      en:'Pet shops, clinics, brands and products: while MeuPet grows, every partnership is 100% free. Register your business and appear in the Partners showcase for thousands of pet parents.'},
+    business_benefit_1:{pt:'Vitrine própria na seção Parceiros',en:'Your own showcase in the Partners section'},
+    business_benefit_2:{pt:'Cadastre quantos produtos e serviços quiser',en:'Register as many products and services as you want'},
     business_benefit_3:{pt:'Selo de parceiro verificado',en:'Verified partner badge'},
     business_benefit_4:{pt:'Link direto pro site/Instagram do seu negócio',en:'Direct link to your business website/Instagram'},
     business_cta:{pt:'Quero ser parceiro — grátis',en:'I want to be a partner — free'},
@@ -2147,6 +2181,20 @@
     mybiz_pick_other:{pt:'➕ Não achei, cadastrar novo',en:"➕ Can't find it, add new"},
     mybiz_ph_product_name:{pt:'Nome do produto',en:'Product name'},
     mybiz_ph_product_link:{pt:'Link do produto',en:'Product link'},
+    mybiz_ph_product_price:{pt:'Preço (R$, opcional)',en:'Price ($, optional)'},
+    mybiz_ph_product_desc:{pt:'Descrição curta (opcional)',en:'Short description (optional)'},
+    mybiz_photo_label:{pt:'Foto (opcional)',en:'Photo (optional)'},
+    mybiz_photo_selected:{pt:'Foto selecionada ✓',en:'Photo selected ✓'},
+    mybiz_photo_uploading:{pt:'Enviando foto…',en:'Uploading photo…'},
+    ph_endereco:{pt:'Endereço — rua e número',en:'Address — street and number'},
+    ph_telefone:{pt:'Telefone/WhatsApp',en:'Phone/WhatsApp'},
+    ph_sobre:{pt:'Sobre o negócio (opcional)',en:'About the business (optional)'},
+    business_type_petsitter:{pt:'Pet Sitter',en:'Pet Sitter'},
+    business_type_adestrador:{pt:'Adestrador',en:'Dog Trainer'},
+    business_type_banhotosa:{pt:'Banho e Tosa',en:'Grooming'},
+    pd_whatsapp:{pt:'Chamar no WhatsApp',en:'Message on WhatsApp'},
+    pd_products_title:{pt:'Produtos e serviços',en:'Products and services'},
+    pd_no_products:{pt:'Esse parceiro ainda não cadastrou produtos ou serviços.',en:"This partner hasn't registered any products or services yet."},
     mybiz_type_produto:{pt:'Produto',en:'Product'},
     mybiz_type_servico:{pt:'Serviço',en:'Service'},
     mybiz_col_type:{pt:'Tipo',en:'Type'},
@@ -6011,7 +6059,7 @@
 
   // CARROSSEL DE PARCEIROS — só negócios já verificados (is_partner=true),
   // ordem embaralhada, troca sozinha a cada 2.1s (ver rotatePartnersCarousel).
-  const businessTypeIcon = { petshop:'🐾', veterinaria:'🩺', produto:'📦', servico:'✂️', outro:'🏪' };
+  const businessTypeIcon = { petshop:'🐾', veterinaria:'🩺', produto:'📦', servico:'✂️', outro:'🏪', pet_sitter:'🏠', adestrador:'🎾', banho_tosa:'🛁' };
   let partnersCarouselList = [];
   let partnersCarouselIndex = 0;
 
@@ -6020,10 +6068,10 @@
     // seleciona business_type "com cuidado": se a coluna ainda não existir
     // nesse banco (migration pendente), cai pra uma versão sem ela em vez de
     // deixar o carrossel inteiro quebrado por causa de um campo decorativo
-    let { data, error } = await supa.from('petshops').select('name,city,business_type').eq('is_partner', true).limit(100);
+    let { data, error } = await supa.from('petshops').select('id,name,city,business_type').eq('is_partner', true).limit(100);
     if(error){
       console.warn('MeuPet: carrossel sem business_type (migration pendente?)', error.message);
-      ({ data, error } = await supa.from('petshops').select('name,city').eq('is_partner', true).limit(100));
+      ({ data, error } = await supa.from('petshops').select('id,name,city').eq('is_partner', true).limit(100));
     }
     if(error || !data || !data.length) return;
     // Fisher-Yates — ordem aleatória a cada carregamento da página
@@ -6042,13 +6090,69 @@
     const el = document.getElementById('partnersCarousel');
     const icon = businessTypeIcon[p.business_type] || '🐾';
     el.innerHTML = `
-      <div class="partners-carousel-card" id="pcCard">
+      <div class="partners-carousel-card" id="pcCard" data-partner-id="${esc(p.id)}" role="button" tabindex="0">
         <div class="pc-icon">${icon}</div>
         <div class="pc-name">${esc(p.name)}</div>
         <div class="pc-meta">${esc(p.city)} · ✅ ${t('mybiz_verified_badge')}</div>
       </div>`;
     requestAnimationFrame(()=> requestAnimationFrame(()=> document.getElementById('pcCard')?.classList.add('show')));
   }
+
+  document.getElementById('partnersCarousel').addEventListener('click', e=>{
+    const card = e.target.closest('[data-partner-id]');
+    if(card) openPartnerDetail(card.dataset.partnerId);
+  });
+
+  const businessTypeI18nKey = {
+    petshop:'business_type_petshop', veterinaria:'business_type_vet', produto:'business_type_produto',
+    servico:'business_type_servico', outro:'opt_outro', pet_sitter:'business_type_petsitter',
+    adestrador:'business_type_adestrador', banho_tosa:'business_type_banhotosa',
+  };
+
+  async function openPartnerDetail(id){
+    const [{ data: p }, { data: products }] = await Promise.all([
+      supa.from('petshops').select('*').eq('id', id).single(),
+      supa.from('products').select('*').eq('petshop_id', id).order('created_at', { ascending:false }),
+    ]);
+    if(!p) return;
+
+    document.getElementById('pdType').textContent = businessTypeI18nKey[p.business_type] ? t(businessTypeI18nKey[p.business_type]) : '';
+    document.getElementById('pdName').textContent = p.name;
+    document.getElementById('pdLocation').textContent = [p.city, p.state, p.country].filter(Boolean).join(' · ');
+    const addressParts = [p.street_address, p.address].filter(Boolean).join(', ');
+    document.getElementById('pdAddress').textContent = addressParts ? '📍 ' + addressParts : '';
+
+    const waBtn = document.getElementById('pdWhatsapp');
+    const digits = (p.phone || '').replace(/\D/g, '');
+    if(digits){
+      const intl = digits.length <= 11 ? '55' + digits : digits;
+      waBtn.href = `https://wa.me/${intl}`;
+      waBtn.style.display = '';
+    }else{
+      waBtn.style.display = 'none';
+    }
+
+    const aboutEl = document.getElementById('pdAbout');
+    if(p.about){ aboutEl.textContent = p.about; aboutEl.style.display = ''; }
+    else aboutEl.style.display = 'none';
+
+    const listEl = document.getElementById('pdProductsList');
+    listEl.innerHTML = (products && products.length) ? products.map(item => `
+      <div class="pd-product-item">
+        ${item.image_url ? `<img src="${safeUrl(item.image_url)}" alt="">` : `<div class="pd-product-icon">${item.item_type === 'servico' ? '✂️' : '🛍️'}</div>`}
+        <div style="flex:1; min-width:0;">
+          <div class="pd-product-name">${esc(item.name)}</div>
+          ${item.description ? `<div class="pd-product-desc">${esc(item.description)}</div>` : ''}
+        </div>
+        ${item.price_cents ? `<div class="pd-product-price">R$ ${(item.price_cents/100).toFixed(2)}</div>` : ''}
+      </div>`).join('') : `<p class="sub" style="margin:0;">${t('pd_no_products')}</p>`;
+
+    document.getElementById('partnerDetailModal').classList.add('open');
+  }
+  document.getElementById('closePartnerDetailModal').onclick = ()=> document.getElementById('partnerDetailModal').classList.remove('open');
+  document.getElementById('partnerDetailModal').addEventListener('click', e=>{
+    if(e.target.id === 'partnerDetailModal') document.getElementById('partnerDetailModal').classList.remove('open');
+  });
 
   function rotatePartnersCarousel(){
     const card = document.getElementById('pcCard');
@@ -6234,7 +6338,7 @@
     document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
     if(val === ''){ box.style.display = 'none'; return; }
     if(val === '_outro_'){
-      ['mpName','mpPrice','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+      ['mpName','mpPrice','mpImage','mpCategory','mpDescription'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('mpType').value = 'produto';
     }else{
       const p = productCatalog[parseInt(val, 10)];
@@ -6243,7 +6347,11 @@
       document.getElementById('mpCategory').value = p.category || '';
       document.getElementById('mpImage').value = p.image_url || '';
       document.getElementById('mpType').value = p.item_type;
+      document.getElementById('mpDescription').value = '';
     }
+    mpPhotoFileSelected = null;
+    document.getElementById('mpPhotoFile').value = '';
+    document.getElementById('mpPhotoLabel').textContent = t('mybiz_photo_label');
     // o link é sempre do próprio parceiro — nunca copiado de outra loja do catálogo
     document.getElementById('mpLink').value = '';
     box.style.display = '';
@@ -6305,6 +6413,17 @@
   wireCountryStateCity('pp');
   wireCountryStateCity('mb');
 
+  // máscara de telefone BR — (00) 00000-0000 / (00) 0000-0000, formatando
+  // enquanto digita, sem travar colar número já formatado
+  document.getElementById('mbPhone').addEventListener('input', e=>{
+    let d = e.target.value.replace(/\D/g, '').slice(0, 11);
+    if(d.length > 10) d = d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    else if(d.length > 6) d = d.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    else if(d.length > 2) d = d.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    else if(d.length > 0) d = d.replace(/(\d{0,2})/, '($1');
+    e.target.value = d.replace(/-$/, '').replace(/\)\s$/, ')');
+  });
+
   document.getElementById('ppContinueBtn').addEventListener('click', async ()=>{
     const statusEl = document.getElementById('ppStatus');
     const full_name = document.getElementById('ppName').value.trim();
@@ -6349,9 +6468,12 @@
     const businessType = document.getElementById('mbType').value;
     const { country, state, city } = readCountryStateCity('mb');
     const address = document.getElementById('mbAddress').value.trim() || null;
+    const street_address = document.getElementById('mbStreet').value.trim();
+    const phone = document.getElementById('mbPhone').value.trim();
+    const about = document.getElementById('mbAbout').value.trim() || null;
     const lat = parseFloat(document.getElementById('mbLat').value);
     const lng = parseFloat(document.getElementById('mbLng').value);
-    if(!name || !city){
+    if(!name || !city || !street_address || !phone){
       statusEl.textContent = t('mybiz_create_missing');
       statusEl.className = 'partner-form-status err';
       return;
@@ -6365,7 +6487,7 @@
       captureMyLocation();
       return;
     }
-    const { error } = await insertResilient('petshops', { name, business_type: businessType, city, state, country, address, lat, lng, owner_id: currentUser.id });
+    const { error } = await insertResilient('petshops', { name, business_type: businessType, city, state, country, address, street_address, phone, about, lat, lng, owner_id: currentUser.id });
     if(error){
       statusEl.textContent = error.message;
       statusEl.className = 'partner-form-status err';
@@ -6391,29 +6513,49 @@
       </tr>`).join('');
   }
 
+  let mpPhotoFileSelected = null;
+  document.getElementById('mpPhotoFile').addEventListener('change', e=>{
+    mpPhotoFileSelected = e.target.files[0] || null;
+    document.getElementById('mpPhotoLabel').textContent = mpPhotoFileSelected ? t('mybiz_photo_selected') : t('mybiz_photo_label');
+  });
+
   document.getElementById('mpSubmit').addEventListener('click', async ()=>{
     const statusEl = document.getElementById('mpStatus');
     if(!myPetshop) return;
+    const submitBtn = document.getElementById('mpSubmit');
     const itemType = document.getElementById('mpType').value;
     const name = document.getElementById('mpName').value.trim();
     const priceStr = document.getElementById('mpPrice').value;
     const link = document.getElementById('mpLink').value.trim();
-    const image = document.getElementById('mpImage').value.trim() || null;
+    const description = document.getElementById('mpDescription').value.trim() || null;
     const category = document.getElementById('mpCategory').value.trim() || null;
     const editId = document.getElementById('mpEditId').value || null;
-    const price = parseFloat(priceStr);
-    if(!name || Number.isNaN(price) || price < 0 || !link){
+    const price = priceStr === '' ? null : parseFloat(priceStr);
+    if(!name || !link || (price != null && (Number.isNaN(price) || price < 0))){
       statusEl.textContent = t('mybiz_product_missing');
       statusEl.className = 'partner-form-status err';
       return;
     }
+    submitBtn.disabled = true;
+    let image = document.getElementById('mpImage').value.trim() || null;
+    if(mpPhotoFileSelected){
+      statusEl.textContent = t('mybiz_photo_uploading');
+      try{ image = await uploadToPetMedia(mpPhotoFileSelected, 'products'); }
+      catch(err){
+        submitBtn.disabled = false;
+        statusEl.textContent = 'Não deu pra enviar a foto: ' + err.message;
+        statusEl.className = 'partner-form-status err';
+        return;
+      }
+    }
     const row = {
-      petshop_id: myPetshop.id, name, price_cents: Math.round(price * 100), item_type: itemType,
-      shop_name: myPetshop.name, affiliate_url: link, image_url: image, category,
+      petshop_id: myPetshop.id, name, price_cents: price == null ? 0 : Math.round(price * 100), item_type: itemType,
+      shop_name: myPetshop.name, affiliate_url: link, image_url: image, category, description,
     };
     const { error } = editId
       ? await updateResilient('products', row, 'id', editId)
       : await insertResilient('products', row);
+    submitBtn.disabled = false;
     if(error){
       statusEl.textContent = error.message;
       statusEl.className = 'partner-form-status err';
@@ -6422,10 +6564,13 @@
     statusEl.textContent = '';
     document.getElementById('mpEditId').value = '';
     document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
-    ['mpName','mpPrice','mpLink','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+    ['mpName','mpPrice','mpLink','mpImage','mpCategory','mpDescription'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('mpType').value = 'produto';
     document.getElementById('mpPick').value = '';
     document.getElementById('mpFieldsBox').style.display = 'none';
+    document.getElementById('mpPhotoFile').value = '';
+    mpPhotoFileSelected = null;
+    document.getElementById('mpPhotoLabel').textContent = t('mybiz_photo_label');
     loadMyProducts();
     loadProductCatalog();
   });
@@ -6445,11 +6590,15 @@
       if(!data) return;
       document.getElementById('mpType').value = data.item_type || 'produto';
       document.getElementById('mpName').value = data.name;
-      document.getElementById('mpPrice').value = (data.price_cents/100).toFixed(2);
+      document.getElementById('mpPrice').value = data.price_cents ? (data.price_cents/100).toFixed(2) : '';
       document.getElementById('mpLink').value = data.affiliate_url;
       document.getElementById('mpImage').value = data.image_url || '';
       document.getElementById('mpCategory').value = data.category || '';
+      document.getElementById('mpDescription').value = data.description || '';
       document.getElementById('mpEditId').value = data.id;
+      mpPhotoFileSelected = null;
+      document.getElementById('mpPhotoFile').value = '';
+      document.getElementById('mpPhotoLabel').textContent = data.image_url ? t('mybiz_photo_selected') : t('mybiz_photo_label');
       document.getElementById('mpSubmit').textContent = t('admin_salvar');
       document.getElementById('mpPick').value = '_outro_';
       document.getElementById('mpFieldsBox').style.display = '';

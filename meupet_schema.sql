@@ -552,7 +552,10 @@ create table public.petshops (
   id uuid primary key default uuid_generate_v4(),
   owner_id uuid references public.profiles(id) on delete set null,
   name text not null check (char_length(name) <= 200),
-  address text check (char_length(address) <= 300),
+  address text check (char_length(address) <= 300), -- usado como "Bairro" na tela de autocadastro de parceiro
+  street_address text check (street_address is null or char_length(street_address) <= 300), -- rua e número
+  phone text check (phone is null or char_length(phone) <= 30),
+  about text check (about is null or char_length(about) <= 2000),
   city text not null check (char_length(city) <= 120),
   state text check (char_length(state) <= 100),
   country text not null check (char_length(country) <= 80),
@@ -562,7 +565,7 @@ create table public.petshops (
   opening_hours jsonb,
   is_partner boolean not null default false,
   partner_plan text check (partner_plan in (null,'basic','featured')),
-  business_type text check (business_type is null or business_type in ('petshop','veterinaria','produto','servico','outro')),
+  business_type text check (business_type is null or business_type in ('petshop','veterinaria','produto','servico','outro','pet_sitter','adestrador','banho_tosa')),
   created_at timestamptz not null default now(),
   -- um negócio autoatendido por conta; petshops criados pelo admin ficam com owner_id null (sem limite)
   unique (owner_id)
@@ -574,11 +577,15 @@ create index idx_petshops_geo on public.petshops using gist (
 );
 
 -- função para buscar petshops num raio (km), usada pelo app em qualquer cidade/país
+-- owner_id is not null = veio do autocadastro de parceiro (seção Parceiros,
+-- carrossel próprio) — fica de fora do Mapa de petshops de propósito, são
+-- vitrines separadas.
 create or replace function public.petshops_near(p_lat double precision, p_lng double precision, p_radius_km integer default 10)
 returns setof public.petshops
 language sql stable as $$
   select * from public.petshops
-  where earth_box(ll_to_earth(p_lat, p_lng), p_radius_km * 1000) @> ll_to_earth(lat, lng)
+  where owner_id is null
+    and earth_box(ll_to_earth(p_lat, p_lng), p_radius_km * 1000) @> ll_to_earth(lat, lng)
     and earth_distance(ll_to_earth(p_lat, p_lng), ll_to_earth(lat, lng)) <= p_radius_km * 1000
   order by earth_distance(ll_to_earth(p_lat, p_lng), ll_to_earth(lat, lng)) asc;
 $$;
@@ -622,6 +629,7 @@ create table public.products (
   shop_name text not null check (char_length(shop_name) <= 200),
   affiliate_url text not null check (char_length(affiliate_url) <= 2000),
   category text check (char_length(category) <= 60),
+  description text check (description is null or char_length(description) <= 500),
   item_type text not null default 'produto' check (item_type in ('produto','servico')),
   is_sponsored boolean not null default false,
   created_at timestamptz not null default now()
@@ -668,12 +676,12 @@ create trigger trg_products_lock_shop_name
   for each row execute procedure public.lock_product_shop_name();
 
 -- feed público (home) só mostra produtos curados pelo admin (petshop_id null)
--- ou de parceiros já verificados (is_partner=true) — produto autoatendido de
--- petshop ainda não verificado não aparece pra todo mundo até o admin revisar.
+-- só produto curado pelo admin (petshop_id null) — produto de parceiro
+-- autoatendido (petshop_id preenchido) fica de fora da Loja de propósito,
+-- tem vitrine própria na seção Parceiros (carrossel + página de detalhes).
 create or replace view public.products_feed as
 select p.* from public.products p
-left join public.petshops s on s.id = p.petshop_id
-where p.petshop_id is null or s.is_partner = true;
+where p.petshop_id is null;
 
 alter view public.products_feed set (security_invoker = true);
 grant select on public.products_feed to anon, authenticated;
