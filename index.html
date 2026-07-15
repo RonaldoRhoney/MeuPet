@@ -639,8 +639,9 @@
   .partner-form .sub{font-size:0.84rem; color:var(--text-muted); margin-bottom:20px;}
   .partners-carousel{
     display:flex; gap:14px; overflow-x:auto; padding:6px 4px 14px; scroll-snap-type:x proximity;
-    -webkit-overflow-scrolling:touch;
+    -webkit-overflow-scrolling:touch; cursor:grab; user-select:none;
   }
+  .partners-carousel.dragging{cursor:grabbing; scroll-snap-type:none;}
   .partners-carousel::-webkit-scrollbar{height:6px;}
   .partners-carousel::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
   .partners-carousel-card{
@@ -1321,6 +1322,7 @@
 
         <div id="myBizHasShop" style="display:none;">
           <h3 data-i18n="mybiz_title">Meu Negócio</h3>
+          <div id="mbDoneBanner" style="background:rgba(15,61,62,0.08); border:1.5px solid var(--teal); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:0.86rem;"></div>
           <p class="sub"><strong id="mbShopName"></strong> · <span id="mbShopCity"></span> <span id="mbShopBadge"></span></p>
 
           <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="mybiz_products_title">Meus produtos e serviços</h4>
@@ -2249,6 +2251,8 @@
     mybiz_add_product:{pt:'+ Adicionar produto',en:'+ Add product'},
     mybiz_verified_badge:{pt:'Parceiro verificado',en:'Verified partner'},
     mybiz_pending_badge:{pt:'Aguardando verificação',en:'Awaiting verification'},
+    mybiz_done_banner_verified:{pt:'✅ Seu negócio já está no carrossel de Parceiros da home — role até "Negócios que já fazem parte da rede" pra ver.',en:'✅ Your business is already in the Partners carousel on the home page — scroll to "Businesses already in the network" to see it.'},
+    mybiz_done_banner_pending:{pt:'⏳ Cadastro concluído! Assim que nosso time aprovar, seu negócio aparece no carrossel de Parceiros da home — pode levar um tempinho.',en:"⏳ Registration complete! As soon as our team approves it, your business will appear in the Partners carousel on the home page — it may take a little while."},
     mybiz_geo_unsupported:{pt:'Seu navegador não suporta localização — preencha manualmente.',en:"Your browser doesn't support geolocation — fill in manually."},
     mybiz_geo_loading:{pt:'Obtendo localização…',en:'Getting location…'},
     mybiz_geo_ok:{pt:'Localização capturada!',en:'Location captured!'},
@@ -6191,6 +6195,33 @@
 
   loadPartnersCarousel();
 
+  // arrastar com o mouse pra rolar a prateleira — overflow-x:auto sozinho só
+  // rola com touch/trackpad, mouse comum não tem "clicar e arrastar" nativo
+  (function enableDragScroll(el){
+    let isDown = false, startX = 0, startScroll = 0, moved = false;
+    el.addEventListener('mousedown', e=>{
+      isDown = true; moved = false;
+      el.classList.add('dragging');
+      startX = e.pageX;
+      startScroll = el.scrollLeft;
+    });
+    const stop = ()=>{ isDown = false; el.classList.remove('dragging'); };
+    el.addEventListener('mouseleave', stop);
+    el.addEventListener('mouseup', stop);
+    el.addEventListener('mousemove', e=>{
+      if(!isDown) return;
+      e.preventDefault();
+      const walk = e.pageX - startX;
+      if(Math.abs(walk) > 5) moved = true;
+      el.scrollLeft = startScroll - walk;
+    });
+    // captura antes do listener de clique que abre o modal — se a pessoa
+    // arrastou (não só clicou), cancela a abertura do card
+    el.addEventListener('click', e=>{
+      if(moved){ e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  })(document.getElementById('partnersCarousel'));
+
   // clique em link de afiliado = evento monetizável real (comissão de parceiro)
   document.getElementById('marketGrid').addEventListener('click', e=>{
     const a = e.target.closest('[data-affiliate]');
@@ -6301,6 +6332,7 @@
       document.getElementById('mbShopName').textContent = myPetshop.name;
       document.getElementById('mbShopCity').textContent = myPetshop.city;
       document.getElementById('mbShopBadge').textContent = myPetshop.is_partner ? '✅ ' + t('mybiz_verified_badge') : '⏳ ' + t('mybiz_pending_badge');
+      document.getElementById('mbDoneBanner').textContent = myPetshop.is_partner ? t('mybiz_done_banner_verified') : t('mybiz_done_banner_pending');
       loadMyProducts();
       loadProductCatalog();
       return;
