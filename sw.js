@@ -1,8 +1,8 @@
 // MeuPet — Service Worker v1.0
 // Estratégia: Cache First para assets, Network First para dados da API
 
-const CACHE_NAME    = 'meupet-v2';
-const RUNTIME_CACHE = 'meupet-runtime-v2';
+const CACHE_NAME    = 'meupet-v3';
+const RUNTIME_CACHE = 'meupet-runtime-v3';
 
 const PRECACHE_URLS = [
   '/',
@@ -43,12 +43,16 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Supabase e APIs externas → sempre Network (não cachear dados sensíveis/dinâmicos)
+  // Supabase, APIs externas e nossas próprias /api/* → sempre Network (não
+  // cachear dados dinâmicos/sensíveis nem o vídeo-do-dia, que já tem cache
+  // próprio de 24h via header Cache-Control — Cache First aqui deixaria um
+  // erro antigo (ou vídeo velho) preso pra sempre no dispositivo do usuário)
   if (
     url.hostname.includes('supabase.co') ||
     url.hostname.includes('ipapi.co') ||
     url.hostname.includes('bigdatacloud.net') ||
     url.hostname.includes('overpass-api.de') ||
+    url.pathname.startsWith('/api/') ||
     request.method !== 'GET'
   ) {
     return; // deixa o browser resolver normalmente
