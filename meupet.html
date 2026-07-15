@@ -619,6 +619,18 @@
   }
   .partner-form h3{font-size:1.25rem; color:var(--heading); margin-bottom:4px;}
   .partner-form .sub{font-size:0.84rem; color:var(--text-muted); margin-bottom:20px;}
+  .partners-carousel{
+    max-width:420px; margin:0 auto; min-height:110px; display:flex; align-items:center; justify-content:center;
+  }
+  .partners-carousel-card{
+    width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:20px;
+    padding:22px 26px; text-align:center; opacity:0; transform:translateY(8px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .partners-carousel-card.show{opacity:1; transform:translateY(0);}
+  .partners-carousel-card .pc-icon{font-size:1.6rem; margin-bottom:6px;}
+  .partners-carousel-card .pc-name{font-family:'Fraunces',serif; font-size:1.15rem; color:var(--heading);}
+  .partners-carousel-card .pc-meta{font-size:0.82rem; color:var(--text-muted); margin-top:2px;}
   .partner-form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
   .partner-form input, .partner-form select, .partner-form textarea{
     width:100%; padding:11px 14px; border-radius:12px; border:1.5px solid var(--line);
@@ -1194,6 +1206,13 @@
           <p class="sub" data-i18n="mybiz_no_shop_sub">Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.</p>
           <div class="partner-form-grid">
             <input type="text" id="mbName" placeholder="Nome do negócio" data-i18n-placeholder="business_ph_nome" required>
+            <select id="mbType" aria-label="Tipo de negócio">
+              <option value="petshop" data-i18n="business_type_petshop">Petshop</option>
+              <option value="veterinaria" data-i18n="business_type_vet">Clínica veterinária</option>
+              <option value="produto" data-i18n="business_type_produto">Marca de produto</option>
+              <option value="servico" data-i18n="business_type_servico">Serviço (banho, adestramento...)</option>
+              <option value="outro" data-i18n="opt_outro">Outro</option>
+            </select>
             <input type="text" id="mbCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade" required>
             <input type="text" id="mbCountry" placeholder="País" value="Brasil" data-i18n-placeholder="admin_ph_petshop_country">
             <input type="text" id="mbAddress" placeholder="Endereço (opcional)" data-i18n-placeholder="admin_ph_petshop_address">
@@ -1208,28 +1227,44 @@
         <div id="myBizHasShop" style="display:none;">
           <p class="sub"><strong id="mbShopName"></strong> · <span id="mbShopCity"></span> <span id="mbShopBadge"></span></p>
 
-          <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="mybiz_products_title">Meus produtos</h4>
+          <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="mybiz_products_title">Meus produtos e serviços</h4>
           <p class="sub" data-i18n="mybiz_pick_sub">Escolha da lista pra não digitar tudo de novo — se não achar, cadastre um novo.</p>
-          <select id="mpPick" aria-label="Escolher produto"></select>
+          <select id="mpPick" aria-label="Escolher produto ou serviço"></select>
 
           <div id="mpFieldsBox" style="display:none; margin-top:12px;">
             <div class="partner-form-grid">
-              <input type="text" id="mpName" placeholder="Nome do produto" data-i18n-placeholder="mybiz_ph_product_name">
+              <select id="mpType" aria-label="Tipo">
+                <option value="produto" data-i18n="mybiz_type_produto">🛍️ Produto</option>
+                <option value="servico" data-i18n="mybiz_type_servico">✂️ Serviço</option>
+              </select>
+              <input type="text" id="mpName" placeholder="Nome do produto ou serviço" data-i18n-placeholder="mybiz_ph_product_name">
               <input type="number" id="mpPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
-              <input type="text" id="mpLink" placeholder="Link do produto (seu WhatsApp, site ou loja)" data-i18n-placeholder="mybiz_ph_product_link">
+              <input type="text" id="mpLink" placeholder="Link (seu WhatsApp, site ou loja)" data-i18n-placeholder="mybiz_ph_product_link">
               <input type="text" id="mpImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
               <input type="text" id="mpCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
             </div>
             <input type="hidden" id="mpEditId" value="">
-            <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar produto</button>
+            <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar</button>
             <p id="mpStatus" class="partner-form-status"></p>
           </div>
 
           <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
-            <th data-i18n="admin_users_col_name">Nome</th><th>Preço</th><th data-i18n="admin_leads_col_actions">Ações</th>
+            <th data-i18n="admin_users_col_name">Nome</th><th data-i18n="mybiz_col_type">Tipo</th><th>Preço</th><th data-i18n="admin_leads_col_actions">Ações</th>
           </tr></thead><tbody id="mpTableBody"></tbody></table></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- CARROSSEL DE PARCEIROS — vitrine giratória dos negócios já verificados, -->
+  <!-- um por vez, ordem aleatória, troca sozinha (ver rotatePartnersCarousel). -->
+  <section class="block" id="partnersCarouselSection" style="display:none; padding-top:10px; padding-bottom:36px;">
+    <div class="wrap">
+      <div class="section-head" style="justify-content:center; text-align:center; flex-direction:column; align-items:center; margin-bottom:18px;">
+        <span class="kicker" data-i18n="carousel_kicker">Parceiros MeuPet</span>
+        <h2 data-i18n="carousel_title">Negócios que já fazem parte da rede</h2>
+      </div>
+      <div class="partners-carousel" id="partnersCarousel"></div>
     </div>
   </section>
 
@@ -2064,6 +2099,13 @@
     mybiz_pick_other:{pt:'➕ Não achei, cadastrar novo',en:"➕ Can't find it, add new"},
     mybiz_ph_product_name:{pt:'Nome do produto',en:'Product name'},
     mybiz_ph_product_link:{pt:'Link do produto',en:'Product link'},
+    mybiz_type_produto:{pt:'Produto',en:'Product'},
+    mybiz_type_servico:{pt:'Serviço',en:'Service'},
+    mybiz_col_type:{pt:'Tipo',en:'Type'},
+    business_type_petshop:{pt:'Petshop',en:'Pet shop'}, business_type_vet:{pt:'Clínica veterinária',en:'Veterinary clinic'},
+    business_type_produto:{pt:'Marca de produto',en:'Product brand'}, business_type_servico:{pt:'Serviço (banho, adestramento...)',en:'Service (grooming, training...)'},
+    carousel_kicker:{pt:'Parceiros MeuPet',en:'MeuPet Partners'},
+    carousel_title:{pt:'Negócios que já fazem parte da rede',en:'Businesses already part of the network'},
     mybiz_add_product:{pt:'+ Adicionar produto',en:'+ Add product'},
     mybiz_verified_badge:{pt:'Parceiro verificado',en:'Verified partner'},
     mybiz_pending_badge:{pt:'Aguardando verificação',en:'Awaiting verification'},
@@ -5855,6 +5897,51 @@
   }
   loadMarket();
 
+  // CARROSSEL DE PARCEIROS — só negócios já verificados (is_partner=true),
+  // ordem embaralhada, troca sozinha a cada 2.1s (ver rotatePartnersCarousel).
+  const businessTypeIcon = { petshop:'🐾', veterinaria:'🩺', produto:'📦', servico:'✂️', outro:'🏪' };
+  let partnersCarouselList = [];
+  let partnersCarouselIndex = 0;
+
+  async function loadPartnersCarousel(){
+    if(!DB_READY) return;
+    const { data, error } = await supa.from('petshops').select('name,city,business_type').eq('is_partner', true).limit(100);
+    if(error || !data || !data.length) return;
+    // Fisher-Yates — ordem aleatória a cada carregamento da página
+    partnersCarouselList = [...data];
+    for(let i = partnersCarouselList.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [partnersCarouselList[i], partnersCarouselList[j]] = [partnersCarouselList[j], partnersCarouselList[i]];
+    }
+    document.getElementById('partnersCarouselSection').style.display = '';
+    renderPartnersCarouselCard();
+    setInterval(rotatePartnersCarousel, 2100);
+  }
+
+  function renderPartnersCarouselCard(){
+    const p = partnersCarouselList[partnersCarouselIndex];
+    const el = document.getElementById('partnersCarousel');
+    const icon = businessTypeIcon[p.business_type] || '🐾';
+    el.innerHTML = `
+      <div class="partners-carousel-card" id="pcCard">
+        <div class="pc-icon">${icon}</div>
+        <div class="pc-name">${esc(p.name)}</div>
+        <div class="pc-meta">${esc(p.city)} · ✅ ${t('mybiz_verified_badge')}</div>
+      </div>`;
+    requestAnimationFrame(()=> requestAnimationFrame(()=> document.getElementById('pcCard')?.classList.add('show')));
+  }
+
+  function rotatePartnersCarousel(){
+    const card = document.getElementById('pcCard');
+    if(card) card.classList.remove('show');
+    setTimeout(()=>{
+      partnersCarouselIndex = (partnersCarouselIndex + 1) % partnersCarouselList.length;
+      renderPartnersCarouselCard();
+    }, 500);
+  }
+
+  loadPartnersCarousel();
+
   // clique em link de afiliado = evento monetizável real (comissão de parceiro)
   document.getElementById('marketGrid').addEventListener('click', e=>{
     const a = e.target.closest('[data-affiliate]');
@@ -5943,14 +6030,14 @@
   let productCatalog = [];
 
   async function loadProductCatalog(){
-    const { data } = await supa.from('products').select('name,price_cents,category,image_url')
+    const { data } = await supa.from('products').select('name,price_cents,category,image_url,item_type')
       .not('petshop_id', 'is', null).order('created_at', { ascending:false }).limit(300);
     const byName = new Map();
-    (data || []).forEach(p => { if(!byName.has(p.name.toLowerCase())) byName.set(p.name.toLowerCase(), p); });
+    (data || []).forEach(p => { const k = p.item_type + ':' + p.name.toLowerCase(); if(!byName.has(k)) byName.set(k, p); });
     productCatalog = [...byName.values()].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
     const pick = document.getElementById('mpPick');
     pick.innerHTML = `<option value="">${t('mybiz_pick_placeholder')}</option>`
-      + productCatalog.map((p,i) => `<option value="${i}">${esc(p.name)} — R$ ${(p.price_cents/100).toFixed(2)}</option>`).join('')
+      + productCatalog.map((p,i) => `<option value="${i}">${p.item_type === 'servico' ? '✂️' : '🛍️'} ${esc(p.name)} — R$ ${(p.price_cents/100).toFixed(2)}</option>`).join('')
       + `<option value="_outro_">${t('mybiz_pick_other')}</option>`;
   }
 
@@ -5962,12 +6049,14 @@
     if(val === ''){ box.style.display = 'none'; return; }
     if(val === '_outro_'){
       ['mpName','mpPrice','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('mpType').value = 'produto';
     }else{
       const p = productCatalog[parseInt(val, 10)];
       document.getElementById('mpName').value = p.name;
       document.getElementById('mpPrice').value = (p.price_cents/100).toFixed(2);
       document.getElementById('mpCategory').value = p.category || '';
       document.getElementById('mpImage').value = p.image_url || '';
+      document.getElementById('mpType').value = p.item_type;
     }
     // o link é sempre do próprio parceiro — nunca copiado de outra loja do catálogo
     document.getElementById('mpLink').value = '';
@@ -5992,6 +6081,7 @@
   document.getElementById('mbCreateSubmit').addEventListener('click', async ()=>{
     const statusEl = document.getElementById('mbCreateStatus');
     const name = document.getElementById('mbName').value.trim();
+    const businessType = document.getElementById('mbType').value;
     const city = document.getElementById('mbCity').value.trim();
     const country = document.getElementById('mbCountry').value.trim() || 'Brasil';
     const address = document.getElementById('mbAddress').value.trim() || null;
@@ -6002,7 +6092,7 @@
       statusEl.className = 'partner-form-status err';
       return;
     }
-    const { error } = await supa.from('petshops').insert({ name, city, country, address, lat, lng, owner_id: currentUser.id });
+    const { error } = await supa.from('petshops').insert({ name, business_type: businessType, city, country, address, lat, lng, owner_id: currentUser.id });
     if(error){
       statusEl.textContent = error.message;
       statusEl.className = 'partner-form-status err';
@@ -6019,6 +6109,7 @@
     tbody.innerHTML = (data || []).map(p => `
       <tr>
         <td>${esc(p.name)}</td>
+        <td>${p.item_type === 'servico' ? '✂️ ' + t('mybiz_type_servico') : '🛍️ ' + t('mybiz_type_produto')}</td>
         <td>R$ ${(p.price_cents/100).toFixed(2)}</td>
         <td>
           <button class="admin-mini-btn" data-mp-action="edit" data-mp-id="${esc(p.id)}">${t('admin_editar')}</button>
@@ -6030,6 +6121,7 @@
   document.getElementById('mpSubmit').addEventListener('click', async ()=>{
     const statusEl = document.getElementById('mpStatus');
     if(!myPetshop) return;
+    const itemType = document.getElementById('mpType').value;
     const name = document.getElementById('mpName').value.trim();
     const priceStr = document.getElementById('mpPrice').value;
     const link = document.getElementById('mpLink').value.trim();
@@ -6043,7 +6135,7 @@
       return;
     }
     const row = {
-      petshop_id: myPetshop.id, name, price_cents: Math.round(price * 100),
+      petshop_id: myPetshop.id, name, price_cents: Math.round(price * 100), item_type: itemType,
       shop_name: myPetshop.name, affiliate_url: link, image_url: image, category,
     };
     const { error } = editId
@@ -6058,6 +6150,7 @@
     document.getElementById('mpEditId').value = '';
     document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
     ['mpName','mpPrice','mpLink','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('mpType').value = 'produto';
     document.getElementById('mpPick').value = '';
     document.getElementById('mpFieldsBox').style.display = 'none';
     loadMyProducts();
@@ -6077,6 +6170,7 @@
     if(btn.dataset.mpAction === 'edit'){
       const { data } = await supa.from('products').select('*').eq('id', id).single();
       if(!data) return;
+      document.getElementById('mpType').value = data.item_type || 'produto';
       document.getElementById('mpName').value = data.name;
       document.getElementById('mpPrice').value = (data.price_cents/100).toFixed(2);
       document.getElementById('mpLink').value = data.affiliate_url;
