@@ -1065,8 +1065,10 @@ create policy "ads_select_admin" on public.ad_impressions for select using (publ
 -- created_by só pode ser nulo (lead anônimo) ou o próprio usuário logado —
 -- impede forjar um lead em nome do uid de outra pessoa (mesmo padrão de
 -- ad_impressions)
+-- só autenticado: o formulário de lead anônimo saiu de uso (virou autoatendimento
+-- logado), então não faz sentido manter esse endpoint aberto a insert anônimo
 create policy "partner_leads_insert_any" on public.partner_leads for insert with check (
-  created_by is null or created_by = auth.uid()
+  auth.uid() is not null and created_by = auth.uid()
 );
 create policy "partner_leads_select_own_or_admin" on public.partner_leads for select using (
   (created_by is not null and auth.uid() = created_by) or public.is_admin()

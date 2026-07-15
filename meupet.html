@@ -1179,32 +1179,15 @@
         <button type="button" class="btn btn-primary partner-cta" id="partnerCta" style="width:100%; padding:16px; font-size:1.05rem;" data-i18n="business_cta">Quero ser parceiro — grátis</button>
       </div>
 
-      <form id="partnerForm" class="partner-form">
-        <h3 data-i18n="business_form_title">Cadastre seu negócio</h3>
-        <p class="sub" data-i18n="business_form_sub">Parceria 100% gratuita — preenche o formulário e nosso time entra em contato pra ativar.</p>
-        <div class="partner-form-grid">
-          <input type="text" id="pfBusiness" placeholder="Nome do negócio" data-i18n-placeholder="business_ph_nome" required>
-          <input type="text" id="pfContact" placeholder="Seu nome" data-i18n-placeholder="ph_seu_nome" required>
-          <input type="email" id="pfEmail" placeholder="E-mail" data-i18n-placeholder="ph_email" required>
-          <input type="tel" id="pfPhone" placeholder="WhatsApp (opcional)" data-i18n-placeholder="ph_whatsapp_opcional">
-          <input type="text" id="pfCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade">
-          <input type="url" id="pfLink" placeholder="Link do site/Instagram (opcional)" data-i18n-placeholder="business_ph_link">
-          <select id="pfType" aria-label="Tipo de negócio">
-            <option value="petshop" data-i18n="business_type_petshop">Petshop</option>
-            <option value="veterinaria" data-i18n="business_type_vet">Clínica veterinária</option>
-            <option value="produto" data-i18n="business_type_produto">Marca de produto</option>
-            <option value="servico" data-i18n="business_type_servico">Serviço (banho, adestramento...)</option>
-            <option value="outro" data-i18n="opt_outro">Outro</option>
-          </select>
-        </div>
-        <textarea id="pfMessage" placeholder="Conte um pouco sobre o seu negócio (opcional)" data-i18n-placeholder="business_ph_message" rows="3"></textarea>
-        <button type="submit" class="btn btn-primary" id="pfSubmit" style="width:100%; padding:14px;" data-i18n="business_form_submit">Enviar solicitação</button>
-        <p id="pfStatus" class="partner-form-status"></p>
-      </form>
+      <!-- Cadastro de negócio — um único fluxo. Deslogado: convite pra entrar/  -->
+      <!-- criar conta. Logado: autoatendimento direto (grátis, sem espera). -->
+      <div id="partnerLoggedOut" class="partner-form">
+        <h3 data-i18n="mybiz_title">Cadastre seu negócio</h3>
+        <p class="sub" data-i18n="mybiz_loggedout_sub">Parceria 100% gratuita e na hora — entra ou cria sua conta pra cadastrar seu negócio e seus produtos.</p>
+        <button type="button" class="btn btn-primary" id="partnerLoginBtn" style="width:100%; padding:14px;" data-i18n="mybiz_login_cta">Entrar ou criar conta — grátis</button>
+      </div>
 
-      <!-- MEU NEGÓCIO — autoatendimento do parceiro logado: cadastra o próprio -->
-      <!-- petshop (grátis) e gerencia seus próprios produtos na vitrine. -->
-      <div id="myBusinessBox" class="partner-form" style="display:none; margin-top:24px;">
+      <div id="myBusinessBox" class="partner-form" style="display:none;">
         <h3 data-i18n="mybiz_title">Meu Negócio</h3>
 
         <div id="myBizNoShop">
@@ -1226,16 +1209,22 @@
           <p class="sub"><strong id="mbShopName"></strong> · <span id="mbShopCity"></span> <span id="mbShopBadge"></span></p>
 
           <h4 style="margin:18px 0 8px; font-size:1rem; color:var(--heading);" data-i18n="mybiz_products_title">Meus produtos</h4>
-          <div class="partner-form-grid">
-            <input type="text" id="mpName" placeholder="Nome do produto" data-i18n-placeholder="mybiz_ph_product_name">
-            <input type="number" id="mpPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
-            <input type="text" id="mpLink" placeholder="Link do produto" data-i18n-placeholder="mybiz_ph_product_link">
-            <input type="text" id="mpImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
-            <input type="text" id="mpCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
+          <p class="sub" data-i18n="mybiz_pick_sub">Escolha da lista pra não digitar tudo de novo — se não achar, cadastre um novo.</p>
+          <select id="mpPick" aria-label="Escolher produto"></select>
+
+          <div id="mpFieldsBox" style="display:none; margin-top:12px;">
+            <div class="partner-form-grid">
+              <input type="text" id="mpName" placeholder="Nome do produto" data-i18n-placeholder="mybiz_ph_product_name">
+              <input type="number" id="mpPrice" placeholder="Preço (R$)" step="0.01" data-i18n-placeholder="admin_ph_product_price">
+              <input type="text" id="mpLink" placeholder="Link do produto (seu WhatsApp, site ou loja)" data-i18n-placeholder="mybiz_ph_product_link">
+              <input type="text" id="mpImage" placeholder="URL da imagem (opcional)" data-i18n-placeholder="admin_ph_product_image">
+              <input type="text" id="mpCategory" placeholder="Categoria (opcional)" data-i18n-placeholder="admin_ph_product_category">
+            </div>
+            <input type="hidden" id="mpEditId" value="">
+            <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar produto</button>
+            <p id="mpStatus" class="partner-form-status"></p>
           </div>
-          <input type="hidden" id="mpEditId" value="">
-          <button type="button" class="btn btn-primary" id="mpSubmit" style="width:100%; padding:14px;" data-i18n="mybiz_add_product">+ Adicionar produto</button>
-          <p id="mpStatus" class="partner-form-status"></p>
+
           <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
             <th data-i18n="admin_users_col_name">Nome</th><th>Preço</th><th data-i18n="admin_leads_col_actions">Ações</th>
           </tr></thead><tbody id="mpTableBody"></tbody></table></div>
@@ -1340,7 +1329,25 @@
 
       <div id="adminTabParcerias" style="display:none;">
         <div class="admin-panel-section">
-          <h4 data-i18n="admin_leads_title">Pedidos de parceria</h4>
+          <h4 data-i18n="admin_pending_biz_title">Negócios aguardando verificação</h4>
+          <p class="sub" data-i18n="admin_pending_biz_desc">Cadastrados pelo próprio parceiro (autoatendimento) — aprove pra liberar o selo de parceiro verificado.</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th data-i18n="admin_leads_col_business">Negócio</th>
+                  <th data-i18n="admin_leads_col_city">Cidade</th>
+                  <th data-i18n="admin_pending_biz_col_products">Produtos</th>
+                  <th data-i18n="admin_leads_col_actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="adminPendingBizBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-panel-section">
+          <h4 data-i18n="admin_leads_title">Pedidos de parceria (histórico)</h4>
           <p class="sub" data-i18n="admin_leads_desc">Negócios que pediram pra virar petshop parceiro/patrocinador.</p>
           <div class="admin-table-wrap">
             <table class="admin-table">
@@ -2044,19 +2051,17 @@
     business_benefit_3:{pt:'Selo de parceiro verificado',en:'Verified partner badge'},
     business_benefit_4:{pt:'Link direto pro site/Instagram do seu negócio',en:'Direct link to your business website/Instagram'},
     business_cta:{pt:'Quero ser parceiro — grátis',en:'I want to be a partner — free'},
-    business_form_title:{pt:'Cadastre seu negócio',en:'Register your business'},
-    business_form_sub:{pt:'Parceria 100% gratuita — preenche o formulário e nosso time entra em contato pra ativar.',en:"100% free partnership — fill out the form and our team will reach out to activate it."},
     business_ph_nome:{pt:'Nome do negócio',en:'Business name'},
-    business_ph_link:{pt:'Link do site/Instagram (opcional)',en:'Website/Instagram link (optional)'},
-    business_type_petshop:{pt:'Petshop',en:'Pet shop'}, business_type_vet:{pt:'Clínica veterinária',en:'Veterinary clinic'},
-    business_type_produto:{pt:'Marca de produto',en:'Product brand'}, business_type_servico:{pt:'Serviço (banho, adestramento...)',en:'Service (grooming, training...)'},
-    business_ph_message:{pt:'Conte um pouco sobre o seu negócio (opcional)',en:'Tell us a bit about your business (optional)'},
-    business_form_submit:{pt:'Enviar solicitação',en:'Send request'},
     mybiz_title:{pt:'Meu Negócio',en:'My Business'},
+    mybiz_loggedout_sub:{pt:'Parceria 100% gratuita e na hora — entra ou cria sua conta pra cadastrar seu negócio e seus produtos.',en:'100% free partnership, activated instantly — log in or create an account to register your business and products.'},
+    mybiz_login_cta:{pt:'Entrar ou criar conta — grátis',en:'Log in or create an account — free'},
     mybiz_no_shop_sub:{pt:'Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.',en:"You're already logged in — register your business right now, for free, with no need to wait for approval."},
     mybiz_use_location:{pt:'📍 Usar minha localização',en:'📍 Use my location'},
     mybiz_create_submit:{pt:'Cadastrar meu negócio — grátis',en:'Register my business — free'},
     mybiz_products_title:{pt:'Meus produtos',en:'My products'},
+    mybiz_pick_sub:{pt:'Escolha da lista pra não digitar tudo de novo — se não achar, cadastre um novo.',en:"Pick from the list so you don't have to type it all again — if you can't find it, add a new one."},
+    mybiz_pick_placeholder:{pt:'🔍 Escolher produto da lista…',en:'🔍 Pick a product from the list…'},
+    mybiz_pick_other:{pt:'➕ Não achei, cadastrar novo',en:"➕ Can't find it, add new"},
     mybiz_ph_product_name:{pt:'Nome do produto',en:'Product name'},
     mybiz_ph_product_link:{pt:'Link do produto',en:'Product link'},
     mybiz_add_product:{pt:'+ Adicionar produto',en:'+ Add product'},
@@ -2072,7 +2077,7 @@
     admin_editar:{pt:'Editar',en:'Edit'},
     admin_salvar:{pt:'Salvar',en:'Save'},
     opt_outro:{pt:'Outro',en:'Other'},
-    ph_seu_nome:{pt:'Seu nome',en:'Your name'}, ph_email:{pt:'E-mail',en:'Email'}, ph_whatsapp_opcional:{pt:'WhatsApp (opcional)',en:'WhatsApp (optional)'},
+    ph_seu_nome:{pt:'Seu nome',en:'Your name'},
     ph_cidade:{pt:'Cidade',en:'City'},
 
     footer_produto:{pt:'Produto',en:'Product'}, footer_sobre_nos:{pt:'Sobre nós',en:'About us'}, footer_legal:{pt:'Legal',en:'Legal'},
@@ -2301,8 +2306,12 @@
     admin_reports_col_date:{pt:'Data',en:'Date'},
     admin_reports_col_status:{pt:'Status',en:'Status'},
     admin_reports_empty:{pt:'Nenhuma denúncia por enquanto.',en:'No reports so far.'},
-    admin_leads_title:{pt:'Pedidos de parceria',en:'Partnership requests'},
+    admin_leads_title:{pt:'Pedidos de parceria (histórico)',en:'Partnership requests (history)'},
     admin_leads_desc:{pt:'Negócios que pediram pra virar petshop parceiro/patrocinador.',en:'Businesses that requested to become a partner petshop/sponsor.'},
+    admin_pending_biz_title:{pt:'Negócios aguardando verificação',en:'Businesses awaiting verification'},
+    admin_pending_biz_desc:{pt:'Cadastrados pelo próprio parceiro (autoatendimento) — aprove pra liberar o selo de parceiro verificado.',en:'Self-registered by the partner — approve to unlock the verified partner badge.'},
+    admin_pending_biz_col_products:{pt:'Produtos',en:'Products'},
+    admin_pending_biz_empty:{pt:'Nenhum negócio aguardando verificação.',en:'No businesses awaiting verification.'},
     admin_leads_col_business:{pt:'Negócio',en:'Business'},
     admin_leads_col_contact:{pt:'Contato',en:'Contact'},
     admin_leads_col_city:{pt:'Cidade',en:'City'},
@@ -2398,10 +2407,6 @@
     if(typeof loadMarket === 'function') loadMarket();
     if(typeof updateAuthNav === 'function' && currentUser) updateAuthNav(currentUser);
   }
-
-  // e-mail comercial que recebe pedidos do formulário MeuPet Business (#parceiros)
-  // quando o Supabase ainda não está configurado (fallback via mailto)
-  const SPONSOR_CONTACT_EMAIL = ""; // ex: "comercial@rhoneyinc.com"
 
   // escapa conteúdo vindo do banco (nomes de pets, cidades, produtos etc.)
   // antes de injetar via innerHTML — evita XSS armazenado por dados de usuário
@@ -3173,7 +3178,7 @@
   async function updateAuthNav(user){
     currentUser = user;
     const btn = document.getElementById('openLogin');
-    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; document.getElementById('admin').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; document.getElementById('myBusinessBox').style.display = 'none'; return; }
+    if(!user){ document.getElementById('navAdminLink').style.display = 'none'; document.getElementById('admin').style.display = 'none'; currentUserIsAdmin = false; document.getElementById('openSignup').style.display = 'none'; document.getElementById('myBusinessBox').style.display = 'none'; document.getElementById('partnerLoggedOut').style.display = ''; return; }
     const { data: profile } = await supa.from('profiles').select('full_name, is_banned').eq('id', user.id).single();
     if(profile?.is_banned){
       await supa.auth.signOut();
@@ -3197,6 +3202,7 @@
       .then(({ error }) => { if(error) console.warn('MeuPet: não deu pra registrar dispositivo', error.message); });
     checkAdminAccess();
     document.getElementById('myBusinessBox').style.display = '';
+    document.getElementById('partnerLoggedOut').style.display = 'none';
     loadMyBusiness();
   }
 
@@ -3367,6 +3373,11 @@
         // a pessoa ter que clicar de novo
         if(pendingIntent === 'createPet'){ pendingIntent = null; onboardingInProgress = true; openPetModal(); }
         else if(pendingIntent === 'createAdoption'){ pendingIntent = null; openAdoptFormModal(); }
+        else if(pendingIntent === 'becomePartner'){
+          pendingIntent = null;
+          document.getElementById('myBusinessBox').scrollIntoView({ behavior:'smooth', block:'center' });
+          document.getElementById('mbName')?.focus();
+        }
       }, 900);
     }catch(err){
       submitBtn.disabled = false;
@@ -5041,7 +5052,7 @@
       });
       if(btn.dataset.tab === 'usuarios') loadAdminUsers();
       if(btn.dataset.tab === 'denuncias') loadAdminReports();
-      if(btn.dataset.tab === 'parcerias') loadAdminLeads();
+      if(btn.dataset.tab === 'parcerias'){ loadAdminPendingBiz(); loadAdminLeads(); }
       if(btn.dataset.tab === 'catalogo') loadAdminCatalog('products');
     };
   });
@@ -5204,6 +5215,33 @@
   // ---------- Parcerias ----------
   let adminLeadForCreate = null;
 
+  async function loadAdminPendingBiz(){
+    const tbody = document.getElementById('adminPendingBizBody');
+    if(!tbody || !currentUserIsAdmin) return;
+    const { data, error } = await supa.from('petshops').select('id,name,city,is_partner,owner_id')
+      .eq('is_partner', false).not('owner_id', 'is', null).order('created_at', { ascending:false });
+    if(error){ console.warn('MeuPet: não deu pra carregar negócios pendentes', error.message); return; }
+    if(!data || !data.length){ tbody.innerHTML = `<tr><td colspan="4">${t('admin_pending_biz_empty')}</td></tr>`; return; }
+    const counts = await Promise.all(data.map(p => supa.from('products').select('id', { count:'exact', head:true }).eq('petshop_id', p.id)));
+    tbody.innerHTML = data.map((p,i) => `
+      <tr>
+        <td>${esc(p.name)}</td>
+        <td>${esc(p.city)}</td>
+        <td>${counts[i].count ?? 0}</td>
+        <td><button class="admin-mini-btn" data-pb-action="approve" data-pb-id="${esc(p.id)}">${t('admin_aprovar')}</button></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('adminPendingBizBody').addEventListener('click', async e=>{
+    const btn = e.target.closest('[data-pb-action]');
+    if(!btn) return;
+    btn.disabled = true;
+    const { error } = await supa.from('petshops').update({ is_partner: true }).eq('id', btn.dataset.pbId);
+    btn.disabled = false;
+    if(error){ alert(error.message); return; }
+    loadAdminPendingBiz();
+  });
+
   async function loadAdminLeads(){
     const tbody = document.getElementById('adminLeadsBody');
     if(!tbody || !currentUserIsAdmin) return;
@@ -5259,7 +5297,6 @@
     const city = document.getElementById('adminPetshopCity').value.trim();
     const country = document.getElementById('adminPetshopCountry').value.trim() || 'Brasil';
     const address = document.getElementById('adminPetshopAddress').value.trim() || null;
-    const phone = document.getElementById('adminPetshopPhone').value.trim() || null;
     const lat = parseFloat(document.getElementById('adminPetshopLat').value);
     const lng = parseFloat(document.getElementById('adminPetshopLng').value);
     if(!name || !city || Number.isNaN(lat) || Number.isNaN(lng)){
@@ -5267,7 +5304,8 @@
       statusEl.className = 'modal-status err';
       return;
     }
-    const { error } = await supa.from('petshops').insert({ name, city, country, address, phone, lat, lng, is_partner: true });
+    // petshops não tem coluna "phone" — o input fica só de referência visual pro admin, não é enviado
+    const { error } = await supa.from('petshops').insert({ name, city, country, address, lat, lng, is_partner: true });
     if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
     statusEl.textContent = '✅ Petshop criado!';
     statusEl.className = 'modal-status ok';
@@ -5858,70 +5896,23 @@
   loadSponsorSlot('adSlotPetshops', 'banner_petshops');
 
   // =====================================================================
-  // PARCEIROS — formulário de parceria gratuita (partner_leads).
-  // Nunca ativa o parceiro sozinho: só cria um "lead" — a ativação real
-  // (petshops.is_partner) é sempre manual, feita pelo time depois de revisar.
+  // PARCEIROS — um fluxo só: deslogado manda pro login/cadastro (grátis),
+  // logado cai direto no autoatendimento (cadastra negócio + produtos, sem
+  // espera de aprovação — a verificação do admin só troca o selo depois).
   // =====================================================================
   document.getElementById('partnerCta').addEventListener('click', ()=>{
-    document.getElementById('partnerForm').scrollIntoView({ behavior:'smooth', block:'center' });
-    document.getElementById('pfBusiness').focus();
+    if(currentUser){
+      document.getElementById('myBusinessBox').scrollIntoView({ behavior:'smooth', block:'center' });
+      document.getElementById('mbName')?.focus();
+    }else{
+      pendingIntent = 'becomePartner';
+      openModal('signup');
+    }
   });
 
-  document.getElementById('partnerForm').addEventListener('submit', async e=>{
-    e.preventDefault();
-    const statusEl = document.getElementById('pfStatus');
-    const submitBtn = document.getElementById('pfSubmit');
-    const lead = {
-      business_name: document.getElementById('pfBusiness').value.trim(),
-      contact_name: document.getElementById('pfContact').value.trim(),
-      contact_email: document.getElementById('pfEmail').value.trim(),
-      contact_phone: document.getElementById('pfPhone').value.trim() || null,
-      city: document.getElementById('pfCity').value.trim() || null,
-      business_type: document.getElementById('pfType').value,
-      website_url: document.getElementById('pfLink').value.trim() || null,
-      message: document.getElementById('pfMessage').value.trim() || null,
-    };
-    if(!lead.business_name || !lead.contact_name || !lead.contact_email){
-      statusEl.textContent = 'Preencha nome do negócio, seu nome e e-mail.';
-      statusEl.className = 'partner-form-status err';
-      return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Enviando…';
-
-    if(DB_READY){
-      const { data:{ user } } = await supa.auth.getUser();
-      const { error } = await supa.from('partner_leads').insert({ ...lead, created_by: user?.id || null });
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Enviar solicitação';
-      if(error){
-        statusEl.textContent = 'Não deu pra enviar agora — tenta de novo em instantes.';
-        statusEl.className = 'partner-form-status err';
-        console.warn('MeuPet: falha ao enviar partner_lead', error.message);
-        return;
-      }
-      statusEl.textContent = 'Recebemos seu pedido! Nosso time entra em contato pra ativar sua parceria — sem custo.';
-      statusEl.className = 'partner-form-status ok';
-      e.target.reset();
-      return;
-    }
-
-    // sem Supabase configurado: e-mail vira o canal alternativo, o lead não se perde
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Enviar solicitação';
-    if(!SPONSOR_CONTACT_EMAIL){
-      statusEl.textContent = 'Cadastro ainda não conectado — configure SUPABASE_URL/ANON_KEY ou SPONSOR_CONTACT_EMAIL no código.';
-      statusEl.className = 'partner-form-status err';
-      return;
-    }
-    const subject = encodeURIComponent(`MeuPet Parceiros — ${lead.business_name}`);
-    const body = encodeURIComponent(
-      `Negócio: ${lead.business_name}\nContato: ${lead.contact_name}\nE-mail: ${lead.contact_email}\nWhatsApp: ${lead.contact_phone || '-'}\nCidade: ${lead.city || '-'}\nTipo: ${lead.business_type}\nLink: ${lead.website_url || '-'}\nMensagem: ${lead.message || '-'}`
-    );
-    window.location.href = `mailto:${SPONSOR_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-    statusEl.textContent = 'Abrindo seu e-mail pra concluir o envio…';
-    statusEl.className = 'partner-form-status ok';
+  document.getElementById('partnerLoginBtn').addEventListener('click', ()=>{
+    pendingIntent = 'becomePartner';
+    openModal('signup');
   });
 
   // =====================================================================
@@ -5943,8 +5934,46 @@
       document.getElementById('mbShopCity').textContent = myPetshop.city;
       document.getElementById('mbShopBadge').textContent = myPetshop.is_partner ? '✅ ' + t('mybiz_verified_badge') : '⏳ ' + t('mybiz_pending_badge');
       loadMyProducts();
+      loadProductCatalog();
     }
   }
+
+  // catálogo compartilhado — cresce sozinho: todo produto que um parceiro
+  // cadastra vira sugestão pra próxima pessoa escolher em vez de digitar.
+  let productCatalog = [];
+
+  async function loadProductCatalog(){
+    const { data } = await supa.from('products').select('name,price_cents,category,image_url')
+      .not('petshop_id', 'is', null).order('created_at', { ascending:false }).limit(300);
+    const byName = new Map();
+    (data || []).forEach(p => { if(!byName.has(p.name.toLowerCase())) byName.set(p.name.toLowerCase(), p); });
+    productCatalog = [...byName.values()].sort((a,b) => a.name.localeCompare(b.name, 'pt-BR'));
+    const pick = document.getElementById('mpPick');
+    pick.innerHTML = `<option value="">${t('mybiz_pick_placeholder')}</option>`
+      + productCatalog.map((p,i) => `<option value="${i}">${esc(p.name)} — R$ ${(p.price_cents/100).toFixed(2)}</option>`).join('')
+      + `<option value="_outro_">${t('mybiz_pick_other')}</option>`;
+  }
+
+  document.getElementById('mpPick').addEventListener('change', e=>{
+    const val = e.target.value;
+    const box = document.getElementById('mpFieldsBox');
+    document.getElementById('mpEditId').value = '';
+    document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
+    if(val === ''){ box.style.display = 'none'; return; }
+    if(val === '_outro_'){
+      ['mpName','mpPrice','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+    }else{
+      const p = productCatalog[parseInt(val, 10)];
+      document.getElementById('mpName').value = p.name;
+      document.getElementById('mpPrice').value = (p.price_cents/100).toFixed(2);
+      document.getElementById('mpCategory').value = p.category || '';
+      document.getElementById('mpImage').value = p.image_url || '';
+    }
+    // o link é sempre do próprio parceiro — nunca copiado de outra loja do catálogo
+    document.getElementById('mpLink').value = '';
+    box.style.display = '';
+    document.getElementById('mpLink').focus();
+  });
 
   document.getElementById('mbGeoBtn').addEventListener('click', ()=>{
     const statusEl = document.getElementById('mbGeoStatus');
@@ -6029,7 +6058,10 @@
     document.getElementById('mpEditId').value = '';
     document.getElementById('mpSubmit').textContent = t('mybiz_add_product');
     ['mpName','mpPrice','mpLink','mpImage','mpCategory'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('mpPick').value = '';
+    document.getElementById('mpFieldsBox').style.display = 'none';
     loadMyProducts();
+    loadProductCatalog();
   });
 
   document.getElementById('mpTableBody').addEventListener('click', async e=>{
@@ -6052,6 +6084,8 @@
       document.getElementById('mpCategory').value = data.category || '';
       document.getElementById('mpEditId').value = data.id;
       document.getElementById('mpSubmit').textContent = t('admin_salvar');
+      document.getElementById('mpPick').value = '_outro_';
+      document.getElementById('mpFieldsBox').style.display = '';
       document.getElementById('mpName').scrollIntoView({ behavior:'smooth', block:'center' });
     }
   });

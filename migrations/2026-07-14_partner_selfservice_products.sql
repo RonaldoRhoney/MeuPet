@@ -86,3 +86,10 @@ where p.petshop_id is null or s.is_partner = true;
 
 alter view public.products_feed set (security_invoker = true);
 grant select on public.products_feed to anon, authenticated;
+
+-- 7) o formulário de lead anônimo saiu de uso (virou autoatendimento logado);
+--    fecha o insert anônimo órfão que ficou aberto em partner_leads.
+drop policy if exists "partner_leads_insert_any" on public.partner_leads;
+create policy "partner_leads_insert_any" on public.partner_leads for insert with check (
+  auth.uid() is not null and created_by = auth.uid()
+);
