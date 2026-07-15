@@ -70,7 +70,7 @@ alter table public.products add constraint products_image_len check (image_url i
 alter table public.products drop constraint if exists products_shop_name_len;
 alter table public.products add constraint products_shop_name_len check (char_length(shop_name) <= 200);
 alter table public.products drop constraint if exists products_affiliate_len;
-alter table public.products add constraint products_affiliate_len check (char_length(affiliate_url) <= 500);
+alter table public.products add constraint products_affiliate_len check (char_length(affiliate_url) <= 2000);
 alter table public.products drop constraint if exists products_category_len;
 alter table public.products add constraint products_category_len check (category is null or char_length(category) <= 60);
 

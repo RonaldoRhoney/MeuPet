@@ -619,7 +619,7 @@ create table public.products (
   price_cents integer not null check (price_cents >= 0),
   image_url text check (char_length(image_url) <= 500),
   shop_name text not null check (char_length(shop_name) <= 200),
-  affiliate_url text not null check (char_length(affiliate_url) <= 500),
+  affiliate_url text not null check (char_length(affiliate_url) <= 2000),
   category text check (char_length(category) <= 60),
   item_type text not null default 'produto' check (item_type in ('produto','servico')),
   is_sponsored boolean not null default false,
