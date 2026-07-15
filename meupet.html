@@ -2159,6 +2159,7 @@
     mybiz_geo_loading:{pt:'Obtendo localização…',en:'Getting location…'},
     mybiz_geo_ok:{pt:'Localização capturada!',en:'Location captured!'},
     mybiz_geo_error:{pt:'Não deu pra obter sua localização — tenta de novo ou preenche manualmente.',en:"Couldn't get your location — try again or fill in manually."},
+    mybiz_geo_missing:{pt:'Falta sua localização — clique em "Usar minha localização" acima e aceite a permissão do navegador.',en:'Your location is missing — click "Use my location" above and allow the browser permission.'},
     mybiz_create_missing:{pt:'Preenche nome, cidade e localização (use o botão acima).',en:'Fill in name, city and location (use the button above).'},
     mybiz_product_missing:{pt:'Preenche nome, preço e link do produto.',en:'Fill in name, price and product link.'},
     mybiz_confirm_delete:{pt:'Excluir este produto?',en:'Delete this product?'},
@@ -6106,6 +6107,7 @@
   // e gerencia os próprios produtos na vitrine (RLS: products_owner_write).
   // =====================================================================
   let myPetshop = null;
+  let locationCaptureAttempted = false;
 
   // Fluxo em 3 passos dentro de "Meu Negócio": (1) seus dados — só aparece
   // se o perfil ainda não tem nome+cidade — (2) dados do negócio, (3) produtos
@@ -6122,8 +6124,16 @@
     const hasPersonal = !!(profile?.full_name && profile?.city);
     document.getElementById('partnerPersonalStep').style.display = hasPersonal ? 'none' : '';
     if(!hasPersonal) document.getElementById('ppName').value = profile?.full_name || '';
-    document.getElementById('myBizNoShop').style.display = (hasPersonal && !myPetshop) ? '' : 'none';
+    const showBizForm = hasPersonal && !myPetshop;
+    document.getElementById('myBizNoShop').style.display = showBizForm ? '' : 'none';
     document.getElementById('myBizHasShop').style.display = (hasPersonal && myPetshop) ? '' : 'none';
+    // pega a localização sozinho assim que a etapa do negócio aparece —
+    // sem isso, o dono esquecia de clicar no botão e o cadastro travava
+    // "sem explicação" (o erro ficava um texto vermelho pequeno abaixo do botão)
+    if(showBizForm && !locationCaptureAttempted && !document.getElementById('mbLat').value){
+      locationCaptureAttempted = true;
+      captureMyLocation();
+    }
 
     if(myPetshop){
       document.getElementById('mbShopName').textContent = myPetshop.name;
@@ -6295,7 +6305,10 @@
     document.getElementById('mbName')?.focus();
   });
 
-  document.getElementById('mbGeoBtn').addEventListener('click', ()=>{
+  // extraída pra função reaproveitável: dispara sozinha quando a etapa do
+  // negócio aparece, sem precisar que o dono lembre de clicar no botão —
+  // o botão continua ali só como retry manual se a primeira tentativa falhar
+  function captureMyLocation(){
     const statusEl = document.getElementById('mbGeoStatus');
     if(!navigator.geolocation){ statusEl.textContent = t('mybiz_geo_unsupported'); return; }
     statusEl.textContent = t('mybiz_geo_loading');
@@ -6304,10 +6317,11 @@
       document.getElementById('mbLng').value = pos.coords.longitude;
       statusEl.textContent = '✅ ' + t('mybiz_geo_ok');
     }, err => {
-      statusEl.textContent = t('mybiz_geo_error');
+      statusEl.textContent = '⚠️ ' + t('mybiz_geo_error');
       console.warn('MeuPet: geolocalização falhou', err.message);
     });
-  });
+  }
+  document.getElementById('mbGeoBtn').addEventListener('click', captureMyLocation);
 
   document.getElementById('mbCreateSubmit').addEventListener('click', async ()=>{
     const statusEl = document.getElementById('mbCreateStatus');
@@ -6317,9 +6331,18 @@
     const address = document.getElementById('mbAddress').value.trim() || null;
     const lat = parseFloat(document.getElementById('mbLat').value);
     const lng = parseFloat(document.getElementById('mbLng').value);
-    if(!name || !city || Number.isNaN(lat) || Number.isNaN(lng)){
+    if(!name || !city){
       statusEl.textContent = t('mybiz_create_missing');
       statusEl.className = 'partner-form-status err';
+      return;
+    }
+    if(Number.isNaN(lat) || Number.isNaN(lng)){
+      // erro mais específico e acionável — sem isso, a pessoa não entendia
+      // por que "nada acontecia" ao clicar em cadastrar
+      statusEl.textContent = '⚠️ ' + t('mybiz_geo_missing');
+      statusEl.className = 'partner-form-status err';
+      document.getElementById('mbGeoBtn').scrollIntoView({ behavior:'smooth', block:'center' });
+      captureMyLocation();
       return;
     }
     const { error } = await insertResilient('petshops', { name, business_type: businessType, city, state, country, address, lat, lng, owner_id: currentUser.id });
