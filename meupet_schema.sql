@@ -52,6 +52,7 @@ create table public.profiles (
   full_name text not null,
   avatar_url text,
   city text,
+  state text check (state is null or char_length(state) <= 100),
   country text,
   plan text not null default 'free' check (plan in ('free','premium','petshop_partner')),
   is_petshop boolean not null default false,

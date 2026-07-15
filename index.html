@@ -1195,7 +1195,39 @@
       <div id="myBusinessBox" class="partner-form" style="display:none;">
         <h3 data-i18n="mybiz_title">Meu Negócio</h3>
 
-        <div id="myBizNoShop">
+        <!-- PASSO 1 — seus dados (salvo no perfil, só pergunta se ainda não tem) -->
+        <div id="partnerPersonalStep">
+          <p class="sub" data-i18n="pp_sub">Antes de cadastrar seu negócio, confirme seus dados.</p>
+          <div class="partner-form-grid">
+            <input type="text" id="ppName" placeholder="Nome completo" data-i18n-placeholder="ph_seu_nome" required>
+            <select id="ppCountry" aria-label="País">
+              <option value="Brasil">🇧🇷 Brasil</option>
+              <option value="_outro_">🌎 Outro país</option>
+            </select>
+            <input type="text" id="ppCountryManual" placeholder="Nome do país" style="display:none;">
+            <select id="ppState" aria-label="Estado">
+              <option value="">Escolha o estado</option>
+              <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+            </select>
+            <select id="ppCity" aria-label="Cidade" disabled>
+              <option value="">Escolha o estado primeiro</option>
+            </select>
+            <input type="text" id="ppCityManual" placeholder="Cidade" style="display:none;">
+          </div>
+          <button type="button" class="btn btn-primary" id="ppContinueBtn" style="width:100%; padding:14px;" data-i18n="pp_continue">Continuar</button>
+          <p id="ppStatus" class="partner-form-status"></p>
+        </div>
+
+        <!-- PASSO 2 — dados do negócio -->
+        <div id="myBizNoShop" style="display:none;">
           <p class="sub" data-i18n="mybiz_no_shop_sub">Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.</p>
           <div class="partner-form-grid">
             <input type="text" id="mbName" placeholder="Nome do negócio" data-i18n-placeholder="business_ph_nome" required>
@@ -1227,7 +1259,7 @@
               <option value="">Escolha o estado primeiro</option>
             </select>
             <input type="text" id="mbCityManual" placeholder="Cidade" style="display:none;">
-            <input type="text" id="mbAddress" placeholder="Endereço (opcional)" data-i18n-placeholder="admin_ph_petshop_address">
+            <input type="text" id="mbAddress" placeholder="Bairro (opcional)" data-i18n-placeholder="ph_bairro">
           </div>
           <input type="hidden" id="mbLat" value=""><input type="hidden" id="mbLng" value="">
           <button type="button" class="admin-mini-btn" id="mbGeoBtn" data-i18n="mybiz_use_location">📍 Usar minha localização</button>
@@ -2102,6 +2134,9 @@
     mybiz_loggedout_sub:{pt:'Parceria 100% gratuita e na hora — entra ou cria sua conta pra cadastrar seu negócio e seus produtos.',en:'100% free partnership, activated instantly — log in or create an account to register your business and products.'},
     mybiz_login_cta:{pt:'Entrar ou criar conta — grátis',en:'Log in or create an account — free'},
     mybiz_no_shop_sub:{pt:'Você já tem uma conta — cadastre seu negócio agora mesmo, de graça, sem esperar aprovação.',en:"You're already logged in — register your business right now, for free, with no need to wait for approval."},
+    pp_sub:{pt:'Antes de cadastrar seu negócio, confirme seus dados.',en:'Before registering your business, confirm your details.'},
+    pp_continue:{pt:'Continuar',en:'Continue'},
+    ph_bairro:{pt:'Bairro (opcional)',en:'Neighborhood (optional)'},
     mybiz_use_location:{pt:'📍 Usar minha localização',en:'📍 Use my location'},
     mybiz_create_submit:{pt:'Cadastrar meu negócio — grátis',en:'Register my business — free'},
     mybiz_products_title:{pt:'Meus produtos',en:'My products'},
@@ -2501,6 +2536,22 @@
       delete payload[badCol];
     }
     return { data: null, error: { message: 'falha inesperada no insert' } };
+  }
+
+  // mesma ideia do insertResilient, mas pra update (ex: salvar cidade/estado
+  // no perfil antes da coluna "state" existir em produção)
+  async function updateResilient(table, row, matchColumn, matchValue){
+    let payload = { ...row };
+    for(let attempts = Object.keys(payload).length; attempts >= 0; attempts--){
+      const result = await supa.from(table).update(payload).eq(matchColumn, matchValue).select();
+      if(!result.error) return result;
+      const m = /column ['"]?([a-zA-Z0-9_]+)['"]?|'([a-zA-Z0-9_]+)' column/.exec(result.error.message);
+      const badCol = m?.[1] || m?.[2];
+      if(!badCol || !(badCol in payload)) return result;
+      console.warn(`MeuPet: coluna "${badCol}" ainda não existe em ${table} (migration pendente) — atualizando sem ela`);
+      delete payload[badCol];
+    }
+    return { data: null, error: { message: 'falha inesperada no update' } };
   }
 
   // =====================================================================
@@ -3448,7 +3499,7 @@
         else if(pendingIntent === 'becomePartner'){
           pendingIntent = null;
           document.getElementById('myBusinessBox').scrollIntoView({ behavior:'smooth', block:'center' });
-          document.getElementById('mbName')?.focus();
+          (document.getElementById('ppName')?.offsetParent ? document.getElementById('ppName') : document.getElementById('mbName'))?.focus();
         }
       }, 900);
     }catch(err){
@@ -6037,7 +6088,7 @@
   document.getElementById('partnerCta').addEventListener('click', ()=>{
     if(currentUser){
       document.getElementById('myBusinessBox').scrollIntoView({ behavior:'smooth', block:'center' });
-      document.getElementById('mbName')?.focus();
+      (document.getElementById('ppName')?.offsetParent ? document.getElementById('ppName') : document.getElementById('mbName'))?.focus();
     }else{
       pendingIntent = 'becomePartner';
       openModal('signup');
@@ -6056,13 +6107,24 @@
   // =====================================================================
   let myPetshop = null;
 
+  // Fluxo em 3 passos dentro de "Meu Negócio": (1) seus dados — só aparece
+  // se o perfil ainda não tem nome+cidade — (2) dados do negócio, (3) produtos
+  // e serviços. Cada passo some assim que o anterior é preenchido.
   async function loadMyBusiness(){
     if(!currentUser || !DB_READY) return;
-    const { data, error } = await supa.from('petshops').select('*').eq('owner_id', currentUser.id).maybeSingle();
+    const [{ data: petshop, error }, { data: profile }] = await Promise.all([
+      supa.from('petshops').select('*').eq('owner_id', currentUser.id).maybeSingle(),
+      supa.from('profiles').select('full_name,city,state,country').eq('id', currentUser.id).single(),
+    ]);
     if(error){ console.warn('MeuPet: não deu pra carregar meu negócio', error.message); return; }
-    myPetshop = data || null;
-    document.getElementById('myBizNoShop').style.display = myPetshop ? 'none' : '';
-    document.getElementById('myBizHasShop').style.display = myPetshop ? '' : 'none';
+    myPetshop = petshop || null;
+
+    const hasPersonal = !!(profile?.full_name && profile?.city);
+    document.getElementById('partnerPersonalStep').style.display = hasPersonal ? 'none' : '';
+    if(!hasPersonal) document.getElementById('ppName').value = profile?.full_name || '';
+    document.getElementById('myBizNoShop').style.display = (hasPersonal && !myPetshop) ? '' : 'none';
+    document.getElementById('myBizHasShop').style.display = (hasPersonal && myPetshop) ? '' : 'none';
+
     if(myPetshop){
       document.getElementById('mbShopName').textContent = myPetshop.name;
       document.getElementById('mbShopCity').textContent = myPetshop.city;
@@ -6160,40 +6222,77 @@
 
   // País/Estado/Cidade por escolha em vez de digitação — a cidade vem da
   // API pública do IBGE (municípios reais do estado escolhido), sem chave.
-  document.getElementById('mbCountry').addEventListener('change', e=>{
-    const isOutro = e.target.value === '_outro_';
-    document.getElementById('mbCountryManual').style.display = isOutro ? '' : 'none';
-    document.getElementById('mbState').style.display = isOutro ? 'none' : '';
-    document.getElementById('mbCity').style.display = isOutro ? 'none' : '';
-    document.getElementById('mbCityManual').style.display = isOutro ? '' : 'none';
-    if(isOutro) document.getElementById('mbCountryManual').focus();
-  });
+  // Reaproveitado em dois formulários (pp = seus dados, mb = negócio) via prefixo.
+  function wireCountryStateCity(prefix){
+    const el = suffix => document.getElementById(prefix + suffix);
+    el('Country').addEventListener('change', e=>{
+      const isOutro = e.target.value === '_outro_';
+      el('CountryManual').style.display = isOutro ? '' : 'none';
+      el('State').style.display = isOutro ? 'none' : '';
+      el('City').style.display = isOutro ? 'none' : '';
+      el('CityManual').style.display = isOutro ? '' : 'none';
+      if(isOutro) el('CountryManual').focus();
+    });
 
-  document.getElementById('mbState').addEventListener('change', async e=>{
-    const uf = e.target.value;
-    const citySel = document.getElementById('mbCity');
-    if(!uf){ citySel.innerHTML = `<option value="">Escolha o estado primeiro</option>`; citySel.disabled = true; return; }
-    citySel.disabled = true;
-    citySel.innerHTML = `<option value="">Carregando cidades…</option>`;
-    try{
-      const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-      const cidades = await res.json();
-      citySel.innerHTML = `<option value="">Escolha a cidade</option>`
-        + cidades.map(c => `<option value="${esc(c.nome)}">${esc(c.nome)}</option>`).join('')
-        + `<option value="_manual_">✍️ Não achei, digitar</option>`;
-      citySel.disabled = false;
-    }catch(err){
-      console.warn('MeuPet: falha ao buscar municípios do IBGE', err.message);
-      citySel.innerHTML = `<option value="_manual_" selected>✍️ Digitar cidade</option>`;
-      citySel.disabled = false;
-      citySel.dispatchEvent(new Event('change'));
+    el('State').addEventListener('change', async e=>{
+      const uf = e.target.value;
+      const citySel = el('City');
+      if(!uf){ citySel.innerHTML = `<option value="">Escolha o estado primeiro</option>`; citySel.disabled = true; return; }
+      citySel.disabled = true;
+      citySel.innerHTML = `<option value="">Carregando cidades…</option>`;
+      try{
+        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+        const cidades = await res.json();
+        citySel.innerHTML = `<option value="">Escolha a cidade</option>`
+          + cidades.map(c => `<option value="${esc(c.nome)}">${esc(c.nome)}</option>`).join('')
+          + `<option value="_manual_">✍️ Não achei, digitar</option>`;
+        citySel.disabled = false;
+      }catch(err){
+        console.warn('MeuPet: falha ao buscar municípios do IBGE', err.message);
+        citySel.innerHTML = `<option value="_manual_" selected>✍️ Digitar cidade</option>`;
+        citySel.disabled = false;
+        citySel.dispatchEvent(new Event('change'));
+      }
+    });
+
+    el('City').addEventListener('change', e=>{
+      const manual = e.target.value === '_manual_';
+      el('CityManual').style.display = manual ? '' : 'none';
+      if(manual) el('CityManual').focus();
+    });
+  }
+
+  function readCountryStateCity(prefix){
+    const el = suffix => document.getElementById(prefix + suffix);
+    const isForeign = el('Country').value === '_outro_';
+    const country = isForeign ? el('CountryManual').value.trim() : 'Brasil';
+    const state = isForeign ? null : (el('State').value || null);
+    const cityPick = el('City').value;
+    const city = (isForeign || cityPick === '_manual_') ? el('CityManual').value.trim() : cityPick;
+    return { country, state, city };
+  }
+
+  wireCountryStateCity('pp');
+  wireCountryStateCity('mb');
+
+  document.getElementById('ppContinueBtn').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('ppStatus');
+    const full_name = document.getElementById('ppName').value.trim();
+    const { country, state, city } = readCountryStateCity('pp');
+    if(!full_name || !city){
+      statusEl.textContent = t('mybiz_create_missing');
+      statusEl.className = 'partner-form-status err';
+      return;
     }
-  });
-
-  document.getElementById('mbCity').addEventListener('change', e=>{
-    const manual = e.target.value === '_manual_';
-    document.getElementById('mbCityManual').style.display = manual ? '' : 'none';
-    if(manual) document.getElementById('mbCityManual').focus();
+    const { error } = await updateResilient('profiles', { full_name, city, state, country }, 'id', currentUser.id);
+    if(error){
+      statusEl.textContent = error.message;
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    statusEl.textContent = '';
+    await loadMyBusiness();
+    document.getElementById('mbName')?.focus();
   });
 
   document.getElementById('mbGeoBtn').addEventListener('click', ()=>{
@@ -6214,14 +6313,7 @@
     const statusEl = document.getElementById('mbCreateStatus');
     const name = document.getElementById('mbName').value.trim();
     const businessType = document.getElementById('mbType').value;
-    const countrySel = document.getElementById('mbCountry').value;
-    const isForeign = countrySel === '_outro_';
-    const country = isForeign ? document.getElementById('mbCountryManual').value.trim() : 'Brasil';
-    const state = isForeign ? null : (document.getElementById('mbState').value || null);
-    const cityPick = document.getElementById('mbCity').value;
-    const city = isForeign || cityPick === '_manual_'
-      ? document.getElementById('mbCityManual').value.trim()
-      : cityPick;
+    const { country, state, city } = readCountryStateCity('mb');
     const address = document.getElementById('mbAddress').value.trim() || null;
     const lat = parseFloat(document.getElementById('mbLat').value);
     const lng = parseFloat(document.getElementById('mbLng').value);
