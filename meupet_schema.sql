@@ -598,7 +598,10 @@ $$;
 create or replace function public.protect_partner_columns()
 returns trigger language plpgsql security definer as $$
 begin
-  if public.is_admin() then
+  -- current_user = 'service_role' também passa (mesmo padrão de
+  -- protect_profile_plan): automação/backend confiável, sem auth.uid()
+  -- associado, então is_admin() sozinho sempre bloquearia esses casos
+  if public.is_admin() or current_user = 'service_role' then
     return new;
   end if;
   if TG_OP = 'INSERT' then
@@ -642,7 +645,7 @@ create index idx_products_petshop on public.products(petshop_id);
 create or replace function public.protect_product_sponsor_column()
 returns trigger language plpgsql security definer as $$
 begin
-  if public.is_admin() then
+  if public.is_admin() or current_user = 'service_role' then
     return new;
   end if;
   if TG_OP = 'INSERT' then
