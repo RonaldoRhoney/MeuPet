@@ -5905,7 +5905,14 @@
 
   async function loadPartnersCarousel(){
     if(!DB_READY) return;
-    const { data, error } = await supa.from('petshops').select('name,city,business_type').eq('is_partner', true).limit(100);
+    // seleciona business_type "com cuidado": se a coluna ainda não existir
+    // nesse banco (migration pendente), cai pra uma versão sem ela em vez de
+    // deixar o carrossel inteiro quebrado por causa de um campo decorativo
+    let { data, error } = await supa.from('petshops').select('name,city,business_type').eq('is_partner', true).limit(100);
+    if(error){
+      console.warn('MeuPet: carrossel sem business_type (migration pendente?)', error.message);
+      ({ data, error } = await supa.from('petshops').select('name,city').eq('is_partner', true).limit(100));
+    }
     if(error || !data || !data.length) return;
     // Fisher-Yates — ordem aleatória a cada carregamento da página
     partnersCarouselList = [...data];
