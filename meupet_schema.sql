@@ -553,6 +553,7 @@ create table public.petshops (
   name text not null check (char_length(name) <= 200),
   address text check (char_length(address) <= 300),
   city text not null check (char_length(city) <= 120),
+  state text check (char_length(state) <= 100),
   country text not null check (char_length(country) <= 80),
   lat double precision not null check (lat between -90 and 90),
   lng double precision not null check (lng between -180 and 180),

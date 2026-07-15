@@ -1214,6 +1214,19 @@
               <option value="outro" data-i18n="opt_outro">Outro</option>
             </select>
             <input type="text" id="mbCity" placeholder="Cidade" data-i18n-placeholder="ph_cidade" required>
+            <select id="mbState" aria-label="Estado">
+              <option value="">Estado (opcional)</option>
+              <option value="AC">Acre</option><option value="AL">Alagoas</option><option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option><option value="BA">Bahia</option><option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option><option value="ES">Espírito Santo</option><option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option><option value="MT">Mato Grosso</option><option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option><option value="PA">Pará</option><option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option><option value="PE">Pernambuco</option><option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option><option value="RN">Rio Grande do Norte</option><option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option><option value="RR">Roraima</option><option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option><option value="SE">Sergipe</option><option value="TO">Tocantins</option>
+              <option value="_outro_">Outro / fora do Brasil</option>
+            </select>
             <input type="text" id="mbCountry" placeholder="País" value="Brasil" data-i18n-placeholder="admin_ph_petshop_country">
             <input type="text" id="mbAddress" placeholder="Endereço (opcional)" data-i18n-placeholder="admin_ph_petshop_address">
           </div>
@@ -2471,6 +2484,24 @@
       const u = new URL(String(url ?? ''), window.location.href);
       return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '#';
     }catch(_){ return '#'; }
+  }
+
+  // insert resiliente a coluna nova que uma migration ainda não aplicou em
+  // produção — em vez de travar o cadastro inteiro por causa de um campo a
+  // mais (ex: business_type/state), detecta "coluna não existe" no erro do
+  // PostgREST, remove só esse campo do payload e tenta de novo
+  async function insertResilient(table, row){
+    let payload = { ...row };
+    for(let attempts = Object.keys(payload).length; attempts >= 0; attempts--){
+      const result = await supa.from(table).insert(payload).select();
+      if(!result.error) return result;
+      const m = /column ['"]?([a-zA-Z0-9_]+)['"]?|'([a-zA-Z0-9_]+)' column/.exec(result.error.message);
+      const badCol = m?.[1] || m?.[2];
+      if(!badCol || !(badCol in payload)) return result;
+      console.warn(`MeuPet: coluna "${badCol}" ainda não existe em ${table} (migration pendente) — cadastrando sem ela`);
+      delete payload[badCol];
+    }
+    return { data: null, error: { message: 'falha inesperada no insert' } };
   }
 
   // =====================================================================
@@ -6090,6 +6121,8 @@
     const name = document.getElementById('mbName').value.trim();
     const businessType = document.getElementById('mbType').value;
     const city = document.getElementById('mbCity').value.trim();
+    const stateVal = document.getElementById('mbState').value;
+    const state = (stateVal && stateVal !== '_outro_') ? stateVal : null;
     const country = document.getElementById('mbCountry').value.trim() || 'Brasil';
     const address = document.getElementById('mbAddress').value.trim() || null;
     const lat = parseFloat(document.getElementById('mbLat').value);
@@ -6099,7 +6132,7 @@
       statusEl.className = 'partner-form-status err';
       return;
     }
-    const { error } = await supa.from('petshops').insert({ name, business_type: businessType, city, country, address, lat, lng, owner_id: currentUser.id });
+    const { error } = await insertResilient('petshops', { name, business_type: businessType, city, state, country, address, lat, lng, owner_id: currentUser.id });
     if(error){
       statusEl.textContent = error.message;
       statusEl.className = 'partner-form-status err';
@@ -6147,7 +6180,7 @@
     };
     const { error } = editId
       ? await supa.from('products').update(row).eq('id', editId)
-      : await supa.from('products').insert(row);
+      : await insertResilient('products', row);
     if(error){
       statusEl.textContent = error.message;
       statusEl.className = 'partner-form-status err';
