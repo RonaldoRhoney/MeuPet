@@ -617,6 +617,24 @@
     background:var(--paper); border-radius:24px; padding:32px 34px; max-width:620px; margin:0 auto;
     box-shadow:0 30px 60px -30px rgba(0,0,0,0.4);
   }
+  .wizard-steps{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+  .wizard-steps-label{font-family:'JetBrains Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--teal);}
+  .wizard-steps-dots{display:flex; gap:5px;}
+  .wizard-steps-dots .dot{width:22px; height:4px; border-radius:2px; background:var(--line);}
+  .wizard-steps-dots .dot.active{background:var(--teal);}
+  .wizard-back-link{display:block; text-align:center; margin-top:10px; font-size:0.84rem; color:var(--teal); cursor:pointer; background:none; border:none; width:100%; font-family:inherit;}
+  .wizard-back-link:hover{text-decoration:underline;}
+  .service-checklist{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+  .service-check-item{
+    display:flex; align-items:center; gap:10px; padding:12px 14px; border:1.5px solid var(--line);
+    border-radius:12px; cursor:pointer; font-size:0.9rem; transition:border-color .15s ease;
+  }
+  .service-check-item:has(input:checked){border-color:var(--teal); background:rgba(15,61,62,0.06);}
+  .service-check-item input{width:18px; height:18px; accent-color:var(--teal); flex-shrink:0;}
+  .service-check-custom{
+    display:flex; align-items:center; gap:8px; padding:12px 14px; border:1.5px dashed var(--line);
+    border-radius:12px; cursor:pointer; font-size:0.9rem; color:var(--teal); background:none; width:100%; font-family:inherit; text-align:left;
+  }
   .partner-form h3{font-size:1.25rem; color:var(--heading); margin-bottom:4px;}
   .partner-form .sub{font-size:0.84rem; color:var(--text-muted); margin-bottom:20px;}
   .partners-carousel{
@@ -1201,6 +1219,11 @@
       </div>
 
       <div id="myBusinessBox" class="partner-form" style="display:none;">
+        <div id="partnerWizardSteps" class="wizard-steps">
+          <span class="wizard-steps-label" id="wizardStepsLabel">Passo 1 de 3</span>
+          <div class="wizard-steps-dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span></div>
+        </div>
+
         <!-- PASSO 1 — seus dados (salvo no perfil, só pergunta se ainda não tem) -->
         <div id="partnerPersonalStep">
           <h3 data-i18n="pp_title">Seus Dados</h3>
@@ -1278,8 +1301,20 @@
           <input type="hidden" id="mbLat" value=""><input type="hidden" id="mbLng" value="">
           <button type="button" class="admin-mini-btn" id="mbGeoBtn" data-i18n="mybiz_use_location">📍 Usar minha localização</button>
           <span id="mbGeoStatus" style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;"></span>
-          <button type="button" class="btn btn-primary" id="mbCreateSubmit" style="width:100%; padding:14px; margin-top:14px;" data-i18n="mybiz_create_submit">Cadastrar meu negócio — grátis</button>
+          <button type="button" class="btn btn-primary" id="mbCreateSubmit" style="width:100%; padding:14px; margin-top:14px;" data-i18n="mybiz_step2_continue">Continuar</button>
           <p id="mbCreateStatus" class="partner-form-status"></p>
+          <button type="button" class="wizard-back-link" id="mbBackBtn" data-i18n="wizard_back">← Voltar</button>
+        </div>
+
+        <!-- PASSO 3 — checklist de produtos/serviços sugeridos pra categoria escolhida -->
+        <div id="myBizServicesStep" style="display:none;">
+          <h3 data-i18n="svc_title">Quais produtos ou serviços você oferece?</h3>
+          <p class="sub" id="svcSub" data-i18n="svc_sub">Selecione o que seu negócio oferece. Você pode adicionar mais depois.</p>
+          <div class="service-checklist" id="serviceChecklist"></div>
+          <button type="button" class="service-check-custom" id="svcAddCustomBtn">+ <span data-i18n="svc_add_custom">Adicionar personalizado</span></button>
+          <button type="button" class="btn btn-primary" id="svcFinishBtn" style="width:100%; padding:14px; margin-top:16px;" data-i18n="svc_finish">Finalizar Cadastro</button>
+          <p id="svcStatus" class="partner-form-status"></p>
+          <button type="button" class="wizard-back-link" id="svcBackBtn" data-i18n="wizard_back">← Voltar</button>
         </div>
 
         <div id="myBizHasShop" style="display:none;">
@@ -2172,9 +2207,16 @@
     pp_title:{pt:'Seus Dados',en:'Your Details'},
     pp_sub:{pt:'Antes de cadastrar seu negócio, confirme seus dados.',en:'Before registering your business, confirm your details.'},
     pp_continue:{pt:'Continuar',en:'Continue'},
+    mybiz_step2_continue:{pt:'Continuar',en:'Continue'},
+    wizard_back:{pt:'← Voltar',en:'← Back'},
+    svc_title:{pt:'Quais produtos ou serviços você oferece?',en:'What products or services do you offer?'},
+    svc_sub:{pt:'Selecione o que seu negócio oferece. Você pode adicionar mais depois.',en:'Select what your business offers. You can add more later.'},
+    svc_add_custom:{pt:'Adicionar personalizado',en:'Add custom'},
+    svc_finish:{pt:'Finalizar Cadastro',en:'Finish Registration'},
+    svc_custom_placeholder:{pt:'Nome do serviço ou produto',en:'Service or product name'},
+    svc_partial_fail:{pt:'Negócio criado, mas {n} item(ns) não foram salvos — adicione de novo em "Meus produtos".',en:'Business created, but {n} item(s) failed to save — add them again in "My products".'},
     ph_bairro:{pt:'Bairro (opcional)',en:'Neighborhood (optional)'},
     mybiz_use_location:{pt:'📍 Usar minha localização',en:'📍 Use my location'},
-    mybiz_create_submit:{pt:'Cadastrar meu negócio — grátis',en:'Register my business — free'},
     mybiz_products_title:{pt:'Meus produtos',en:'My products'},
     mybiz_pick_sub:{pt:'Escolha da lista pra não digitar tudo de novo — se não achar, cadastre um novo.',en:"Pick from the list so you don't have to type it all again — if you can't find it, add a new one."},
     mybiz_pick_placeholder:{pt:'🔍 Escolher produto da lista…',en:'🔍 Pick a product from the list…'},
@@ -6231,10 +6273,33 @@
   // =====================================================================
   let myPetshop = null;
   let locationCaptureAttempted = false;
+  // nada é salvo no banco até "Finalizar Cadastro" (passo 3) — fica em
+  // memória enquanto a pessoa navega entre os 3 passos do wizard
+  let partnerWizardState = { personal: null, business: null };
 
-  // Fluxo em 3 passos dentro de "Meu Negócio": (1) seus dados — só aparece
-  // se o perfil ainda não tem nome+cidade — (2) dados do negócio, (3) produtos
-  // e serviços. Cada passo some assim que o anterior é preenchido.
+  const WIZARD_STEP_IDS = { 1:'partnerPersonalStep', 2:'myBizNoShop', 3:'myBizServicesStep' };
+
+  function showWizardStep(n){
+    Object.entries(WIZARD_STEP_IDS).forEach(([num, id]) => {
+      document.getElementById(id).style.display = (Number(num) === n) ? '' : 'none';
+    });
+    document.getElementById('myBizHasShop').style.display = 'none';
+    document.getElementById('partnerWizardSteps').style.display = '';
+    document.getElementById('wizardStepsLabel').textContent = currentLang === 'en' ? `Step ${n} of 3` : `Passo ${n} de 3`;
+    document.querySelectorAll('#partnerWizardSteps .dot').forEach((dot, i) => dot.classList.toggle('active', i < n));
+    // mesma ideia de sempre: captura a localização sozinha ao entrar no
+    // passo do negócio, sem esperar o dono lembrar de clicar no botão
+    if(n === 2 && !locationCaptureAttempted && !document.getElementById('mbLat').value){
+      locationCaptureAttempted = true;
+      captureMyLocation();
+    }
+    if(n === 3) renderServiceChecklist(partnerWizardState.business?.business_type);
+  }
+
+  // Fluxo em 3 passos dentro de "Meu Negócio": (1) seus dados, (2) dados do
+  // negócio, (3) checklist de produtos/serviços sugeridos — só grava tudo
+  // no banco no "Finalizar Cadastro" do passo 3. Depois de criado, some o
+  // wizard e mostra o painel de gestão (myBizHasShop).
   async function loadMyBusiness(){
     if(!currentUser || !DB_READY) return;
     const [{ data: petshop, error: petshopError }, { data: profile, error: profileError }] = await Promise.all([
@@ -6245,26 +6310,26 @@
     if(profileError){ console.warn('MeuPet: não deu pra carregar meu perfil', profileError.message); return; }
     myPetshop = petshop || null;
 
-    const hasPersonal = !!(profile?.full_name && profile?.city);
-    document.getElementById('partnerPersonalStep').style.display = hasPersonal ? 'none' : '';
-    if(!hasPersonal) document.getElementById('ppName').value = profile?.full_name || '';
-    const showBizForm = hasPersonal && !myPetshop;
-    document.getElementById('myBizNoShop').style.display = showBizForm ? '' : 'none';
-    document.getElementById('myBizHasShop').style.display = (hasPersonal && myPetshop) ? '' : 'none';
-    // pega a localização sozinho assim que a etapa do negócio aparece —
-    // sem isso, o dono esquecia de clicar no botão e o cadastro travava
-    // "sem explicação" (o erro ficava um texto vermelho pequeno abaixo do botão)
-    if(showBizForm && !locationCaptureAttempted && !document.getElementById('mbLat').value){
-      locationCaptureAttempted = true;
-      captureMyLocation();
-    }
-
     if(myPetshop){
+      document.getElementById('partnerWizardSteps').style.display = 'none';
+      Object.values(WIZARD_STEP_IDS).forEach(id => document.getElementById(id).style.display = 'none');
+      document.getElementById('myBizHasShop').style.display = '';
       document.getElementById('mbShopName').textContent = myPetshop.name;
       document.getElementById('mbShopCity').textContent = myPetshop.city;
       document.getElementById('mbShopBadge').textContent = myPetshop.is_partner ? '✅ ' + t('mybiz_verified_badge') : '⏳ ' + t('mybiz_pending_badge');
       loadMyProducts();
       loadProductCatalog();
+      return;
+    }
+
+    document.getElementById('myBizHasShop').style.display = 'none';
+    const hasPersonal = !!(profile?.full_name && profile?.city);
+    if(hasPersonal){
+      partnerWizardState.personal = { full_name: profile.full_name, city: profile.city, state: profile.state || null, country: profile.country || 'Brasil' };
+      showWizardStep(2);
+    }else{
+      document.getElementById('ppName').value = profile?.full_name || '';
+      showWizardStep(1);
     }
   }
 
@@ -6424,7 +6489,7 @@
     e.target.value = d.replace(/-$/, '').replace(/\)\s$/, ')');
   });
 
-  document.getElementById('ppContinueBtn').addEventListener('click', async ()=>{
+  document.getElementById('ppContinueBtn').addEventListener('click', ()=>{
     const statusEl = document.getElementById('ppStatus');
     const full_name = document.getElementById('ppName').value.trim();
     const { country, state, city } = readCountryStateCity('pp');
@@ -6433,14 +6498,10 @@
       statusEl.className = 'partner-form-status err';
       return;
     }
-    const { error } = await updateResilient('profiles', { full_name, city, state, country }, 'id', currentUser.id);
-    if(error){
-      statusEl.textContent = error.message;
-      statusEl.className = 'partner-form-status err';
-      return;
-    }
     statusEl.textContent = '';
-    await loadMyBusiness();
+    // ainda não grava no banco — só guarda em memória até o passo 3
+    partnerWizardState.personal = { full_name, city, state, country };
+    showWizardStep(2);
     document.getElementById('mbName')?.focus();
   });
 
@@ -6462,7 +6523,7 @@
   }
   document.getElementById('mbGeoBtn').addEventListener('click', captureMyLocation);
 
-  document.getElementById('mbCreateSubmit').addEventListener('click', async ()=>{
+  document.getElementById('mbCreateSubmit').addEventListener('click', ()=>{
     const statusEl = document.getElementById('mbCreateStatus');
     const name = document.getElementById('mbName').value.trim();
     const businessType = document.getElementById('mbType').value;
@@ -6487,13 +6548,122 @@
       captureMyLocation();
       return;
     }
-    const { error } = await insertResilient('petshops', { name, business_type: businessType, city, state, country, address, street_address, phone, about, lat, lng, owner_id: currentUser.id });
-    if(error){
-      statusEl.textContent = error.message;
+    statusEl.textContent = '';
+    // ainda não grava no banco — só guarda em memória até o passo 3
+    partnerWizardState.business = { name, business_type: businessType, city, state, country, address, street_address, phone, about, lat, lng };
+    showWizardStep(3);
+  });
+
+  document.getElementById('mbBackBtn').addEventListener('click', ()=> showWizardStep(1));
+  document.getElementById('svcBackBtn').addEventListener('click', ()=> showWizardStep(2));
+
+  // ---------- Passo 3: checklist de serviços/produtos sugeridos ----------
+  // listas prontas por categoria — ninguém digita nada nessa etapa, só
+  // marca o que já oferece; "Adicionar personalizado" cobre o resto.
+  const serviceChecklistSeeds = {
+    petshop: [
+      { name:'Banho', item_type:'servico' }, { name:'Tosa', item_type:'servico' },
+      { name:'Tosa Higiênica', item_type:'servico' }, { name:'Hidratação', item_type:'servico' },
+      { name:'Corte de Unhas', item_type:'servico' }, { name:'Hospedagem', item_type:'servico' },
+    ],
+    veterinaria: [
+      { name:'Consulta', item_type:'servico' }, { name:'Vacinação', item_type:'servico' },
+      { name:'Exames', item_type:'servico' }, { name:'Cirurgia', item_type:'servico' },
+      { name:'Microchipagem', item_type:'servico' }, { name:'Atendimento de emergência', item_type:'servico' },
+    ],
+    pet_sitter: [
+      { name:'Passeio com o pet', item_type:'servico' }, { name:'Visitas diárias', item_type:'servico' },
+      { name:'Hospedagem em casa', item_type:'servico' }, { name:'Cuidado noturno', item_type:'servico' },
+    ],
+    adestrador: [
+      { name:'Adestramento básico', item_type:'servico' }, { name:'Adestramento avançado', item_type:'servico' },
+      { name:'Sessão individual', item_type:'servico' }, { name:'Adestramento em grupo', item_type:'servico' },
+    ],
+    banho_tosa: [
+      { name:'Banho', item_type:'servico' }, { name:'Tosa', item_type:'servico' },
+      { name:'Tosa Higiênica', item_type:'servico' }, { name:'Hidratação', item_type:'servico' },
+      { name:'Corte de Unhas', item_type:'servico' }, { name:'Escovação de dentes', item_type:'servico' },
+    ],
+    produto: [
+      { name:'Ração', item_type:'produto' }, { name:'Petiscos', item_type:'produto' },
+      { name:'Brinquedos', item_type:'produto' }, { name:'Acessórios', item_type:'produto' },
+      { name:'Suplementos', item_type:'produto' },
+    ],
+    servico: [], outro: [],
+  };
+  let svcCustomCount = 0;
+
+  function renderServiceChecklist(businessType){
+    const seeds = serviceChecklistSeeds[businessType] || [];
+    const list = document.getElementById('serviceChecklist');
+    svcCustomCount = 0;
+    list.innerHTML = seeds.map((s,i) => `
+      <label class="service-check-item">
+        <input type="checkbox" data-svc-name="${esc(s.name)}" data-svc-type="${s.item_type}" checked>
+        ${esc(s.name)}
+      </label>`).join('');
+    if(!seeds.length){
+      list.innerHTML = `<p class="sub" style="margin:0;">${t('svc_add_custom')} ↓</p>`;
+    }
+  }
+
+  document.getElementById('svcAddCustomBtn').addEventListener('click', ()=>{
+    svcCustomCount++;
+    const id = `svcCustom${svcCustomCount}`;
+    const wrap = document.createElement('label');
+    wrap.className = 'service-check-item';
+    wrap.innerHTML = `<input type="checkbox" checked>
+      <input type="text" id="${id}" placeholder="${t('svc_custom_placeholder')}" style="border:none; background:none; flex:1; padding:0; font-family:inherit; font-size:inherit; color:inherit;">`;
+    document.getElementById('serviceChecklist').appendChild(wrap);
+    document.getElementById(id).focus();
+  });
+
+  document.getElementById('svcFinishBtn').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('svcStatus');
+    const btn = document.getElementById('svcFinishBtn');
+    if(!partnerWizardState.personal || !partnerWizardState.business) return;
+    btn.disabled = true;
+    statusEl.textContent = '';
+
+    const { error: profileErr } = await updateResilient('profiles', partnerWizardState.personal, 'id', currentUser.id);
+    if(profileErr){
+      btn.disabled = false;
+      statusEl.textContent = profileErr.message;
       statusEl.className = 'partner-form-status err';
       return;
     }
-    statusEl.textContent = '';
+
+    const { data: petshopData, error: petshopErr } = await insertResilient('petshops', { ...partnerWizardState.business, owner_id: currentUser.id });
+    if(petshopErr || !petshopData?.[0]){
+      btn.disabled = false;
+      statusEl.textContent = petshopErr?.message || t('mybiz_create_missing');
+      statusEl.className = 'partner-form-status err';
+      return;
+    }
+    const newPetshop = petshopData[0];
+
+    const items = [...document.querySelectorAll('#serviceChecklist input[type=checkbox]:checked')].map(cb => {
+      const customInput = cb.nextElementSibling;
+      const name = cb.dataset.svcName || customInput?.value?.trim();
+      const item_type = cb.dataset.svcType || 'servico';
+      return name ? { name, item_type } : null;
+    }).filter(Boolean);
+
+    if(items.length){
+      const results = await Promise.all(items.map(it => insertResilient('products', {
+        petshop_id: newPetshop.id, name: it.name, item_type: it.item_type,
+        price_cents: 0, shop_name: newPetshop.name, affiliate_url: null,
+      })));
+      const failedCount = results.filter(r => r.error).length;
+      if(failedCount){
+        console.warn(`MeuPet: ${failedCount} de ${items.length} produtos não foram salvos`);
+        statusEl.textContent = t('svc_partial_fail').replace('{n}', failedCount);
+        statusEl.className = 'partner-form-status err';
+      }
+    }
+
+    btn.disabled = false;
+    partnerWizardState = { personal: null, business: null };
     loadMyBusiness();
   });
 

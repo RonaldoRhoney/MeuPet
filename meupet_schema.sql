@@ -627,7 +627,7 @@ create table public.products (
   price_cents integer not null check (price_cents >= 0),
   image_url text check (char_length(image_url) <= 500),
   shop_name text not null check (char_length(shop_name) <= 200),
-  affiliate_url text not null check (char_length(affiliate_url) <= 2000),
+  affiliate_url text check (affiliate_url is null or char_length(affiliate_url) <= 2000), -- opcional: parceiro pode completar depois
   category text check (char_length(category) <= 60),
   description text check (description is null or char_length(description) <= 500),
   item_type text not null default 'produto' check (item_type in ('produto','servico')),
