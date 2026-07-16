@@ -16,6 +16,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MeuPet — A carteirinha digital do seu pet</title>
 <meta name="description" content="Carteirinha digital, ranking, adoção, vitrine e petshops perto de você. Uma conta. Todos os pets.">
+<!-- canonical: index.html e meupet.html são gêmeos byte-idênticos servidos
+     em URLs diferentes — sem isso, buscadores tratam como conteúdo duplicado -->
+<link rel="canonical" href="https://meupet-zeta.vercel.app/">
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
@@ -30,8 +33,14 @@
 <!-- Open Graph -->
 <meta property="og:title" content="MeuPet — Carteirinha Digital do seu Pet">
 <meta property="og:description" content="Feed, ranking, adoção e petshops perto de você.">
-<meta property="og:image" content="/icons/feature-graphic-1024x500.png">
+<meta property="og:image" content="https://meupet-zeta.vercel.app/icons/feature-graphic-1024x500.png">
+<meta property="og:url" content="https://meupet-zeta.vercel.app/">
 <meta property="og:type" content="website">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MeuPet — Carteirinha Digital do seu Pet">
+<meta name="twitter:description" content="Feed, ranking, adoção e petshops perto de você.">
+<meta name="twitter:image" content="https://meupet-zeta.vercel.app/icons/feature-graphic-1024x500.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
@@ -4635,9 +4644,9 @@
     if(p.media_url){
       return p.media_type === 'video'
         ? `<video src="${safeUrl(p.media_url)}" controls muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`
-        : `<img src="${safeUrl(p.media_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
+        : `<img src="${safeUrl(p.media_url)}" alt="" loading="lazy" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
     }
-    if(p.pet_photo_url) return `<img src="${safeUrl(p.pet_photo_url)}" alt="" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
+    if(p.pet_photo_url) return `<img src="${safeUrl(p.pet_photo_url)}" alt="" loading="lazy" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover; object-position:center;">`;
     return '🐾';
   }
 
@@ -5668,7 +5677,7 @@
       return `
       <div class="adopt-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
         <div class="media">
-          ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
+          ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
           <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="${t('adopt_favoritar_title')}" aria-label="${t('adopt_favoritar_title')} ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
           ${isOwner ? `<button class="icon-btn edit-post-btn" data-edit-adopt="${esc(a.id)}" title="Editar anúncio" aria-label="Editar anúncio">✏️</button>` : ''}
         </div>
@@ -6083,7 +6092,7 @@
         grid.innerHTML = sorted.map((m,i)=>`
           <div class="product-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
             ${m.is_sponsored ? '<span class="spons">Parceiro</span>' : ''}
-            <div class="media">${m.image_url ? `<img src="${safeUrl(m.image_url)}" alt="${esc(m.name)}" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover;border-radius:10px;">` : '🛍️'}</div>
+            <div class="media">${m.image_url ? `<img src="${safeUrl(m.image_url)}" alt="${esc(m.name)}" loading="lazy" style="width:100%;height:100%;align-self:stretch;justify-self:stretch;object-fit:cover;border-radius:10px;">` : '🛍️'}</div>
             <h5>${esc(m.name)}</h5>
             <div class="price">R$ ${(m.price_cents/100).toFixed(2)}</div>
             <div class="shop"><a href="${safeUrl(m.affiliate_url)}" target="_blank" rel="sponsored noopener nofollow" data-affiliate="${esc(m.id)}">via ${esc(m.shop_name)} ↗</a></div>
