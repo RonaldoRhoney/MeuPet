@@ -462,6 +462,27 @@
   .care-tip-card p{font-size:0.86rem; color:var(--ink); line-height:1.5; margin:0 0 8px;}
   .vaccine-panel{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:10px;}
   .vaccine-panel h3{font-family:'Fraunces',serif; color:var(--heading); font-size:1.1rem; margin-bottom:4px;}
+  .vet-finder{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:16px;}
+  .vet-finder-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .vet-finder-head h3{font-family:'Fraunces',serif; color:var(--heading); font-size:1.1rem; margin:0 0 4px;}
+  .vet-species-badge{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-pill); padding:6px 12px; font-size:0.78rem; font-weight:700; color:var(--teal); white-space:nowrap;}
+  .vet-finder-tabs{margin:14px 0 6px;}
+  .vet-list{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+  .vet-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px 16px;}
+  .vet-card-top{display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;}
+  .vet-card-name{font-weight:700; color:var(--heading); font-size:0.94rem;}
+  .vet-badge{font-size:0.68rem; font-weight:700; padding:3px 9px; border-radius:var(--radius-pill); white-space:nowrap; display:inline-block;}
+  .vet-badge.gratuito{background:rgba(15,61,62,0.12); color:var(--teal);}
+  .vet-badge.particular{background:rgba(255,182,39,0.2); color:#8a6200;}
+  .vet-badge.prefeitura{background:rgba(23,92,86,0.14); color:var(--teal-light);}
+  .vet-badge.open{background:rgba(46,160,67,0.15); color:#1f7a34;}
+  .vet-badge.new{background:var(--coral); color:#fff; animation:pulse 1.6s ease-in-out infinite;}
+  .vet-card-meta{font-size:0.78rem; color:var(--text-muted-2); margin:4px 0;}
+  .vet-card-actions{display:flex; gap:8px; margin-top:10px;}
+  .vet-card-actions a, .vet-card-actions button{flex:1; text-align:center; padding:8px 10px; border-radius:var(--radius-pill); font-size:0.78rem; font-weight:700; border:1px solid var(--line); background:var(--paper); color:var(--heading); cursor:pointer; text-decoration:none; font-family:inherit;}
+  .vet-card-actions a:hover, .vet-card-actions button:hover{background:var(--surface);}
+  .vet-skeleton{background:#E8F0EF; border-radius:16px; height:88px; animation:pulse 1.4s ease-in-out infinite;}
+  .vet-empty{text-align:center; padding:24px 12px; color:var(--text-muted-2); font-size:0.86rem; line-height:1.6;}
   .vaccine-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);}
   .vaccine-row:last-child{border-bottom:none;}
   .vaccine-name{font-weight:700; color:var(--ink);}
@@ -2366,6 +2387,20 @@
     vaccine_ph_given:{pt:'Data aplicada',en:'Date given'}, vaccine_ph_due:{pt:'Próxima dose',en:'Next dose due'},
     vaccine_add:{pt:'+ Adicionar vacina',en:'+ Add vaccine'},
     vaccine_badge_alert:{pt:'💉 Vacina pendente',en:'💉 Vaccine due'},
+
+    vetfinder_title:{pt:'Onde vacinar agora',en:'Where to vaccinate now'},
+    vetfinder_sub:{pt:'Clínicas e campanhas perto de você — particulares e gratuitas',en:'Clinics and campaigns near you — private and free'},
+    vetfinder_badge_cao:{pt:'Para cães 🐕',en:'For dogs 🐕'}, vetfinder_badge_gato:{pt:'Para gatos 🐱',en:'For cats 🐱'}, vetfinder_badge_outro:{pt:'Para seu pet 🐾',en:'For your pet 🐾'},
+    vetfinder_filter_todos:{pt:'Todos',en:'All'}, vetfinder_filter_gratuito:{pt:'Gratuito 💚',en:'Free 💚'},
+    vetfinder_filter_particular:{pt:'Particular 🟠',en:'Private 🟠'}, vetfinder_filter_aberto:{pt:'Aberto agora',en:'Open now'},
+    vetfinder_badge_gratuito:{pt:'GRATUITO 💚',en:'FREE 💚'}, vetfinder_badge_particular:{pt:'PARTICULAR 🟠',en:'PRIVATE 🟠'}, vetfinder_badge_prefeitura:{pt:'PREFEITURA 🔵',en:'CITY HALL 🔵'},
+    vetfinder_aberto:{pt:'ABERTO ✅',en:'OPEN ✅'}, vetfinder_novo:{pt:'NOVO',en:'NEW'},
+    vetfinder_ver_rota:{pt:'Ver rota',en:'Get directions'}, vetfinder_ligar:{pt:'Ligar',en:'Call'}, vetfinder_ver_mapa:{pt:'Ver todos no mapa',en:'See all on the map'},
+    vetfinder_buscando:{pt:'Buscando locais perto de você...',en:'Looking for places near you...'},
+    vetfinder_vazio:{pt:'Nenhum local encontrado em {city}',en:'No place found in {city}'},
+    vetfinder_ampliar:{pt:'Ampliar busca para 20km',en:'Expand search to 20km'},
+    vetfinder_sua_regiao:{pt:'sua região',en:'your area'},
+    vetfinder_endereco_indisponivel:{pt:'Endereço não disponível',en:'Address unavailable'},
 
     tip_racao_cao_filhote:{pt:'Filhotes precisam de ração específica para filhotes, com mais proteína e cálcio para o crescimento — geralmente em 3 a 4 porções por dia.',
       en:'Puppies need puppy-specific food, higher in protein and calcium for growth — usually 3 to 4 small meals a day.'},
@@ -5034,6 +5069,23 @@
         </div>
         <p class="modal-status" id="vaccineStatus"></p>
       </div>
+      <div class="vet-finder" id="vetFinder">
+        <div class="vet-finder-head">
+          <div>
+            <h3>📍 ${t('vetfinder_title')}</h3>
+            <p class="sub" style="margin:4px 0 0;">${t('vetfinder_sub')}</p>
+          </div>
+          <span class="vet-species-badge">${speciesEmoji[speciesBucket(pet.species)]} ${t('vetfinder_badge_' + speciesBucket(pet.species))}</span>
+        </div>
+        <div class="pill-tabs vet-finder-tabs" id="vetFinderTabs">
+          <button class="active" data-vfilter="todos">${t('vetfinder_filter_todos')}</button>
+          <button data-vfilter="gratuito">${t('vetfinder_filter_gratuito')}</button>
+          <button data-vfilter="particular">${t('vetfinder_filter_particular')}</button>
+          <button data-vfilter="aberto">${t('vetfinder_filter_aberto')}</button>
+        </div>
+        <div class="vet-list" id="vetFinderList"></div>
+        <button type="button" class="btn btn-ghost" id="vetFinderMapBtn" style="width:100%; margin-top:12px;">🗺️ ${t('vetfinder_ver_mapa')}</button>
+      </div>
       <div class="care-tip-grid">
         ${Object.keys(byCategory).map(cat => `
           <div class="care-tip-card">
@@ -5061,6 +5113,180 @@
         refreshVaccineBadge();
       };
     });
+
+    document.getElementById('vetFinderTabs').querySelectorAll('button').forEach(btn=>{
+      btn.onclick = () => {
+        vetFinderFilter = btn.dataset.vfilter;
+        document.getElementById('vetFinderTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn));
+        renderVetFinderList();
+      };
+    });
+    document.getElementById('vetFinderMapBtn').onclick = () => {
+      const hasGeo = currentGeo.lat != null && currentGeo.lng != null;
+      const q = hasGeo ? `clínica veterinária perto de ${currentGeo.lat},${currentGeo.lng}` : `clínica veterinária ${currentGeo.city || ''}`;
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank', 'noopener');
+    };
+    vetFinderRadiusKm = 5;
+    loadVetFinder();
+  }
+
+  // =====================================================================
+  // ONDE VACINAR AGORA — combina campanhas gratuitas cadastradas (tabela
+  // vaccination_events, admin/ONG/prefeitura) com clínicas particulares
+  // reais buscadas via api/nearby-petshops.js (proxy Overpass/OSM já usado
+  // pela seção Petshops — sem chave de API exposta no cliente).
+  // =====================================================================
+  let vetFinderFilter = 'todos';
+  let vetFinderRadiusKm = 5;
+  let vetFinderResults = [];
+  let vetFinderRealtimeChannel = null;
+
+  function isEventOpenNow(ev){
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0,10);
+    if(ev.date_start > todayStr) return false;
+    if(ev.date_end && ev.date_end < todayStr) return false;
+    if(!ev.time_start || !ev.time_end) return true;
+    const hm = now.toTimeString().slice(0,5);
+    return hm >= ev.time_start.slice(0,5) && hm <= ev.time_end.slice(0,5);
+  }
+
+  function eventToVetItem(ev){
+    return {
+      type: ev.type === 'prefeitura' ? 'prefeitura' : 'gratuito',
+      name: ev.name, address: `${ev.address} · ${ev.organizer}`,
+      phone: ev.phone, lat: ev.lat, lng: ev.lng,
+      distKm: (currentGeo.lat != null && ev.lat != null) ? haversineKm(currentGeo.lat, currentGeo.lng, ev.lat, ev.lng) : null,
+      isNew: (Date.now() - new Date(ev.created_at).getTime()) < 86400000,
+      isOpenNow: isEventOpenNow(ev),
+    };
+  }
+
+  async function fetchVaccinationEvents(city){
+    if(!city) return [];
+    const today = new Date().toISOString().slice(0,10);
+    const { data, error } = await supa.from('vaccination_events')
+      .select('*')
+      .ilike('city', `%${city}%`)
+      .eq('is_active', true)
+      .or(`date_end.is.null,date_end.gte.${today}`)
+      .order('date_start', { ascending:true });
+    if(error || !data) return [];
+    return data.map(eventToVetItem);
+  }
+
+  // retorna null (em vez de []) quando o proxy falha, pra sinalizar que
+  // devemos cair no mock — [] vazio é uma busca válida sem resultados
+  async function fetchParticularVets(radiusKm){
+    if(currentGeo.lat == null || currentGeo.lng == null) return [];
+    try{
+      const res = await fetch(`/api/nearby-petshops?lat=${currentGeo.lat}&lng=${currentGeo.lng}&radiusKm=${radiusKm}`);
+      if(!res.ok) throw new Error('http ' + res.status);
+      const data = await res.json();
+      return (data.elements || [])
+        .filter(el => el.kind === 'Veterinário')
+        .map(el => ({
+          type:'particular', name: el.name, address: el.address || null, phone: el.phone,
+          lat: el.lat, lng: el.lng,
+          distKm: haversineKm(currentGeo.lat, currentGeo.lng, el.lat, el.lng),
+          isNew:false, isOpenNow:null,
+        }));
+    } catch(err){
+      return null;
+    }
+  }
+
+  function mockVetsForCity(city){
+    const label = city || t('vetfinder_sua_regiao');
+    return ['Clínica Veterinária Central', 'Pet Vida', 'Vet+ Amigo Fiel'].map(name => ({
+      type:'particular', name:`${name} — ${label}`, address:null, phone:null, lat:null, lng:null,
+      distKm:null, isNew:false, isOpenNow:null,
+    }));
+  }
+
+  async function loadVetFinder(){
+    const listEl = document.getElementById('vetFinderList');
+    if(!listEl) return;
+    listEl.innerHTML = `
+      <div class="vet-skeleton"></div><div class="vet-skeleton"></div><div class="vet-skeleton"></div>
+      <p class="vet-empty">${t('vetfinder_buscando')}</p>`;
+
+    const [particularRaw, events] = await Promise.all([
+      fetchParticularVets(vetFinderRadiusKm),
+      fetchVaccinationEvents(currentGeo.city),
+    ]);
+    const particular = particularRaw === null ? mockVetsForCity(currentGeo.city) : particularRaw;
+    vetFinderResults = [...events, ...particular].sort((a,b) => (a.distKm ?? 1e9) - (b.distKm ?? 1e9));
+    renderVetFinderList();
+    subscribeVetFinderRealtime(currentGeo.city);
+  }
+
+  function badgeForVetType(type){
+    if(type === 'gratuito') return `<span class="vet-badge gratuito">${t('vetfinder_badge_gratuito')}</span>`;
+    if(type === 'prefeitura') return `<span class="vet-badge prefeitura">${t('vetfinder_badge_prefeitura')}</span>`;
+    return `<span class="vet-badge particular">${t('vetfinder_badge_particular')}</span>`;
+  }
+
+  function renderVetCard(item){
+    const distLabel = item.distKm != null ? ` · ${item.distKm.toFixed(1)} km` : '';
+    return `
+      <div class="vet-card">
+        <div class="vet-card-top">
+          <span class="vet-card-name">🏥 ${esc(item.name)}</span>
+          <div style="display:flex; gap:6px;">
+            ${item.isOpenNow === true ? `<span class="vet-badge open">${t('vetfinder_aberto')}</span>` : ''}
+            ${item.isNew ? `<span class="vet-badge new">${t('vetfinder_novo')}</span>` : ''}
+          </div>
+        </div>
+        <div class="vet-card-meta">📍 ${esc(item.address || t('vetfinder_endereco_indisponivel'))}${distLabel}</div>
+        <div class="vet-card-meta">${badgeForVetType(item.type)}</div>
+        <div class="vet-card-actions">
+          ${item.lat != null && item.lng != null ? `<button type="button" data-vet-route="${item.lat},${item.lng}">🗺️ ${t('vetfinder_ver_rota')}</button>` : ''}
+          ${item.phone ? `<a href="tel:${esc(item.phone)}">📞 ${t('vetfinder_ligar')}</a>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderVetFinderList(){
+    const listEl = document.getElementById('vetFinderList');
+    if(!listEl) return;
+    let items = vetFinderResults;
+    if(vetFinderFilter === 'gratuito') items = items.filter(i => i.type === 'gratuito' || i.type === 'prefeitura');
+    else if(vetFinderFilter === 'particular') items = items.filter(i => i.type === 'particular');
+    else if(vetFinderFilter === 'aberto') items = items.filter(i => i.isOpenNow === true);
+
+    if(!items.length){
+      listEl.innerHTML = `
+        <div class="vet-empty">
+          🐾<br>${t('vetfinder_vazio').replace('{city}', esc(currentGeo.city || t('vetfinder_sua_regiao')))}
+          ${vetFinderRadiusKm < 20 ? `<br><button type="button" class="btn btn-ghost" id="vetFinderExpandBtn" style="margin-top:10px;">${t('vetfinder_ampliar')}</button>` : ''}
+        </div>`;
+      const expandBtn = document.getElementById('vetFinderExpandBtn');
+      if(expandBtn) expandBtn.onclick = () => { vetFinderRadiusKm = 20; loadVetFinder(); };
+      return;
+    }
+
+    listEl.innerHTML = items.map(renderVetCard).join('');
+    listEl.querySelectorAll('[data-vet-route]').forEach(btn=>{
+      btn.onclick = () => {
+        const [lat,lng] = btn.dataset.vetRoute.split(',');
+        const origin = (currentGeo.lat != null && currentGeo.lng != null) ? `&origin=${currentGeo.lat},${currentGeo.lng}` : '';
+        window.open(`https://www.google.com/maps/dir/?api=1${origin}&destination=${lat},${lng}`, '_blank', 'noopener');
+      };
+    });
+  }
+
+  function subscribeVetFinderRealtime(city){
+    if(vetFinderRealtimeChannel){ supa.removeChannel(vetFinderRealtimeChannel); vetFinderRealtimeChannel = null; }
+    if(!city) return;
+    vetFinderRealtimeChannel = supa.channel('vaccination_events_' + city)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'vaccination_events', filter:`city=eq.${city}` }, (payload) => {
+        const ev = payload.new;
+        if(!ev.is_active) return;
+        vetFinderResults.unshift(eventToVetItem(ev));
+        renderVetFinderList();
+      })
+      .subscribe();
   }
 
   document.addEventListener('click', e=>{
