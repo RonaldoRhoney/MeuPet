@@ -647,14 +647,14 @@
   .partner-form h3{font-size:1.25rem; color:var(--heading); margin-bottom:4px;}
   .partner-form .sub{font-size:0.84rem; color:var(--text-muted); margin-bottom:20px;}
   .partners-carousel{
-    display:flex; gap:14px; overflow-x:auto; padding:6px 4px 14px; scroll-snap-type:x proximity;
+    display:flex; gap:14px; overflow-x:auto; padding:6px 4px 14px;
     -webkit-overflow-scrolling:touch; cursor:grab; user-select:none;
   }
-  .partners-carousel.dragging{cursor:grabbing; scroll-snap-type:none;}
+  .partners-carousel.dragging{cursor:grabbing;}
   .partners-carousel::-webkit-scrollbar{height:6px;}
   .partners-carousel::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
   .partners-carousel-card{
-    flex:0 0 auto; width:168px; scroll-snap-align:start; background:var(--surface); border:1.5px solid var(--line);
+    flex:0 0 auto; width:168px; background:var(--surface); border:1.5px solid var(--line);
     border-radius:20px; padding:20px 16px; text-align:center; transition:border-color .2s ease, transform .15s ease; cursor:pointer;
   }
   .partners-carousel-card:hover, .partners-carousel-card:focus-visible{border-color:var(--coral); transform:translateY(-2px);}
@@ -6138,12 +6138,41 @@
     }
     document.getElementById('partnersCarouselSection').style.display = '';
     const el = document.getElementById('partnersCarousel');
-    el.innerHTML = shuffled.map(p => `
+    const cardHtml = shuffled.map(p => `
       <div class="partners-carousel-card" data-partner-id="${esc(p.id)}" role="button" tabindex="0">
         <div class="pc-icon">${businessTypeIcon[p.business_type] || '🐾'}</div>
         <div class="pc-name">${esc(p.name)}</div>
         <div class="pc-meta">${esc(p.city)} · ✅ ${t('mybiz_verified_badge')}</div>
       </div>`).join('');
+    // duplica a lista uma vez — dá pra rolar sem fim (quando passa da
+    // primeira cópia, volta pro início sem "salto" visível) só se tiver
+    // cards o bastante pra render dobrado não ficar curto demais na tela
+    el.innerHTML = shuffled.length > 2 ? cardHtml + cardHtml : cardHtml;
+    startCarouselAutoScroll(el, shuffled.length > 2);
+  }
+
+  // esteira automática e contínua — pausa sozinha enquanto a pessoa está
+  // arrastando ou com o mouse em cima, retoma depois. Só ativa loop
+  // (voltar pro início sem salto) quando o conteúdo foi duplicado.
+  function startCarouselAutoScroll(el, loop){
+    let lastTs = null, touching = false;
+    // toque no celular usa o scroll nativo do navegador — se a esteira
+    // continuasse mexendo scrollLeft durante o swipe, brigaria com o dedo
+    el.addEventListener('touchstart', ()=> touching = true, { passive:true });
+    el.addEventListener('touchend', ()=> touching = false, { passive:true });
+    const speed = 28; // px/segundo — bem devagar, só pra sinalizar "tem mais"
+    function step(ts){
+      if(lastTs == null) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      if(!touching && !el.classList.contains('dragging') && !el.matches(':hover')){
+        el.scrollLeft += speed * dt;
+        const halfWidth = el.scrollWidth / (loop ? 2 : 1);
+        if(loop && el.scrollLeft >= halfWidth) el.scrollLeft -= halfWidth;
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
   }
 
   document.getElementById('partnersCarousel').addEventListener('click', e=>{
