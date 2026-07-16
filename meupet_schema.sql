@@ -566,6 +566,12 @@ create table public.petshops (
   is_partner boolean not null default false,
   partner_plan text check (partner_plan in (null,'basic','featured')),
   business_type text check (business_type is null or business_type in ('petshop','veterinaria','produto','servico','outro','pet_sitter','adestrador','banho_tosa')),
+  -- marca dado fictício/seed de teste (nunca setado pela UI — só via
+  -- migration/admin direto no banco), pra dar pra filtrar depois sem
+  -- precisar apagar nada agora. Auditoria de geolocalização encontrou
+  -- esse tipo de dado se passando por petshop real no Mapa (owner_id null
+  -- é o mesmo padrão de um petshop curado de verdade pelo admin).
+  is_test boolean not null default false,
   created_at timestamptz not null default now(),
   -- um negócio autoatendido por conta; petshops criados pelo admin ficam com owner_id null (sem limite)
   unique (owner_id)
