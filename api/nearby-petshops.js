@@ -68,10 +68,16 @@ module.exports = async (req, res) => {
   const lng = Math.round(lngRaw * 1000) / 1000;
 
   const radiusM = Math.round(radiusKm * 1000);
+  // `way` cobre locais mapeados como área/prédio (comum pra clínicas maiores)
+  // — junto com `out center`, que dá lat/lng do centro geométrico da área,
+  // já que ways não têm lat/lon direto como node
   const query = `[out:json][timeout:15];(
     node["shop"="pet"](around:${radiusM},${lat},${lng});
+    way["shop"="pet"](around:${radiusM},${lat},${lng});
     node["amenity"="veterinary"](around:${radiusM},${lat},${lng});
-  );out 20;`;
+    way["amenity"="veterinary"](around:${radiusM},${lat},${lng});
+    node["shop"="grooming"](around:${radiusM},${lat},${lng});
+  );out center 30;`;
 
   let data = null, lastErr = null;
   for (const mirror of OVERPASS_MIRRORS) {
@@ -88,16 +94,19 @@ module.exports = async (req, res) => {
   }
 
   const elements = (data.elements || [])
+    .map(el => ({ ...el, lat: el.lat ?? el.center?.lat, lon: el.lon ?? el.center?.lon }))
     .filter(el => el.lat != null && el.lon != null)
     .map(el => {
       const t = el.tags || {};
       const addrParts = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(', ');
+      const kind = t.amenity === 'veterinary' ? 'Veterinário' : (t.shop === 'grooming' ? 'Banho e Tosa' : 'Petshop');
       return {
-        name: t.name || (t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop'),
-        kind: t.amenity === 'veterinary' ? 'Veterinário' : 'Petshop',
+        name: t.name || kind,
+        kind,
         address: addrParts || t['addr:full'] || null,
         phone: t.phone || t['contact:phone'] || null,
         website: t.website || t['contact:website'] || null,
+        openingHours: t.opening_hours || null,
         lat: el.lat, lng: el.lon,
       };
     });

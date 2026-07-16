@@ -476,6 +476,8 @@
   .vet-badge.particular{background:rgba(255,182,39,0.2); color:#8a6200;}
   .vet-badge.prefeitura{background:rgba(23,92,86,0.14); color:var(--teal-light);}
   .vet-badge.open{background:rgba(46,160,67,0.15); color:#1f7a34;}
+  .vet-badge.closed{background:rgba(255,107,74,0.15); color:var(--coral-dark);}
+  .vet-badge.unknown{background:var(--surface); color:var(--text-muted); border:1px solid var(--line);}
   .vet-badge.new{background:var(--coral); color:#fff; animation:pulse 1.6s ease-in-out infinite;}
   .vet-card-meta{font-size:0.78rem; color:var(--text-muted-2); margin:4px 0;}
   .vet-card-actions{display:flex; gap:8px; margin-top:10px;}
@@ -584,9 +586,19 @@
   }
   .emoji-pin.me{background:var(--teal);}
   .emoji-pin.shop{background:var(--coral);}
-  .emoji-pin.partner{background:var(--mustard); box-shadow:0 6px 14px -4px rgba(255,182,39,0.7);}
+  .emoji-pin.vet{background:var(--teal);}
+  .emoji-pin.grooming{background:var(--mustard); color:#3A2A00;}
+  .emoji-pin.partner-ring{box-shadow:0 0 0 3px var(--mustard), 0 6px 14px -4px rgba(15,61,62,0.5);}
+  .map-overlay{position:absolute; inset:0; background:rgba(255,254,251,0.65); display:flex; align-items:center; justify-content:center; z-index:450; border-radius:20px;}
+  :root[data-theme="dark"] .map-overlay, .theme-dark .map-overlay{background:rgba(11,22,21,0.65);}
+  .map-spinner{width:32px; height:32px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--teal); animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .geo-radius{display:flex; align-items:center; gap:10px; margin-top:14px; font-size:0.74rem; color:var(--text-muted-2);}
+  .geo-radius input[type="range"]{flex:1; accent-color:var(--teal);}
+  .geo-radius-label{text-align:center; font-size:0.72rem; color:var(--text-muted); margin-top:2px;}
   .geo-list{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:6px;}
-  .geo-row{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); font-size:0.88rem;}
+  .geo-row{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); font-size:0.88rem; outline:2px solid transparent; outline-offset:-2px; border-radius:12px; transition:outline-color .2s ease;}
+  .geo-row.highlight{outline-color:var(--coral);}
   .geo-row:last-child{border-bottom:none;}
   .geo-row.clickable{cursor:pointer; transition:background .15s ease;}
   .geo-row.clickable:hover{background:var(--surface);}
@@ -1132,13 +1144,26 @@
           <div id="petshopSearchSuggestions" style="display:none; position:absolute; top:calc(100% + 6px); left:0; right:0; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 28px -8px rgba(0,0,0,0.18); z-index:20; overflow:hidden;"></div>
         </div>
       </div>
+      <div class="pill-tabs" id="petshopCategoryTabs" style="margin-top:10px;">
+        <button class="active" data-pcat="todos" data-i18n="geo_cat_todos">Todos</button>
+        <button data-pcat="Petshop" data-i18n="geo_cat_petshop">🐾 Petshops</button>
+        <button data-pcat="Veterinário" data-i18n="geo_cat_vet">🏥 Veterinários</button>
+        <button data-pcat="Banho e Tosa" data-i18n="geo_cat_grooming">✂️ Banho e Tosa</button>
+      </div>
       <div id="petshopsTabMapa">
         <div class="geo-panel">
           <div class="map-mock">
             <div id="petMap" style="height:100%; width:100%;"></div>
+            <div class="map-overlay" id="petMapOverlay" style="display:none;"><div class="map-spinner"></div></div>
           </div>
           <div>
             <div class="geo-list" id="geoList"></div>
+            <div class="geo-radius">
+              <span>2km</span>
+              <input type="range" id="geoRadiusSlider" min="0" max="3" step="1" value="1" aria-label="Raio de busca">
+              <span>20km</span>
+            </div>
+            <div class="geo-radius-label" id="geoRadiusLabel">Raio: 5 km</div>
             <div class="city-select">
               <span id="geoLabel" data-i18n="geo_detectando">📍 Detectando localização ·</span>
               <select id="citySelect">
@@ -2213,6 +2238,13 @@
       en:'GPS location (with IP or manual fallback) and real search via OpenStreetMap — click "directions" to trace the route.'},
     geo_detectando:{pt:'📍 Detectando localização ·',en:'📍 Detecting location ·'}, geo_outra_cidade:{pt:'Outra cidade…',en:'Another city…'},
     geo_atualizar:{pt:'Atualizar minha localização',en:'Refresh my location'},
+    geo_cat_todos:{pt:'Todos',en:'All'}, geo_cat_petshop:{pt:'🐾 Petshops',en:'🐾 Pet shops'},
+    geo_cat_vet:{pt:'🏥 Veterinários',en:'🏥 Vets'}, geo_cat_grooming:{pt:'✂️ Banho e Tosa',en:'✂️ Grooming'},
+    geo_aberto:{pt:'ABERTO ✅',en:'OPEN ✅'}, geo_fechado:{pt:'FECHADO',en:'CLOSED'}, geo_horario_desconhecido:{pt:'Horário não informado',en:'Hours not available'},
+    geo_ampliar:{pt:'Ampliar para {km}km',en:'Expand to {km}km'},
+    geo_vazio_raio:{pt:'Nenhum local encontrado em {km}km.',en:'No place found within {km}km.'},
+    geo_indisponivel:{pt:'😕 Serviço temporariamente indisponível.',en:"😕 Service temporarily unavailable."},
+    geo_buscar_google:{pt:'Buscar no Google Maps',en:'Search on Google Maps'},
     petshops_search_placeholder:{pt:'Buscar petshop, clínica, banho e tosa…',en:'Search pet shop, clinic, grooming…'},
     petshops_search_vazio:{pt:'Nenhum petshop ou clínica encontrado por aqui.',en:'No pet shop or clinic found nearby.'},
 
@@ -3010,6 +3042,25 @@
     }
   }
 
+  // ícone + classe CSS por categoria — pin colorido dá pra diferenciar o
+  // tipo de local sem precisar abrir o popup; parceiro ganha um anel dourado
+  // por cima da cor da categoria, em vez de virar um pin genérico só dele
+  function iconForPlace(p){
+    const byKind = { 'Veterinário': ['🏥','vet'], 'Banho e Tosa': ['✂️','grooming'] };
+    const [emoji, cls] = byKind[p.kind] || ['🐾','shop'];
+    return emojiIcon(emoji, p.isPartner ? `${cls} partner-ring` : cls);
+  }
+
+  function placePopupHtml(p){
+    const dir = directionsUrl(p.lat, p.lng);
+    return `<div style="min-width:170px; font-size:0.85rem;">
+      <b>${esc(p.name)}</b><br>
+      ${p.address ? `📍 ${esc(p.address)}<br>` : ''}
+      ${p.phone ? `📞 <a href="tel:${esc(p.phone)}">${esc(p.phone)}</a><br>` : ''}
+      <a href="${esc(dir)}" target="_blank" rel="noopener" style="display:inline-block; margin-top:6px; font-weight:700; color:var(--teal);">🗺️ Como chegar</a>
+    </div>`;
+  }
+
   function renderMapMarkers(items){
     if(!petMap) return;
     petMarkers.forEach(m => petMap.removeLayer(m));
@@ -3023,9 +3074,9 @@
     }
     items.forEach((p, idx)=>{
       if(p.lat == null || p.lng == null) return;
-      const icon = p.isPartner ? emojiIcon('🏅','partner') : emojiIcon('🐾','shop');
-      const marker = L.marker([p.lat, p.lng], { icon })
-        .addTo(petMap).bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.meta || '')}`);
+      const marker = L.marker([p.lat, p.lng], { icon: iconForPlace(p) })
+        .addTo(petMap).bindPopup(placePopupHtml(p));
+      marker.on('click', () => highlightGeoRow(idx));
       petMarkers.push(marker);
       petMarkersByIndex[idx] = marker;
     });
@@ -3039,6 +3090,16 @@
     petMap.setView(marker.getLatLng(), 16);
     marker.openPopup();
     document.getElementById('petMap').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  // mão dupla: clicar num pin destaca o card correspondente na lista
+  function highlightGeoRow(idx){
+    document.querySelectorAll('#geoList .geo-row.highlight').forEach(el => el.classList.remove('highlight'));
+    const row = document.querySelector(`#geoList .geo-row[data-idx="${idx}"]`);
+    if(row){
+      row.classList.add('highlight');
+      row.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
   }
 
   // link universal de rota (abre o app de mapas do usuário — Google/Apple Maps —
@@ -3072,6 +3133,47 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
+  // heurística best-effort pro formato mais comum de opening_hours do OSM
+  // (ex: "Mo-Fr 08:00-18:00; Sa 08:00-12:00", "24/7"). Não cobre sintaxes
+  // raras (feriados, "off" etc) — nesses casos cai em 'unknown', nunca
+  // inventa um status de aberto/fechado sem base real.
+  const OH_DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  function dayInRange(range, today){
+    return range.split(',').some(token=>{
+      token = token.trim();
+      if(token.includes('-')){
+        const [a,b] = token.split('-');
+        const ai = OH_DAYS.indexOf(a), bi = OH_DAYS.indexOf(b), ti = OH_DAYS.indexOf(today);
+        if(ai === -1 || bi === -1 || ti === -1) return false;
+        return ai <= bi ? (ti >= ai && ti <= bi) : (ti >= ai || ti <= bi);
+      }
+      return token === today;
+    });
+  }
+  function openingStatus(oh){
+    if(!oh) return 'unknown';
+    if(/24\/7/.test(oh)) return 'open';
+    const today = OH_DAYS[new Date().getDay()];
+    const now = new Date();
+    const curMin = now.getHours() * 60 + now.getMinutes();
+    for(const part of oh.split(';')){
+      const m = part.trim().match(/^([A-Za-z,-]+)\s+([\d:]+)-([\d:]+)$/);
+      if(!m) continue;
+      const [, dayRange, startStr, endStr] = m;
+      if(!dayInRange(dayRange, today)) continue;
+      const [sh, sm] = startStr.split(':').map(Number);
+      const [eh, em] = endStr.split(':').map(Number);
+      return (curMin >= sh*60+sm && curMin <= eh*60+em) ? 'open' : 'closed';
+    }
+    return 'unknown';
+  }
+  function openingBadgeHtml(oh){
+    const status = openingStatus(oh);
+    if(status === 'open') return `<span class="vet-badge open">${t('geo_aberto')}</span>`;
+    if(status === 'closed') return `<span class="vet-badge closed">${t('geo_fechado')}</span>`;
+    return `<span class="vet-badge unknown">${t('geo_horario_desconhecido')}</span>`;
+  }
+
   // petshops e veterinários REAIS via Overpass API (OpenStreetMap) — a busca
   // em si roda no servidor (api/nearby-petshops.js), não aqui no navegador.
   // Chamar a Overpass direto do browser esbarra em CORS de forma persistente
@@ -3102,8 +3204,21 @@
       .filter(el => el.lat != null && el.lng != null)
       .map(el => ({
         name: el.name, kind: el.kind, address: el.address,
-        phone: el.phone, website: el.website, lat: el.lat, lng: el.lng,
+        phone: el.phone, website: el.website, openingHours: el.openingHours,
+        lat: el.lat, lng: el.lng,
       }));
+  }
+
+  // tenta 1x e, se falhar, espera 3s e tenta de novo — só desiste depois
+  // dessa segunda tentativa (evita mostrar erro por uma falha isolada)
+  async function fetchOSMPetshopsWithRetry(lat, lng, radiusKm){
+    try{
+      return await fetchOSMPetshops(lat, lng, radiusKm);
+    } catch(err){
+      console.warn('MeuPet: 1ª tentativa Overpass falhou, tentando de novo em 3s.', err);
+      await new Promise(r => setTimeout(r, 3000));
+      return await fetchOSMPetshops(lat, lng, radiusKm); // deixa propagar se falhar de novo
+    }
   }
 
   // cache da última busca de petshops perto do usuário — reaproveitada pela
@@ -3138,15 +3253,19 @@
       return `
       <div class="geo-row${p.lat != null ? ' clickable' : ''}" data-reveal="${i % 2 === 0 ? 'left' : 'right'}" ${p.lat != null ? `data-idx="${i}" title="${t('geo_ver_no_mapa')}"` : ''}>
         <div>
-          ${link
-            ? `<a class="name" href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color:inherit;">${esc(p.name)}</a>`
-            : `<div class="name">${esc(p.name)}</div>`}
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            ${link
+              ? `<a class="name" href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; color:inherit;">${esc(p.name)}</a>`
+              : `<div class="name">${esc(p.name)}</div>`}
+            ${p.isPartner ? `<span class="vet-badge particular">⭐ PARCEIRO</span>` : ''}
+            ${openingBadgeHtml(p.openingHours)}
+          </div>
           ${p.address ? `<div class="geo-address">📍 ${esc(p.address)}</div>` : ''}
           <div class="meta">${esc(p.meta)}</div>
           ${p.phone ? `<a class="geo-phone" href="tel:${esc(p.phone)}">📞 ${esc(p.phone)}</a>` : ''}
         </div>
         ${p.lat != null
-          ? `<a class="icon-btn" href="${directionsUrl(p.lat, p.lng)}" target="_blank" rel="noopener" title="Como chegar">🧭</a>`
+          ? `<a class="icon-btn" href="${esc(directionsUrl(p.lat, p.lng))}" target="_blank" rel="noopener" title="Como chegar">🧭</a>`
           : '<span class="icon-btn">→</span>'}
       </div>`;
     }).join('');
@@ -3170,70 +3289,111 @@
   // Paulo) só pra ter uma coordenada de partida, e busca de verdade nela
   const DEFAULT_SEARCH_LOCATION = { lat: -23.5505, lng: -46.6333, label: 'São Paulo' };
 
+  const GEO_RADIUS_STEPS = [2, 5, 10, 20];
+  let geoRadiusKm = GEO_RADIUS_STEPS[1];
+
+  function syncRadiusSliderUI(){
+    const idx = GEO_RADIUS_STEPS.indexOf(geoRadiusKm);
+    const slider = document.getElementById('geoRadiusSlider');
+    if(slider && idx !== -1) slider.value = idx;
+    const label = document.getElementById('geoRadiusLabel');
+    if(label) label.textContent = `Raio: ${geoRadiusKm} km`;
+  }
+
+  function showGeoLoading(){
+    document.getElementById('geoList').innerHTML = `<div class="vet-skeleton"></div><div class="vet-skeleton"></div><div class="vet-skeleton"></div>`;
+    const overlay = document.getElementById('petMapOverlay');
+    if(overlay) overlay.style.display = 'flex';
+  }
+  function hideGeoLoading(){
+    const overlay = document.getElementById('petMapOverlay');
+    if(overlay) overlay.style.display = 'none';
+  }
+
   async function loadGeoListInner(){
-    let items = null;
+    showGeoLoading();
     const usingDefaultLocation = currentGeo.lat == null || currentGeo.lng == null;
     const searchLat = usingDefaultLocation ? DEFAULT_SEARCH_LOCATION.lat : currentGeo.lat;
     const searchLng = usingDefaultLocation ? DEFAULT_SEARCH_LOCATION.lng : currentGeo.lng;
 
     // 1) dados reais dos petshops parceiros cadastrados no MeuPet
+    let partnerItems = [];
     if(DB_READY){
-      const { data, error } = await supa.rpc('petshops_near', { p_lat: searchLat, p_lng: searchLng, p_radius_km: 15 });
+      const { data, error } = await supa.rpc('petshops_near', { p_lat: searchLat, p_lng: searchLng, p_radius_km: geoRadiusKm });
       if(!error && data && data.length){
-        items = data.map(p => ({
-          name:p.name, address: p.address || null, phone: p.phone || null,
-          meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}⭐ ${p.rating ?? '-'}`,
+        partnerItems = data.map(p => ({
+          name:p.name, address: p.address || null, phone: p.phone || null, openingHours:null,
+          meta:`${p.is_partner ? '🏅 Parceiro · ' : ''}⭐ ${p.rating ?? '-'} · ${haversineKm(searchLat, searchLng, p.lat, p.lng).toFixed(1)} km`,
           lat:p.lat, lng:p.lng, isPartner: !!p.is_partner, kind:'Petshop',
           rating: p.rating ?? null, dist: haversineKm(searchLat, searchLng, p.lat, p.lng)
         }));
         // petshops parceiros (plano pago) aparecem primeiro — o "pin de destaque" prometido no plano
-        items.sort((a,b) => (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0) || a.dist - b.dist);
+        partnerItems.sort((a,b) => (b.isPartner ? 1 : 0) - (a.isPartner ? 1 : 0) || a.dist - b.dist);
       }
     }
 
-    // 2) sem parceiros por perto: busca petshops/veterinários reais via OpenStreetMap
-    let osmFalhou = false;
-    if(!items){
-      try{
-        const osm = await fetchOSMPetshops(searchLat, searchLng, 8);
-        if(osm.length){
-          items = osm
-            .map(p => ({ ...p, dist: haversineKm(searchLat, searchLng, p.lat, p.lng) }))
-            .sort((a,b) => a.dist - b.dist)
-            .slice(0, 8)
-            .map(p => ({
-              name:p.name, address:p.address, phone:p.phone, website:p.website,
-              meta:`${p.kind} · ${p.dist.toFixed(1)} km${usingDefaultLocation ? ' · ' + DEFAULT_SEARCH_LOCATION.label : ''}`,
-              lat:p.lat, lng:p.lng, rating:null, dist:p.dist, kind:p.kind
-            }));
-        } else {
-          items = []; // busca funcionou, só não achou nada de verdade por perto
-        }
-      }catch(err){
-        console.warn('MeuPet: todos os espelhos Overpass falharam.', err);
-        osmFalhou = true;
-      }
+    // 2) petshops/veterinários/banho-e-tosa reais via OpenStreetMap — busca
+    // sempre, mesmo já havendo parceiros, pra nunca esconder resultado real
+    let osmItems = [], osmFalhou = false;
+    try{
+      const osm = await fetchOSMPetshopsWithRetry(searchLat, searchLng, geoRadiusKm);
+      osmItems = osm
+        .map(p => ({ ...p, dist: haversineKm(searchLat, searchLng, p.lat, p.lng) }))
+        .sort((a,b) => a.dist - b.dist)
+        .slice(0, 12)
+        .map(p => ({
+          name:p.name, address:p.address, phone:p.phone, website:p.website, openingHours:p.openingHours,
+          meta:`${p.kind} · ${p.dist.toFixed(1)} km${usingDefaultLocation ? ' · ' + DEFAULT_SEARCH_LOCATION.label : ''}`,
+          lat:p.lat, lng:p.lng, rating:null, dist:p.dist, kind:p.kind
+        }));
+    }catch(err){
+      console.warn('MeuPet: todos os espelhos Overpass falharam (2 tentativas).', err);
+      osmFalhou = true;
     }
 
-    // busca em si falhou (não é falta de resultado) — nunca mostra petshops
-    // inventados como se fossem reais; mostra estado de erro honesto com
-    // botão de tentar de novo
-    if(!items && osmFalhou){
-      document.getElementById('geoList').innerHTML = `<div class="feed-empty">😕 Não conseguimos buscar petshops agora.<br><button class="btn btn-ghost" id="geoRetryBtn" style="margin-top:10px;">Tentar de novo</button></div>`;
-      document.getElementById('geoRetryBtn').addEventListener('click', loadGeoList);
+    // OSM falhou de vez (2 tentativas) e não tínhamos nem parceiro pra
+    // mostrar — nunca inventa petshop; erro honesto + fallback pro Google Maps
+    if(osmFalhou && !partnerItems.length){
+      hideGeoLoading();
+      document.getElementById('geoList').innerHTML = `
+        <div class="feed-empty">
+          ${t('geo_indisponivel')}<br>
+          <a class="btn btn-ghost" style="display:inline-block; margin-top:10px;" href="https://www.google.com/maps/search/petshop/@${searchLat},${searchLng},14z" target="_blank" rel="noopener">${t('geo_buscar_google')}</a>
+        </div>`;
       nearbyPetshopsCache = [];
       renderMapMarkers([]);
       loadMarket();
       return;
     }
 
+    const items = [...partnerItems, ...osmItems];
+
     if(usingDefaultLocation && document.getElementById('geoLabel')){
       document.getElementById('geoLabel').textContent = `📍 Sem sua localização — mostrando ${DEFAULT_SEARCH_LOCATION.label} ·`;
     }
 
     nearbyPetshopsCache = items;
-    renderGeoListItems(items);
-    renderMapMarkers(items);
+    hideGeoLoading();
+
+    if(!items.length){
+      const nextRadius = Math.min(geoRadiusKm * 2, 20);
+      document.getElementById('geoList').innerHTML = `
+        <div class="feed-empty">
+          🐾<br>${t('geo_vazio_raio').replace('{km}', geoRadiusKm)}
+          ${geoRadiusKm < 20 ? `<br><button type="button" class="btn btn-ghost" id="geoExpandBtn" style="margin-top:10px;">${t('geo_ampliar').replace('{km}', nextRadius)}</button>` : ''}
+        </div>`;
+      const expandBtn = document.getElementById('geoExpandBtn');
+      if(expandBtn) expandBtn.onclick = () => {
+        geoRadiusKm = nextRadius;
+        syncRadiusSliderUI();
+        loadGeoList();
+      };
+      renderMapMarkers([]);
+      loadMarket();
+      return;
+    }
+
+    applyGeoFilters();
     loadMarket(); // atualiza o CTA de "loja física perto de você" na vitrine
   }
 
@@ -3256,21 +3416,33 @@
     { label:'🏨 Hotel/creche pet', term:'hotel' },
   ];
 
+  let geoCategoryFilter = 'todos';
+
   function filterGeoItems(query){
     const q = query.trim().toLowerCase();
-    if(!q) return nearbyPetshopsCache;
-    return nearbyPetshopsCache.filter(p =>
+    let items = nearbyPetshopsCache;
+    if(geoCategoryFilter !== 'todos') items = items.filter(p => p.kind === geoCategoryFilter);
+    if(!q) return items;
+    return items.filter(p =>
       (p.name || '').toLowerCase().includes(q) ||
       (p.kind || '').toLowerCase().includes(q) ||
       (p.meta || '').toLowerCase().includes(q)
     );
   }
 
-  function applyGeoSearch(query){
-    const filtered = filterGeoItems(query);
+  function applyGeoFilters(){
+    const filtered = filterGeoItems(petshopSearchInput.value || '');
     renderGeoListItems(filtered);
     renderMapMarkers(filtered);
   }
+
+  document.getElementById('petshopCategoryTabs').querySelectorAll('button').forEach(btn=>{
+    btn.onclick = () => {
+      geoCategoryFilter = btn.dataset.pcat;
+      document.getElementById('petshopCategoryTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn));
+      applyGeoFilters();
+    };
+  });
 
   const petshopSearchInput = document.getElementById('petshopSearchInput');
   const petshopSearchSuggestions = document.getElementById('petshopSearchSuggestions');
@@ -3285,7 +3457,7 @@
     petshopSearchDebounce = setTimeout(()=>{
       if(val.trim().length < 3){
         petshopSearchSuggestions.style.display = 'none';
-        applyGeoSearch('');
+        applyGeoFilters();
         return;
       }
       const q = val.trim().toLowerCase();
@@ -3305,7 +3477,7 @@
         ).join('');
         petshopSearchSuggestions.style.display = 'block';
       }
-      applyGeoSearch(val);
+      applyGeoFilters();
     }, 200);
   });
 
@@ -3313,7 +3485,7 @@
     const item = e.target.closest('.geo-suggestion');
     if(!item) return;
     petshopSearchInput.value = item.dataset.term;
-    applyGeoSearch(item.dataset.term);
+    applyGeoFilters();
     petshopSearchSuggestions.style.display = 'none';
   });
 
@@ -3344,6 +3516,13 @@
     try{ await detectLocation(); }
     finally{ btn.disabled = false; }
   });
+
+  document.getElementById('geoRadiusSlider').addEventListener('change', e=>{
+    geoRadiusKm = GEO_RADIUS_STEPS[parseInt(e.target.value, 10)] ?? GEO_RADIUS_STEPS[1];
+    syncRadiusSliderUI();
+    loadGeoList();
+  });
+  syncRadiusSliderUI();
 
   // clock
   function tick(){
