@@ -60,11 +60,20 @@
     --paper:#FFFEFB;
     --line:rgba(15,61,62,0.12);
     --surface:#FFFFFF;
-    --text-muted:#7C9492;
+    --text-muted:#587170;
     --text-muted-2:#5C7472;
     --text-muted-3:#8AA1A0;
     --header-bg-rgb:255,248,240;
     --heading:#0F3D3E;
+    /* cores de texto dos badges de status (vet-badge) — precisam de um par
+       claro/escuro próprio porque o fundo deles é uma cor de marca translúcida
+       (rgba) que escurece de verdade no tema escuro; usar var(--teal) etc.
+       direto virava "texto escuro sobre fundo escuro" e ficava ilegível */
+    --badge-green-text:#0F3D3E;
+    --badge-amber-text:#8a6200;
+    --badge-tealalt-text:#175C56;
+    --badge-status-green:#1f7a34;
+    --badge-status-red:#C93D1D;
     --radius-card:20px;
     --radius-pill:999px;
     --shadow-soft: 0 12px 30px -12px rgba(15,61,62,0.25);
@@ -86,6 +95,11 @@
     --text-muted-3:#CFE0DE;
     --header-bg-rgb:11,22,21;
     --heading:#8FD9CE;
+    --badge-green-text:#8FD9CE;
+    --badge-amber-text:#FFCB66;
+    --badge-tealalt-text:#7FE0D4;
+    --badge-status-green:#5FD97B;
+    --badge-status-red:#FF9478;
     --shadow-soft: 0 12px 30px -12px rgba(0,0,0,0.55);
   }
   *{box-sizing:border-box;}
@@ -472,11 +486,11 @@
   .vet-card-top{display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;}
   .vet-card-name{font-weight:700; color:var(--heading); font-size:0.94rem;}
   .vet-badge{font-size:0.68rem; font-weight:700; padding:3px 9px; border-radius:var(--radius-pill); white-space:nowrap; display:inline-block;}
-  .vet-badge.gratuito{background:rgba(15,61,62,0.12); color:var(--teal);}
-  .vet-badge.particular{background:rgba(255,182,39,0.2); color:#8a6200;}
-  .vet-badge.prefeitura{background:rgba(23,92,86,0.14); color:var(--teal-light);}
-  .vet-badge.open{background:rgba(46,160,67,0.15); color:#1f7a34;}
-  .vet-badge.closed{background:rgba(255,107,74,0.15); color:var(--coral-dark);}
+  .vet-badge.gratuito{background:rgba(15,61,62,0.12); color:var(--badge-green-text);}
+  .vet-badge.particular{background:rgba(255,182,39,0.2); color:var(--badge-amber-text);}
+  .vet-badge.prefeitura{background:rgba(23,92,86,0.14); color:var(--badge-tealalt-text);}
+  .vet-badge.open{background:rgba(46,160,67,0.15); color:var(--badge-status-green);}
+  .vet-badge.closed{background:rgba(255,107,74,0.15); color:var(--badge-status-red);}
   .vet-badge.unknown{background:var(--surface); color:var(--text-muted); border:1px solid var(--line);}
   .vet-badge.new{background:var(--coral); color:#fff; animation:pulse 1.6s ease-in-out infinite;}
   .vet-card-meta{font-size:0.78rem; color:var(--text-muted-2); margin:4px 0;}
