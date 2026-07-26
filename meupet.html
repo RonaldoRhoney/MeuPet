@@ -424,6 +424,17 @@
   .adopt-card h4{font-family:'Fraunces',serif; font-size:1rem; margin-bottom:2px;}
   .adopt-card .dist{font-size:0.74rem; color:var(--text-muted); margin:2px 0 12px; display:flex; align-items:center; gap:5px;}
   .adopt-empty{grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.9rem;}
+  .adopt-badge{
+    position:absolute; top:10px; left:10px; padding:3px 10px; border-radius:100px;
+    font-size:0.68rem; font-weight:700; color:#fff; letter-spacing:0.02em;
+  }
+  .adopt-badge--available{background:#2fa86a;}
+  .adopt-badge--pending{background:#e0972f;}
+  .adopt-badge--adopted{background:#8b8f98;}
+  .adopt-extra-filters select{
+    font-size:0.78rem; padding:7px 10px; border-radius:100px; border:1px solid var(--line);
+    background:var(--surface); color:var(--text); cursor:pointer;
+  }
   .adopt-banner{
     background:linear-gradient(120deg, rgba(255,107,74,0.12), rgba(255,107,74,0.04));
     border:1px solid rgba(255,107,74,0.25); border-radius:24px;
@@ -1132,7 +1143,48 @@
         <button data-species="gato" data-i18n="species_gato">🐱 Gatos</button>
         <button data-species="outro" data-i18n="species_outro">🐾 Outros</button>
       </div>
+      <div class="adopt-extra-filters" id="adoptExtraFilters" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+        <select data-filter="size" aria-label="Filtrar por porte">
+          <option value="">Porte: todos</option>
+          <option value="pequeno">Pequeno</option>
+          <option value="medio">Médio</option>
+          <option value="grande">Grande</option>
+        </select>
+        <select data-filter="sex" aria-label="Filtrar por sexo">
+          <option value="">Sexo: todos</option>
+          <option value="macho">Macho</option>
+          <option value="femea">Fêmea</option>
+        </select>
+        <select data-filter="neutered" aria-label="Filtrar por castração">
+          <option value="">Castrado: todos</option>
+          <option value="true">Castrado: sim</option>
+          <option value="false">Castrado: não</option>
+        </select>
+        <select data-filter="convive_criancas" aria-label="Filtrar por convívio com crianças">
+          <option value="">Convive c/ crianças: todos</option>
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+        <select data-filter="convive_gatos" aria-label="Filtrar por convívio com gatos">
+          <option value="">Convive c/ gatos: todos</option>
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+        <select data-filter="convive_caes" aria-label="Filtrar por convívio com cães">
+          <option value="">Convive c/ cães: todos</option>
+          <option value="true">Sim</option>
+          <option value="false">Não</option>
+        </select>
+        <select data-filter="nivel_energia" aria-label="Filtrar por nível de energia">
+          <option value="">Energia: todos</option>
+          <option value="baixo">Baixo</option>
+          <option value="medio">Médio</option>
+          <option value="alto">Alto</option>
+        </select>
+        <button class="btn btn-ghost" id="btnAdoptVerMapa" type="button">🗺️ Ver no mapa</button>
+      </div>
       <div class="adopt-grid" id="adoptGrid"></div>
+      <div id="adoptMap" style="display:none; height:420px; border-radius:16px; overflow:hidden; margin-top:10px;"></div>
     </div>
   </section>
 
@@ -1842,14 +1894,54 @@
         </select>
       </div>
 
+      <div class="partner-form-grid">
+        <select id="adoptConviveCriancas" aria-label="Convive com crianças">
+          <option value="">Convive com crianças?</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+        <select id="adoptConviveGatos" aria-label="Convive com gatos">
+          <option value="">Convive com gatos?</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+        <select id="adoptConviveCaes" aria-label="Convive com cães">
+          <option value="">Convive com cães?</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+
+      <div class="partner-form-grid">
+        <select id="adoptNivelEnergia" aria-label="Nível de energia">
+          <option value="">Nível de energia</option>
+          <option value="baixo">Baixo</option>
+          <option value="medio">Médio</option>
+          <option value="alto">Alto</option>
+        </select>
+        <select id="adoptVermifugado" aria-label="Vermifugado">
+          <option value="">Vermifugado?</option>
+          <option value="sim">Vermifugado: sim</option>
+          <option value="nao">Vermifugado: não</option>
+        </select>
+      </div>
+
       <input type="text" placeholder="ONG/abrigo (opcional — deixe em branco se for tutor individual)" id="adoptOng" data-i18n-placeholder="ph_ong">
       <textarea placeholder="Conte sobre o temperamento, histórico, cuidados especiais..." id="adoptDescription" data-i18n-placeholder="ph_temperamento" rows="3"></textarea>
+      <textarea placeholder="Motivo da adoção (opcional)" id="adoptMotivoAdocao" rows="2" maxlength="500"></textarea>
 
       <label class="photo-upload" for="adoptPhotoFile">
         <span id="adoptPhotoPreview">📷</span>
-        <span id="adoptPhotoLabel" data-i18n="ph_adicionar_foto">Adicionar uma foto (opcional)</span>
+        <span id="adoptPhotoLabel" data-i18n="ph_adicionar_foto">Adicionar uma foto de capa (opcional)</span>
       </label>
       <input type="file" accept="image/*" id="adoptPhotoFile" style="display:none;">
+
+      <label class="photo-upload" for="adoptGalleryFiles">
+        <span>🖼️</span>
+        <span>Adicionar mais fotos (até 5 no total, opcional)</span>
+      </label>
+      <input type="file" accept="image/*" id="adoptGalleryFiles" multiple style="display:none;">
+      <div id="adoptGalleryPreview" style="display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;"></div>
 
       <input type="tel" placeholder="WhatsApp/telefone para contato (obrigatório)" id="adoptPhone" data-i18n-placeholder="ph_whatsapp_obrigatorio">
       <p class="sub" style="margin:-6px 0 14px; font-size:0.72rem;" data-i18n="adoptform_contact_note">Esse contato só aparece pra quem estiver logado e clicar em "Quero adotar" — não fica público na página.</p>
@@ -3078,6 +3170,59 @@
     </div>`;
   }
 
+  // Mapa da seção de Adoção: nunca plota a coordenada exata do pet (a RPC
+  // adoption_near nem devolve isso, de propósito — só dist_km). Mostra a
+  // posição real do usuário e um círculo por pet no raio da distância real,
+  // dá noção precisa de "quão perto" sem revelar endereço/direção.
+  let adoptMap = null, adoptMapLayers = [];
+  function initAdoptMap(lat, lng){
+    if(typeof L === 'undefined') return;
+    if(!adoptMap){
+      adoptMap = L.map('adoptMap', { zoomControl:false }).setView([lat, lng], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }).addTo(adoptMap);
+    } else {
+      adoptMap.setView([lat, lng], 11);
+    }
+  }
+  function renderAdoptMapCircles(items){
+    if(!adoptMap) return;
+    adoptMapLayers.forEach(l => adoptMap.removeLayer(l));
+    adoptMapLayers = [];
+    if(currentGeo.lat == null || currentGeo.lng == null) return;
+    adoptMapLayers.push(
+      L.marker([currentGeo.lat, currentGeo.lng], { icon: emojiIcon('📍','me') })
+        .addTo(adoptMap).bindPopup('Você está aqui'),
+    );
+    items.forEach(a => {
+      if(a.km == null) return;
+      const circle = L.circle([currentGeo.lat, currentGeo.lng], {
+        radius: a.km * 1000, color:'#ff8a5c', weight:2, fillOpacity:0.04,
+      }).addTo(adoptMap).bindPopup(`${esc(a.name)} — ${a.km.toFixed(1)} km de você`);
+      adoptMapLayers.push(circle);
+    });
+  }
+  document.getElementById('btnAdoptVerMapa').addEventListener('click', ()=>{
+    const grid = document.getElementById('adoptGrid');
+    const mapDiv = document.getElementById('adoptMap');
+    const showingMap = mapDiv.style.display !== 'none';
+    if(showingMap){
+      mapDiv.style.display = 'none';
+      grid.style.display = '';
+      document.getElementById('btnAdoptVerMapa').textContent = '🗺️ Ver no mapa';
+    } else {
+      grid.style.display = 'none';
+      mapDiv.style.display = 'block';
+      document.getElementById('btnAdoptVerMapa').textContent = '🐾 Ver lista';
+      const lat = currentGeo.lat ?? DEFAULT_SEARCH_LOCATION.lat;
+      const lng = currentGeo.lng ?? DEFAULT_SEARCH_LOCATION.lng;
+      initAdoptMap(lat, lng);
+      setTimeout(()=>{ adoptMap.invalidateSize(); renderAdoptMapCircles(adoptItemsCache); }, 50);
+    }
+  });
+
   function renderMapMarkers(items){
     if(!petMap) return;
     petMarkers.forEach(m => petMap.removeLayer(m));
@@ -3521,6 +3666,7 @@
       document.getElementById('geoSource').textContent = t('geo_fonte_manual');
       if(lat != null && lng != null) initMap(lat, lng);
       loadGeoList();
+      loadAdoption(); // busca de adoção também segue a cidade escolhida manualmente
     }
   });
 
@@ -6081,26 +6227,50 @@
     loadAdminCatalog('games');
   });
 
-  const adoptFavorites = new Set();
+  let adoptFavoritesCache = new Set();
   let adoptFilter = 'todos';
   let adoptView = 'disponivel'; // 'disponivel' | 'adotado'
   let adoptItemsCache = [];
   let adoptEditingId = null;
+  let adoptExtraFilters = {}; // { size, sex, neutered, convive_criancas, convive_gatos, convive_caes, nivel_energia }
+
+  const ADOPT_BADGE = {
+    available: { label: 'Disponível', cls: 'adopt-badge--available' },
+    pending:   { label: 'Em processo', cls: 'adopt-badge--pending' },
+    adopted:   { label: 'Adotado', cls: 'adopt-badge--adopted' },
+  };
+
+  async function loadAdoptFavorites(){
+    if(!DB_READY || !currentUser){ adoptFavoritesCache = new Set(); return; }
+    const { data, error } = await supa.from('adoption_favorites').select('listing_id').eq('user_id', currentUser.id);
+    adoptFavoritesCache = new Set(error || !data ? [] : data.map(f => f.listing_id));
+  }
+
+  function passesAdoptExtraFilters(a){
+    for(const [key, val] of Object.entries(adoptExtraFilters)){
+      if(val == null || val === '') continue;
+      if(String(a[key]) !== String(val)) return false;
+    }
+    return true;
+  }
 
   function renderAdoptCards(items){
     const grid = document.getElementById('adoptGrid');
-    const filtered = adoptFilter === 'todos' ? items : items.filter(a => a.species === adoptFilter);
+    let filtered = adoptFilter === 'todos' ? items : items.filter(a => a.species === adoptFilter);
+    filtered = filtered.filter(passesAdoptExtraFilters);
     if(!filtered.length){
       grid.innerHTML = '<div class="adopt-empty">Nenhum pet dessa categoria por perto ainda 🐾 — tente "Todos" ou volte mais tarde.</div>';
       return;
     }
     grid.innerHTML = filtered.map((a,i) => {
       const isOwner = currentUser && a.created_by === currentUser.id;
+      const badge = ADOPT_BADGE[a.status] || ADOPT_BADGE.available;
       return `
       <div class="adopt-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
         <div class="media">
           ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
-          <button class="fav-btn ${adoptFavorites.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="${t('adopt_favoritar_title')}" aria-label="${t('adopt_favoritar_title')} ${esc(a.name)}">${adoptFavorites.has(a.id) ? '❤️' : '🤍'}</button>
+          <span class="adopt-badge ${badge.cls}">${badge.label}</span>
+          <button class="fav-btn ${adoptFavoritesCache.has(a.id) ? 'active' : ''}" data-fav="${esc(a.id)}" title="${t('adopt_favoritar_title')}" aria-label="${t('adopt_favoritar_title')} ${esc(a.name)}">${adoptFavoritesCache.has(a.id) ? '❤️' : '🤍'}</button>
           ${isOwner ? `<button class="icon-btn edit-post-btn" data-edit-adopt="${esc(a.id)}" title="Editar anúncio" aria-label="Editar anúncio">✏️</button>` : ''}
         </div>
         <div class="info">
@@ -6125,31 +6295,61 @@
     line.style.display = 'flex';
   }
 
+  // Mapeia uma linha crua de adoption_listings (ou do retorno de adoption_near,
+  // que tem os mesmos campos + dist_km) pro formato usado pelos cards.
+  function mapAdoptionRow(a, km){
+    const bucket = speciesBucket(a.species);
+    const dist = km != null
+      ? `${km.toFixed(1)} km · ${a.ong_name || 'Tutor independente'}`
+      : `${a.ong_name || 'Tutor independente'}${a.city ? ' · ' + a.city : ''}`;
+    const sizeLabel = { pequeno:'Pequeno porte', medio:'Médio porte', grande:'Grande porte' }[a.size] || null;
+    const meta = [a.breed, a.age_years != null ? `${a.age_years} anos` : null, sizeLabel].filter(Boolean).join(' · ');
+    return {
+      id:a.id, created_by:a.created_by, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket],
+      dist, km, photo_url:a.photo_url, meta, status:a.status, size:a.size, sex:a.sex, neutered:a.neutered,
+      convive_criancas:a.convive_criancas, convive_gatos:a.convive_gatos, convive_caes:a.convive_caes,
+      nivel_energia:a.nivel_energia,
+    };
+  }
+
+  // Busca por raio real no banco (adoption_near), expandindo automaticamente
+  // 10 → 20 → 50 → 100km até achar algo — mesmo padrão de fallback em cadeia
+  // já usado pra geolocalização (GPS → IP → manual).
+  async function fetchAdoptionNear(radii = [10,20,50,100]){
+    for(const r of radii){
+      const { data, error } = await supa.rpc('adoption_near', { p_lat: currentGeo.lat, p_lng: currentGeo.lng, p_radius_km: r });
+      if(error){ console.error('adoption_near', error); return []; }
+      if(data && data.length) return data;
+    }
+    return [];
+  }
+
   async function loadAdoption(){
     loadAdoptWaitingCount();
-    const dbStatus = adoptView === 'adotado' ? 'adopted' : 'available';
+    loadAdoptFavorites().then(() => renderAdoptCards(adoptItemsCache));
     let items = [];
     if(DB_READY){
       // sempre real: nunca cai pro array de demonstração quando o banco está
       // ativo, mesmo se a busca vier vazia (senão apareceria pet fictício
       // como se fosse real — só o modo 100% offline, sem Supabase, usa mock)
-      const { data, error } = await supa.from('adoption_listings').select('*').eq('status', dbStatus).limit(30);
-      if(!error && data){
-        items = data.map(a => {
-          const bucket = speciesBucket(a.species);
-          const km = (currentGeo.lat && a.lat != null && a.lng != null) ? haversineKm(currentGeo.lat, currentGeo.lng, a.lat, a.lng) : null;
-          const dist = km != null
-            ? `${km.toFixed(1)} km · ${a.ong_name || 'Tutor independente'}`
-            : `${a.ong_name || 'Tutor independente'}${a.city ? ' · ' + a.city : ''}`;
-          const sizeLabel = { pequeno:'Pequeno porte', medio:'Médio porte', grande:'Grande porte' }[a.size] || null;
-          const meta = [a.breed, a.age_years != null ? `${a.age_years} anos` : null, sizeLabel].filter(Boolean).join(' · ');
-          return { id:a.id, created_by:a.created_by, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket], dist, km, photo_url:a.photo_url, meta };
-        });
-        items.sort((x,y) => (x.km ?? Infinity) - (y.km ?? Infinity));
-        items = items.slice(0, 8);
+      if(adoptView === 'adotado'){
+        // Pets já adotados não precisam de busca por raio/geolocalização —
+        // "perto de você" não faz sentido pra quem já não está mais disponível.
+        const { data, error } = await supa.from('adoption_listings').select('*').eq('status','adopted').limit(30);
+        if(!error && data) items = data.map(a => mapAdoptionRow(a, null));
+      } else if(currentUser && currentGeo.lat != null && currentGeo.lng != null){
+        // adoption_near() exige usuário autenticado (correção de segurança —
+        // evita varredura anônima em massa das distâncias/coordenadas)
+        const rows = await fetchAdoptionNear();
+        items = rows.map(a => mapAdoptionRow(a, a.dist_km));
+      } else {
+        // visitante não logado, ou sem geolocalização ainda: mostra
+        // disponíveis sem ordenação por distância, ainda assim dado real.
+        const { data, error } = await supa.from('adoption_listings').select('*').eq('status','available').limit(30);
+        if(!error && data) items = data.map(a => mapAdoptionRow(a, null));
       }
     } else {
-      items = adoptView === 'adotado' ? [] : adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist }));
+      items = adoptView === 'adotado' ? [] : adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist, status:'available' }));
     }
     adoptItemsCache = items;
     renderAdoptCards(items);
@@ -6177,12 +6377,34 @@
     renderAdoptCards(adoptItemsCache);
   });
 
+  document.getElementById('adoptExtraFilters').addEventListener('change', e=>{
+    const sel = e.target.closest('select[data-filter]');
+    if(!sel) return;
+    const key = sel.dataset.filter;
+    if(sel.value === ''){ delete adoptExtraFilters[key]; }
+    else if(sel.value === 'true' || sel.value === 'false'){ adoptExtraFilters[key] = sel.value === 'true'; }
+    else { adoptExtraFilters[key] = sel.value; }
+    renderAdoptCards(adoptItemsCache);
+  });
+
   document.addEventListener('click', e=>{
     const fav = e.target.closest('.fav-btn');
     if(fav){
+      if(!currentUser){ openModal('login'); return; }
       const id = fav.dataset.fav;
-      if(adoptFavorites.has(id)) adoptFavorites.delete(id); else adoptFavorites.add(id);
+      const wasFavorited = adoptFavoritesCache.has(id);
+      // atualização otimista — reverte se a escrita no banco falhar
+      if(wasFavorited) adoptFavoritesCache.delete(id); else adoptFavoritesCache.add(id);
       renderAdoptCards(adoptItemsCache);
+      const writeFav = wasFavorited
+        ? supa.from('adoption_favorites').delete().eq('user_id', currentUser.id).eq('listing_id', id)
+        : supa.from('adoption_favorites').insert({ user_id: currentUser.id, listing_id: id });
+      writeFav.then(({ error }) => {
+        if(error){
+          if(wasFavorited) adoptFavoritesCache.add(id); else adoptFavoritesCache.delete(id);
+          renderAdoptCards(adoptItemsCache);
+        }
+      });
       return;
     }
     const editAdoptBtn = e.target.closest('[data-edit-adopt]');
@@ -6226,6 +6448,50 @@
   // CADASTRO DE PET PARA ADOÇÃO/DOAÇÃO
   // ===================================================================
   let adoptPhotoFileSelected = null;
+  let adoptGalleryFilesSelected = []; // arquivos novos a subir no submit
+  let adoptExistingGalleryPhotos = []; // { id, url } já salvos (modo edição)
+
+  function renderAdoptGalleryPreview(){
+    const wrap = document.getElementById('adoptGalleryPreview');
+    const existing = adoptExistingGalleryPhotos.map(p => `
+      <div style="position:relative;width:64px;height:64px;">
+        <img src="${safeUrl(p.url)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        <button type="button" data-remove-gallery-existing="${esc(p.id)}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--coral-dark);color:#fff;border:none;font-size:11px;line-height:1;">✕</button>
+      </div>`).join('');
+    const novas = adoptGalleryFilesSelected.map((f,i) => `
+      <div style="position:relative;width:64px;height:64px;">
+        <img src="${URL.createObjectURL(f)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+        <button type="button" data-remove-gallery-new="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--coral-dark);color:#fff;border:none;font-size:11px;line-height:1;">✕</button>
+      </div>`).join('');
+    wrap.innerHTML = existing + novas;
+  }
+  document.getElementById('adoptGalleryPreview').addEventListener('click', e=>{
+    const rmExisting = e.target.closest('[data-remove-gallery-existing]');
+    if(rmExisting){
+      const photoId = rmExisting.dataset.removeGalleryExisting;
+      // apaga de verdade agora (não só da tela) — evita foto "removida" que
+      // continua pública em adoption_photos e no Storage
+      rmExisting.disabled = true;
+      supa.from('adoption_photos').delete().eq('id', photoId).then(({ error })=>{
+        if(error){ rmExisting.disabled = false; return; }
+        adoptExistingGalleryPhotos = adoptExistingGalleryPhotos.filter(p => p.id !== photoId);
+        renderAdoptGalleryPreview();
+      });
+      return;
+    }
+    const rmNew = e.target.closest('[data-remove-gallery-new]');
+    if(rmNew){
+      adoptGalleryFilesSelected.splice(parseInt(rmNew.dataset.removeGalleryNew, 10), 1);
+      renderAdoptGalleryPreview();
+    }
+  });
+  document.getElementById('adoptGalleryFiles').addEventListener('change', e=>{
+    const totalAtual = adoptExistingGalleryPhotos.length + adoptGalleryFilesSelected.length;
+    const novos = Array.from(e.target.files).slice(0, Math.max(0, 5 - totalAtual));
+    adoptGalleryFilesSelected = adoptGalleryFilesSelected.concat(novos);
+    renderAdoptGalleryPreview();
+    e.target.value = '';
+  });
 
   document.getElementById('adoptSpecies').addEventListener('change', e=>{
     const isOther = e.target.value === 'outro';
@@ -6259,13 +6525,23 @@
     document.getElementById('adoptSize').value = '';
     document.getElementById('adoptNeutered').value = '';
     document.getElementById('adoptVaccinated').value = '';
+    document.getElementById('adoptConviveCriancas').value = '';
+    document.getElementById('adoptConviveGatos').value = '';
+    document.getElementById('adoptConviveCaes').value = '';
+    document.getElementById('adoptNivelEnergia').value = '';
+    document.getElementById('adoptVermifugado').value = '';
+    document.getElementById('adoptMotivoAdocao').value = '';
     document.getElementById('adoptOng').value = '';
     document.getElementById('adoptDescription').value = '';
     document.getElementById('adoptPhone').value = '';
     document.getElementById('adoptPhotoFile').value = '';
     adoptPhotoFileSelected = null;
     document.getElementById('adoptPhotoPreview').innerHTML = '📷';
-    document.getElementById('adoptPhotoLabel').textContent = 'Adicionar uma foto (opcional)';
+    document.getElementById('adoptPhotoLabel').textContent = 'Adicionar uma foto de capa (opcional)';
+    document.getElementById('adoptGalleryFiles').value = '';
+    adoptGalleryFilesSelected = [];
+    adoptExistingGalleryPhotos = [];
+    renderAdoptGalleryPreview();
     document.getElementById('adoptFormStatus').textContent = '';
     document.getElementById('adoptFormStatus').className = 'modal-status';
 
@@ -6280,9 +6556,10 @@
       markAdoptedBtn.style.display = 'block';
       deleteBtn.style.display = 'block';
 
-      const [{ data: listing, error }, { data: contact }] = await Promise.all([
+      const [{ data: listing, error }, { data: contact }, { data: photos }] = await Promise.all([
         supa.from('adoption_listings').select('*').eq('id', adoptEditingId).single(),
         supa.from('adoption_contacts').select('phone').eq('listing_id', adoptEditingId).single(),
+        supa.from('adoption_photos').select('id, url, order_index').eq('listing_id', adoptEditingId).order('order_index'),
       ]);
       if(!error && listing){
         document.getElementById('adoptPetName').value = listing.pet_name || '';
@@ -6297,9 +6574,17 @@
         document.getElementById('adoptSize').value = listing.size || '';
         document.getElementById('adoptNeutered').value = listing.neutered == null ? '' : (listing.neutered ? 'sim' : 'nao');
         document.getElementById('adoptVaccinated').value = listing.vaccinated == null ? '' : (listing.vaccinated ? 'sim' : 'nao');
+        document.getElementById('adoptConviveCriancas').value = listing.convive_criancas == null ? '' : (listing.convive_criancas ? 'sim' : 'nao');
+        document.getElementById('adoptConviveGatos').value = listing.convive_gatos == null ? '' : (listing.convive_gatos ? 'sim' : 'nao');
+        document.getElementById('adoptConviveCaes').value = listing.convive_caes == null ? '' : (listing.convive_caes ? 'sim' : 'nao');
+        document.getElementById('adoptNivelEnergia').value = listing.nivel_energia || '';
+        document.getElementById('adoptVermifugado').value = listing.vermifugado == null ? '' : (listing.vermifugado ? 'sim' : 'nao');
+        document.getElementById('adoptMotivoAdocao').value = listing.motivo_adocao || '';
         document.getElementById('adoptOng').value = listing.ong_name || '';
         document.getElementById('adoptDescription').value = listing.description || '';
         if(listing.photo_url) document.getElementById('adoptPhotoPreview').innerHTML = `<img src="${safeUrl(listing.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+        adoptExistingGalleryPhotos = photos || [];
+        renderAdoptGalleryPreview();
       }
       if(contact) document.getElementById('adoptPhone').value = contact.phone || '';
       loadBreedList(listing?.species || 'cao', 'adoptBreedList');
@@ -6335,6 +6620,16 @@
     const neutered = neuteredRaw === '' ? null : neuteredRaw === 'sim';
     const vaccinatedRaw = document.getElementById('adoptVaccinated').value;
     const vaccinated = vaccinatedRaw === '' ? null : vaccinatedRaw === 'sim';
+    const conviveCriancasRaw = document.getElementById('adoptConviveCriancas').value;
+    const convive_criancas = conviveCriancasRaw === '' ? null : conviveCriancasRaw === 'sim';
+    const conviveGatosRaw = document.getElementById('adoptConviveGatos').value;
+    const convive_gatos = conviveGatosRaw === '' ? null : conviveGatosRaw === 'sim';
+    const conviveCaesRaw = document.getElementById('adoptConviveCaes').value;
+    const convive_caes = conviveCaesRaw === '' ? null : conviveCaesRaw === 'sim';
+    const nivel_energia = document.getElementById('adoptNivelEnergia').value || null;
+    const vermifugadoRaw = document.getElementById('adoptVermifugado').value;
+    const vermifugado = vermifugadoRaw === '' ? null : vermifugadoRaw === 'sim';
+    const motivo_adocao = document.getElementById('adoptMotivoAdocao').value.trim() || null;
     const ong_name = document.getElementById('adoptOng').value.trim() || null;
     const description = document.getElementById('adoptDescription').value.trim() || null;
     const phone = document.getElementById('adoptPhone').value.trim();
@@ -6361,6 +6656,7 @@
     const fields = {
       pet_name, species, breed, description, ong_name,
       age_years, weight_kg, sex, size, neutered, vaccinated,
+      convive_criancas, convive_gatos, convive_caes, nivel_energia, motivo_adocao, vermifugado,
     };
     if(photo_url) fields.photo_url = photo_url; // só sobrescreve se uma foto nova foi enviada
 
@@ -6377,7 +6673,6 @@
       const { data: listing, error } = await supa.from('adoption_listings').insert({
         created_by: currentUser.id, ...fields,
         city: currentGeo.city || null, country: currentGeo.country || null,
-        lat: currentGeo.lat || null, lng: currentGeo.lng || null,
       }).select().single();
       if(error){
         submitBtn.disabled = false;
@@ -6388,17 +6683,45 @@
       listingId = listing.id;
     }
 
+    // coordenada exata fica numa tabela à parte, nunca pública (ver adoption_geo)
+    if(currentGeo.lat != null && currentGeo.lng != null){
+      await supa.from('adoption_geo').upsert(
+        { listing_id: listingId, lat: currentGeo.lat, lng: currentGeo.lng },
+        { onConflict: 'listing_id' },
+      );
+    }
+
     // upsert (não update): listagens antigas podem não ter linha de contato
     // ainda — um update simples afetaria 0 linhas e falharia silenciosamente
     const { error: contactError } = await supa.from('adoption_contacts')
       .upsert({ listing_id: listingId, phone }, { onConflict: 'listing_id' });
-    submitBtn.disabled = false;
     if(contactError){
+      submitBtn.disabled = false;
       statusEl.textContent = 'Pet salvo, mas houve um erro ao salvar o contato: ' + contactError.message;
       statusEl.className = 'modal-status err';
       return;
     }
 
+    // galeria: sobe cada foto nova, ocupando o primeiro order_index livre
+    // entre 0 e 4 (a tabela trava esse intervalo por constraint) — nunca
+    // assume slots contíguos, já que fotos podem ter sido removidas no meio
+    if(adoptGalleryFilesSelected.length){
+      statusEl.textContent = 'Enviando fotos da galeria…';
+      const usedSlots = new Set(adoptExistingGalleryPhotos.map(p => p.order_index));
+      const freeSlots = [0,1,2,3,4].filter(i => !usedSlots.has(i));
+      let slotIdx = 0;
+      for(const file of adoptGalleryFilesSelected){
+        if(slotIdx >= freeSlots.length) break;
+        const nextOrder = freeSlots[slotIdx];
+        slotIdx++;
+        try{
+          const url = await uploadToPetMedia(file, 'adoption');
+          await supa.from('adoption_photos').insert({ listing_id: listingId, url, order_index: nextOrder });
+        }catch(err){ console.error('adoption_photos upload', err); }
+      }
+    }
+
+    submitBtn.disabled = false;
     statusEl.textContent = adoptEditingId ? '✅ Anúncio atualizado!' : '✅ Pet publicado para adoção!';
     statusEl.className = 'modal-status ok';
     setTimeout(()=>{
