@@ -1181,6 +1181,14 @@
           <option value="medio">Médio</option>
           <option value="alto">Alto</option>
         </select>
+        <select id="adoptSortSelect" aria-label="Ordenar por">
+          <option value="proximos">Mais próximos</option>
+          <option value="recentes">Mais recentes</option>
+          <option value="antigos">Mais antigos</option>
+          <option value="favoritados">Mais favoritados</option>
+          <option value="visualizados">Mais visualizados</option>
+          <option value="nome">Nome (A-Z)</option>
+        </select>
         <button class="btn btn-ghost" id="btnAdoptVerMapa" type="button">🗺️ Ver no mapa</button>
       </div>
       <div class="adopt-grid" id="adoptGrid"></div>
@@ -1927,8 +1935,19 @@
       </div>
 
       <input type="text" placeholder="ONG/abrigo (opcional — deixe em branco se for tutor individual)" id="adoptOng" data-i18n-placeholder="ph_ong">
+      <div class="partner-form-grid">
+        <input type="text" placeholder="WhatsApp da ONG (opcional)" id="adoptOngWhatsapp" maxlength="30">
+        <input type="text" placeholder="Instagram da ONG (opcional)" id="adoptOngInstagram" maxlength="100">
+        <input type="text" placeholder="Site da ONG (opcional)" id="adoptOngSite" maxlength="300">
+      </div>
       <textarea placeholder="Conte sobre o temperamento, histórico, cuidados especiais..." id="adoptDescription" data-i18n-placeholder="ph_temperamento" rows="3"></textarea>
       <textarea placeholder="Motivo da adoção (opcional)" id="adoptMotivoAdocao" rows="2" maxlength="500"></textarea>
+      <select id="adoptNecessidadesEspeciais" aria-label="Necessidades especiais">
+        <option value="">Necessita cuidados especiais?</option>
+        <option value="sim">Sim, tem necessidades especiais</option>
+        <option value="nao">Não</option>
+      </select>
+      <input type="text" placeholder="Link de um vídeo do YouTube (opcional)" id="adoptVideoUrl" maxlength="300">
 
       <label class="photo-upload" for="adoptPhotoFile">
         <span id="adoptPhotoPreview">📷</span>
@@ -1950,6 +1969,62 @@
       <button class="btn btn-ghost" style="width:100%; padding:12px; margin-top:10px; display:none;" id="adoptFormMarkAdopted" data-i18n="adoptform_marcar_adotado">🏠 Marcar como adotado</button>
       <button class="btn-block" style="width:100%; margin-top:10px; background:var(--coral-dark); display:none;" id="adoptFormDelete" data-i18n="adoptform_excluir">🗑️ Excluir anúncio</button>
       <p class="modal-status" id="adoptFormStatus"></p>
+
+      <div id="adoptRequestsPanel" style="display:none; margin-top:22px; padding-top:16px; border-top:1px solid var(--line);">
+        <h4 style="font-size:0.9rem; margin-bottom:8px;">📨 Solicitações recebidas</h4>
+        <div id="adoptRequestsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETALHES DO PET PARA ADOÇÃO -->
+<div class="modal-overlay" id="adoptDetailModal">
+  <div class="modal" style="max-width:560px;">
+    <button class="modal-close" id="closeAdoptDetailModal">✕</button>
+    <div class="modal-body">
+      <div id="adoptDetailMainPhoto" style="width:100%; height:260px; border-radius:16px; overflow:hidden; background:linear-gradient(135deg,#FFD9C7,#FFB627); display:flex; align-items:center; justify-content:center; font-size:3rem; margin-bottom:8px;"></div>
+      <div id="adoptDetailThumbs" style="display:flex; gap:8px; margin-bottom:16px; overflow-x:auto;"></div>
+
+      <h3 id="adoptDetailName" style="font-family:'Fraunces',serif;"></h3>
+      <p id="adoptDetailMeta" class="sub"></p>
+      <div id="adoptDetailBadges" style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0;"></div>
+
+      <p id="adoptDetailDescription" style="margin:10px 0; white-space:pre-wrap;"></p>
+
+      <div id="adoptDetailVideoWrap" style="display:none; margin:14px 0;">
+        <div style="position:relative; padding-top:56.25%; border-radius:12px; overflow:hidden;">
+          <iframe id="adoptDetailVideo" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div id="adoptDetailOng" style="margin:14px 0; padding:12px; background:var(--surface); border-radius:12px; display:none;"></div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn-block" id="adoptDetailAdoptBtn" style="flex:1;">🐶 Quero adotar</button>
+        <button class="btn btn-ghost" id="adoptDetailMessageBtn" style="flex:1;">📨 Enviar mensagem</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SOLICITAÇÃO ESTRUTURADA DE INTERESSE -->
+<div class="modal-overlay" id="adoptRequestModal">
+  <div class="modal">
+    <button class="modal-close" id="closeAdoptRequestModal">✕</button>
+    <div class="modal-body">
+      <h3>Enviar mensagem</h3>
+      <p class="sub">Conte um pouco sobre você — o anunciante recebe seus dados e sua mensagem.</p>
+      <input type="text" placeholder="Seu nome" id="adoptReqName" maxlength="120">
+      <input type="tel" placeholder="Seu telefone" id="adoptReqPhone" maxlength="30">
+      <input type="email" placeholder="Seu e-mail" id="adoptReqEmail" maxlength="200">
+      <textarea placeholder="Mensagem (opcional)" id="adoptReqMessage" rows="3" maxlength="500"></textarea>
+      <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.78rem; margin:10px 0;">
+        <input type="checkbox" id="adoptReqTerms" style="margin-top:3px;">
+        <span>Aceito que meus dados sejam compartilhados com o anunciante pra tratar da adoção.</span>
+      </label>
+      <button class="btn btn-primary" style="width:100%; padding:13px;" id="adoptReqSubmit">Enviar solicitação</button>
+      <p class="modal-status" id="adoptReqStatus"></p>
     </div>
   </div>
 </div>
@@ -2802,6 +2877,24 @@
       const u = new URL(String(url ?? ''), window.location.href);
       return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : '#';
     }catch(_){ return '#'; }
+  }
+
+  // Extrai o videoId de uma URL de YouTube colada pelo usuário (formatos:
+  // youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID). Retorna null
+  // se não reconhecer — nunca bloqueia o salvamento do anúncio, só não mostra
+  // o vídeo embedado na página de detalhes.
+  function extractYoutubeId(url){
+    if(!url) return null;
+    const patterns = [
+      /youtu\.be\/([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/watch\?(?:.*&)?v=([A-Za-z0-9_-]{11})/,
+      /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
+    ];
+    for(const re of patterns){
+      const m = re.exec(url);
+      if(m) return m[1];
+    }
+    return null;
   }
 
   // insert resiliente a coluna nova que uma migration ainda não aplicou em
@@ -6233,6 +6326,18 @@
   let adoptItemsCache = [];
   let adoptEditingId = null;
   let adoptExtraFilters = {}; // { size, sex, neutered, convive_criancas, convive_gatos, convive_caes, nivel_energia }
+  let adoptSort = 'proximos';
+
+  function sortAdoptItems(items){
+    const sorted = items.slice();
+    if(adoptSort === 'proximos') sorted.sort((a,b) => (a.km ?? Infinity) - (b.km ?? Infinity));
+    else if(adoptSort === 'recentes') sorted.sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    else if(adoptSort === 'antigos') sorted.sort((a,b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    else if(adoptSort === 'favoritados') sorted.sort((a,b) => (b.favCount || 0) - (a.favCount || 0));
+    else if(adoptSort === 'visualizados') sorted.sort((a,b) => (b.viewCount || 0) - (a.viewCount || 0));
+    else if(adoptSort === 'nome') sorted.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    return sorted;
+  }
 
   const ADOPT_BADGE = {
     available: { label: 'Disponível', cls: 'adopt-badge--available' },
@@ -6258,6 +6363,7 @@
     const grid = document.getElementById('adoptGrid');
     let filtered = adoptFilter === 'todos' ? items : items.filter(a => a.species === adoptFilter);
     filtered = filtered.filter(passesAdoptExtraFilters);
+    filtered = sortAdoptItems(filtered);
     if(!filtered.length){
       grid.innerHTML = '<div class="adopt-empty">Nenhum pet dessa categoria por perto ainda 🐾 — tente "Todos" ou volte mais tarde.</div>';
       return;
@@ -6266,7 +6372,7 @@
       const isOwner = currentUser && a.created_by === currentUser.id;
       const badge = ADOPT_BADGE[a.status] || ADOPT_BADGE.available;
       return `
-      <div class="adopt-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}">
+      <div class="adopt-card" data-reveal="${i % 2 === 0 ? 'left' : 'right'}" data-detail="${esc(a.id)}" style="cursor:pointer;">
         <div class="media">
           ${a.photo_url ? `<img src="${safeUrl(a.photo_url)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;object-position:center;">` : a.emoji}
           <span class="adopt-badge ${badge.cls}">${badge.label}</span>
@@ -6308,8 +6414,30 @@
       id:a.id, created_by:a.created_by, name:a.pet_name, species:bucket, emoji:speciesEmoji[bucket],
       dist, km, photo_url:a.photo_url, meta, status:a.status, size:a.size, sex:a.sex, neutered:a.neutered,
       convive_criancas:a.convive_criancas, convive_gatos:a.convive_gatos, convive_caes:a.convive_caes,
-      nivel_energia:a.nivel_energia,
+      nivel_energia:a.nivel_energia, created_at:a.created_at,
+      favCount:0, viewCount:0, // preenchidos depois por attachAdoptionCounts()
     };
+  }
+
+  // Anexa contagem de favoritos/visualizações a cada item já carregado —
+  // usado só pra ordenação "mais favoritado"/"mais visto", sem precisar de
+  // nova infra de paginação no banco (agrega sobre os itens já em memória).
+  async function attachAdoptionCounts(items){
+    if(!items.length) return items;
+    // via RPC agregadora (security definer) — nunca lê linha crua de
+    // adoption_favorites (RLS só deixa cada um ver os próprios favoritos
+    // mesmo, então uma leitura direta nunca contaria certo) nem de
+    // adoption_views (evita baixar a tabela inteira pro client).
+    const { data, error } = await supa.rpc('adoption_counts', { p_listing_ids: items.map(i => i.id) });
+    if(error || !data) return items;
+    const byId = {};
+    data.forEach(row => { byId[row.listing_id] = row; });
+    items.forEach(i => {
+      const row = byId[i.id];
+      i.favCount = row?.fav_count || 0;
+      i.viewCount = row?.view_count || 0;
+    });
+    return items;
   }
 
   // Busca por raio real no banco (adoption_near), expandindo automaticamente
@@ -6351,6 +6479,7 @@
     } else {
       items = adoptView === 'adotado' ? [] : adoptData.map((a,i) => ({ id:'demo-'+i, name:a.name, species:a.species, emoji:a.emoji, dist:a.dist, status:'available' }));
     }
+    if(DB_READY && items.length) await attachAdoptionCounts(items);
     adoptItemsCache = items;
     renderAdoptCards(items);
   }
@@ -6387,6 +6516,11 @@
     renderAdoptCards(adoptItemsCache);
   });
 
+  document.getElementById('adoptSortSelect').addEventListener('change', e=>{
+    adoptSort = e.target.value;
+    renderAdoptCards(adoptItemsCache);
+  });
+
   document.addEventListener('click', e=>{
     const fav = e.target.closest('.fav-btn');
     if(fav){
@@ -6411,37 +6545,176 @@
     if(editAdoptBtn){ openAdoptFormModal(editAdoptBtn.dataset.editAdopt); return; }
     const adoptBtn = e.target.closest('[data-adopt]');
     if(adoptBtn){
-      if(!currentUser){ openModal('login'); return; }
-      const id = adoptBtn.dataset.adopt;
-      if(id.startsWith('demo-')){
-        adoptBtn.textContent = 'Contato disponível quando houver pets reais aqui 🐾';
+      revealAdoptContact(adoptBtn.dataset.adopt, adoptBtn);
+      return;
+    }
+    const detailCard = e.target.closest('.adopt-card[data-detail]');
+    if(detailCard){ openAdoptDetailModal(detailCard.dataset.detail); return; }
+  });
+
+  // o telefone nunca é lido direto da tabela — passa por uma função no banco
+  // (security definer) que exige login e aplica um limite de contatos
+  // revelados por usuário a cada 24h, pra uma conta grátis não conseguir
+  // varrer o telefone de todos os doadores de uma vez. Reaproveitada tanto
+  // pelo botão do card quanto pelo botão da página de detalhes.
+  function revealAdoptContact(id, btnEl){
+    if(!currentUser){ openModal('login'); return; }
+    if(id.startsWith('demo-')){
+      btnEl.textContent = 'Contato disponível quando houver pets reais aqui 🐾';
+      return;
+    }
+    btnEl.disabled = true;
+    btnEl.textContent = 'Buscando contato…';
+    supa.rpc('reveal_adoption_contact', { p_listing_id: id }).then(({ data, error })=>{
+      if(error || !data){
+        btnEl.disabled = false;
+        btnEl.textContent = error?.message?.includes('Limite')
+          ? 'Limite de contatos revelados atingido — tente mais tarde'
+          : 'Contato indisponível no momento';
         return;
       }
-      adoptBtn.disabled = true;
-      adoptBtn.textContent = 'Buscando contato…';
-      // o telefone nunca é lido direto da tabela — passa por uma função no
-      // banco (security definer) que exige login e aplica um limite de
-      // contatos revelados por usuário a cada 24h, pra uma conta grátis não
-      // conseguir varrer o telefone de todos os doadores de uma vez
-      supa.rpc('reveal_adoption_contact', { p_listing_id: id }).then(({ data, error })=>{
-        if(error || !data){
-          adoptBtn.disabled = false;
-          adoptBtn.textContent = error?.message?.includes('Limite')
-            ? 'Limite de contatos revelados atingido — tente mais tarde'
-            : 'Contato indisponível no momento';
-          return;
-        }
-        const digits = data.replace(/\D/g, '');
-        const link = document.createElement('a');
-        link.className = 'btn-block';
-        link.style.cssText = 'display:block; text-align:center; text-decoration:none;';
-        link.href = `https://wa.me/${digits}`;
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.textContent = `💬 Chamar ${data}`;
-        adoptBtn.replaceWith(link);
-      });
+      const digits = data.replace(/\D/g, '');
+      const link = document.createElement('a');
+      link.className = 'btn-block';
+      link.style.cssText = 'display:block; text-align:center; text-decoration:none;';
+      link.href = `https://wa.me/${digits}`;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = `💬 Chamar ${data}`;
+      btnEl.replaceWith(link);
+    });
+  }
+
+  // ===================================================================
+  // PÁGINA DE DETALHES DO PET
+  // ===================================================================
+  let adoptDetailCurrentId = null;
+
+  async function openAdoptDetailModal(id){
+    if(!DB_READY || id.startsWith('demo-')) return;
+    adoptDetailCurrentId = id;
+    // conta a visualização (fire-and-forget, sem exigir login — mesmo
+    // padrão de ad_impressions: insert público simples, só pra contagem)
+    supa.from('adoption_views').insert({ listing_id: id }).then(()=>{});
+
+    const [{ data: listing }, { data: photos }] = await Promise.all([
+      supa.from('adoption_listings').select('*').eq('id', id).single(),
+      supa.from('adoption_photos').select('url').eq('listing_id', id).order('order_index'),
+    ]);
+    if(!listing) return;
+
+    const bucket = speciesBucket(listing.species);
+    const allPhotos = [listing.photo_url, ...((photos || []).map(p => p.url))].filter(Boolean);
+
+    function showPhoto(url){
+      const main = document.getElementById('adoptDetailMainPhoto');
+      main.innerHTML = url ? `<img src="${safeUrl(url)}" style="width:100%;height:100%;object-fit:cover;">` : speciesEmoji[bucket];
     }
+    showPhoto(allPhotos[0]);
+    document.getElementById('adoptDetailThumbs').innerHTML = allPhotos.length > 1
+      ? allPhotos.map(u => `<img src="${safeUrl(u)}" data-thumb style="width:56px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;flex-shrink:0;">`).join('')
+      : '';
+
+    document.getElementById('adoptDetailName').textContent = listing.pet_name;
+    const sizeLabel = { pequeno:'Pequeno porte', medio:'Médio porte', grande:'Grande porte' }[listing.size] || null;
+    document.getElementById('adoptDetailMeta').textContent = [listing.breed, listing.age_years != null ? `${listing.age_years} anos` : null, sizeLabel, listing.weight_kg != null ? `${listing.weight_kg} kg` : null, listing.sex === 'macho' ? 'Macho' : listing.sex === 'femea' ? 'Fêmea' : null].filter(Boolean).join(' · ');
+
+    const badges = [];
+    const badge = ADOPT_BADGE[listing.status] || ADOPT_BADGE.available;
+    badges.push(`<span class="adopt-badge ${badge.cls}" style="position:static;">${badge.label}</span>`);
+    const boolBadge = (val, simLabel) => val == null ? '' : `<span style="font-size:0.72rem;padding:3px 10px;border-radius:100px;background:var(--surface);border:1px solid var(--line);">${val ? '✔' : '✕'} ${simLabel}</span>`;
+    badges.push(boolBadge(listing.neutered, 'Castrado'));
+    badges.push(boolBadge(listing.vaccinated, 'Vacinado'));
+    badges.push(boolBadge(listing.vermifugado, 'Vermifugado'));
+    badges.push(boolBadge(listing.convive_criancas, 'Convive c/ crianças'));
+    badges.push(boolBadge(listing.convive_gatos, 'Convive c/ gatos'));
+    badges.push(boolBadge(listing.convive_caes, 'Convive c/ cães'));
+    if(listing.nivel_energia) badges.push(`<span style="font-size:0.72rem;padding:3px 10px;border-radius:100px;background:var(--surface);border:1px solid var(--line);">⚡ Energia: ${esc(listing.nivel_energia)}</span>`);
+    if(listing.necessidades_especiais) badges.push(`<span style="font-size:0.72rem;padding:3px 10px;border-radius:100px;background:var(--surface);border:1px solid var(--line);">♿ Necessidades especiais</span>`);
+    document.getElementById('adoptDetailBadges').innerHTML = badges.filter(Boolean).join('');
+
+    const descParts = [listing.description, listing.motivo_adocao ? `Motivo da adoção: ${listing.motivo_adocao}` : null].filter(Boolean);
+    document.getElementById('adoptDetailDescription').textContent = descParts.join('\n\n') || 'Sem descrição adicional.';
+
+    const videoId = extractYoutubeId(listing.video_url);
+    document.getElementById('adoptDetailVideoWrap').style.display = videoId ? '' : 'none';
+    if(videoId) document.getElementById('adoptDetailVideo').src = `https://www.youtube.com/embed/${videoId}`;
+
+    const ongWrap = document.getElementById('adoptDetailOng');
+    if(listing.ong_name || listing.ong_whatsapp || listing.ong_instagram || listing.ong_site){
+      ongWrap.style.display = '';
+      ongWrap.innerHTML = `
+        ${listing.ong_name ? `<p style="font-weight:700;margin-bottom:4px;">${esc(listing.ong_name)}</p>` : ''}
+        ${listing.ong_whatsapp ? `<a href="https://wa.me/${esc(listing.ong_whatsapp.replace(/\D/g,''))}" target="_blank" rel="noopener noreferrer" style="display:block;font-size:0.82rem;">💬 ${esc(listing.ong_whatsapp)}</a>` : ''}
+        ${listing.ong_instagram ? `<a href="${safeUrl(listing.ong_instagram.startsWith('http') ? listing.ong_instagram : 'https://instagram.com/' + listing.ong_instagram.replace('@',''))}" target="_blank" rel="noopener noreferrer" style="display:block;font-size:0.82rem;">📸 ${esc(listing.ong_instagram)}</a>` : ''}
+        ${listing.ong_site ? `<a href="${safeUrl(listing.ong_site)}" target="_blank" rel="noopener noreferrer" style="display:block;font-size:0.82rem;">🔗 ${esc(listing.ong_site)}</a>` : ''}
+      `;
+    } else {
+      ongWrap.style.display = 'none';
+    }
+
+    const adoptBtn = document.getElementById('adoptDetailAdoptBtn');
+    adoptBtn.style.display = listing.status === 'adopted' ? 'none' : '';
+    adoptBtn.disabled = false;
+    adoptBtn.textContent = '🐶 Quero adotar';
+
+    document.getElementById('adoptDetailModal').classList.add('open');
+  }
+  document.getElementById('closeAdoptDetailModal').onclick = ()=> document.getElementById('adoptDetailModal').classList.remove('open');
+  document.getElementById('adoptDetailModal').addEventListener('click', e=>{
+    if(e.target.id === 'adoptDetailModal') document.getElementById('adoptDetailModal').classList.remove('open');
+    const thumb = e.target.closest('[data-thumb]');
+    if(thumb) document.getElementById('adoptDetailMainPhoto').innerHTML = `<img src="${thumb.src}" style="width:100%;height:100%;object-fit:cover;">`;
+  });
+  document.getElementById('adoptDetailAdoptBtn').addEventListener('click', ()=>{
+    revealAdoptContact(adoptDetailCurrentId, document.getElementById('adoptDetailAdoptBtn'));
+  });
+  document.getElementById('adoptDetailMessageBtn').addEventListener('click', ()=>{
+    if(!currentUser){ openModal('login'); return; }
+    document.getElementById('adoptDetailModal').classList.remove('open');
+    openAdoptRequestModal(adoptDetailCurrentId);
+  });
+
+  // ===================================================================
+  // SOLICITAÇÃO ESTRUTURADA DE INTERESSE
+  // ===================================================================
+  let adoptRequestListingId = null;
+  function openAdoptRequestModal(listingId){
+    adoptRequestListingId = listingId;
+    document.getElementById('adoptReqName').value = currentUser?.user_metadata?.full_name || '';
+    document.getElementById('adoptReqPhone').value = '';
+    document.getElementById('adoptReqEmail').value = currentUser?.email || '';
+    document.getElementById('adoptReqMessage').value = '';
+    document.getElementById('adoptReqTerms').checked = false;
+    document.getElementById('adoptReqStatus').textContent = '';
+    document.getElementById('adoptReqStatus').className = 'modal-status';
+    document.getElementById('adoptRequestModal').classList.add('open');
+  }
+  document.getElementById('closeAdoptRequestModal').onclick = ()=> document.getElementById('adoptRequestModal').classList.remove('open');
+  document.getElementById('adoptRequestModal').addEventListener('click', e=>{
+    if(e.target.id === 'adoptRequestModal') document.getElementById('adoptRequestModal').classList.remove('open');
+  });
+  document.getElementById('adoptReqSubmit').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('adoptReqStatus');
+    const name = document.getElementById('adoptReqName').value.trim();
+    const phone = document.getElementById('adoptReqPhone').value.trim();
+    const email = document.getElementById('adoptReqEmail').value.trim();
+    const message = document.getElementById('adoptReqMessage').value.trim() || null;
+    const accepted_terms = document.getElementById('adoptReqTerms').checked;
+    if(!name || !phone || !email){ statusEl.textContent = 'Preencha nome, telefone e e-mail.'; statusEl.className = 'modal-status err'; return; }
+    if(!accepted_terms){ statusEl.textContent = 'Você precisa aceitar o compartilhamento dos dados.'; statusEl.className = 'modal-status err'; return; }
+    if(!currentUser){ openModal('login'); return; }
+    const submitBtn = document.getElementById('adoptReqSubmit');
+    submitBtn.disabled = true;
+    const { error } = await supa.from('adoption_requests').insert({
+      listing_id: adoptRequestListingId, requester_id: currentUser.id,
+      name, phone, email, message, accepted_terms,
+    });
+    submitBtn.disabled = false;
+    if(error){ statusEl.textContent = error.message; statusEl.className = 'modal-status err'; return; }
+    statusEl.textContent = '✅ Solicitação enviada!';
+    statusEl.className = 'modal-status ok';
+    setTimeout(()=> document.getElementById('adoptRequestModal').classList.remove('open'), 900);
   });
 
   // ===================================================================
@@ -6531,6 +6804,11 @@
     document.getElementById('adoptNivelEnergia').value = '';
     document.getElementById('adoptVermifugado').value = '';
     document.getElementById('adoptMotivoAdocao').value = '';
+    document.getElementById('adoptOngWhatsapp').value = '';
+    document.getElementById('adoptOngInstagram').value = '';
+    document.getElementById('adoptOngSite').value = '';
+    document.getElementById('adoptNecessidadesEspeciais').value = '';
+    document.getElementById('adoptVideoUrl').value = '';
     document.getElementById('adoptOng').value = '';
     document.getElementById('adoptDescription').value = '';
     document.getElementById('adoptPhone').value = '';
@@ -6580,6 +6858,11 @@
         document.getElementById('adoptNivelEnergia').value = listing.nivel_energia || '';
         document.getElementById('adoptVermifugado').value = listing.vermifugado == null ? '' : (listing.vermifugado ? 'sim' : 'nao');
         document.getElementById('adoptMotivoAdocao').value = listing.motivo_adocao || '';
+        document.getElementById('adoptOngWhatsapp').value = listing.ong_whatsapp || '';
+        document.getElementById('adoptOngInstagram').value = listing.ong_instagram || '';
+        document.getElementById('adoptOngSite').value = listing.ong_site || '';
+        document.getElementById('adoptNecessidadesEspeciais').value = listing.necessidades_especiais == null ? '' : (listing.necessidades_especiais ? 'sim' : 'nao');
+        document.getElementById('adoptVideoUrl').value = listing.video_url || '';
         document.getElementById('adoptOng').value = listing.ong_name || '';
         document.getElementById('adoptDescription').value = listing.description || '';
         if(listing.photo_url) document.getElementById('adoptPhotoPreview').innerHTML = `<img src="${safeUrl(listing.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
@@ -6588,14 +6871,31 @@
       }
       if(contact) document.getElementById('adoptPhone').value = contact.phone || '';
       loadBreedList(listing?.species || 'cao', 'adoptBreedList');
+      loadAdoptRequestsPanel(adoptEditingId);
     } else {
       titleEl.textContent = t('adoptform_title');
       submitBtn.textContent = t('adoptform_submit');
       markAdoptedBtn.style.display = 'none';
       deleteBtn.style.display = 'none';
       loadBreedList('cao', 'adoptBreedList');
+      document.getElementById('adoptRequestsPanel').style.display = 'none';
     }
     document.getElementById('adoptFormModal').classList.add('open');
+  }
+
+  async function loadAdoptRequestsPanel(listingId){
+    const panel = document.getElementById('adoptRequestsPanel');
+    const list = document.getElementById('adoptRequestsList');
+    const { data } = await supa.from('adoption_requests').select('*').eq('listing_id', listingId).order('created_at', { ascending:false });
+    if(!data || !data.length){ panel.style.display = 'none'; return; }
+    panel.style.display = '';
+    list.innerHTML = data.map(r => `
+      <div style="padding:10px 0; border-bottom:1px solid var(--line); font-size:0.82rem;">
+        <p style="font-weight:700;">${esc(r.name)}</p>
+        <p>📞 ${esc(r.phone)} · ✉️ ${esc(r.email)}</p>
+        ${r.message ? `<p style="margin-top:4px; color:var(--text-muted);">"${esc(r.message)}"</p>` : ''}
+      </div>
+    `).join('');
   }
   document.getElementById('closeAdoptFormModal').onclick = ()=> document.getElementById('adoptFormModal').classList.remove('open');
   document.getElementById('adoptFormModal').addEventListener('click', e=>{
@@ -6631,6 +6931,12 @@
     const vermifugado = vermifugadoRaw === '' ? null : vermifugadoRaw === 'sim';
     const motivo_adocao = document.getElementById('adoptMotivoAdocao').value.trim() || null;
     const ong_name = document.getElementById('adoptOng').value.trim() || null;
+    const ong_whatsapp = document.getElementById('adoptOngWhatsapp').value.trim() || null;
+    const ong_instagram = document.getElementById('adoptOngInstagram').value.trim() || null;
+    const ong_site = document.getElementById('adoptOngSite').value.trim() || null;
+    const necessidadesRaw = document.getElementById('adoptNecessidadesEspeciais').value;
+    const necessidades_especiais = necessidadesRaw === '' ? null : necessidadesRaw === 'sim';
+    const video_url = document.getElementById('adoptVideoUrl').value.trim() || null;
     const description = document.getElementById('adoptDescription').value.trim() || null;
     const phone = document.getElementById('adoptPhone').value.trim();
 
@@ -6657,6 +6963,7 @@
       pet_name, species, breed, description, ong_name,
       age_years, weight_kg, sex, size, neutered, vaccinated,
       convive_criancas, convive_gatos, convive_caes, nivel_energia, motivo_adocao, vermifugado,
+      ong_whatsapp, ong_instagram, ong_site, necessidades_especiais, video_url,
     };
     if(photo_url) fields.photo_url = photo_url; // só sobrescreve se uma foto nova foi enviada
 
